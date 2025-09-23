@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/card";
 import { format } from "date-fns";
 
-/* ---------- Validation ---------- */
 const schema = z.object({
     firstName: z.string().min(1, "Enter first name"),
     middleName: z.string().optional(),
@@ -216,7 +215,7 @@ export default function EmployeeForm() {
     );
 
     return (
-        <div className="mx-auto max-w-5xl space-y-8 p-6">
+        <div className="mx-auto max-w-[1500px] space-y-8 p-6">
             <h1 className="mb-4 text-3xl font-bold tracking-tight">
                 Create Employee
             </h1>

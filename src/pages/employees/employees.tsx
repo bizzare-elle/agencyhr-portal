@@ -1,8 +1,14 @@
-import DataTableFetch from "@/components/data-table-fetch";
-
-import { Column } from "@/components/data-table-fetch";
+import { useQuery } from "@tanstack/react-query";
+import DataTable, { TableColumn } from "react-data-table-component";
+import api from "@/lib/axios";
+import { ApiResponse } from "@/index";
+import { Badge } from "@/components/ui/badge";
+import { formateToMonthDayYear } from "@/helpers/formatDates";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export type Employee = {
     id: number;
@@ -19,45 +25,140 @@ export type Employee = {
     user_id: string | null;
     personal_email_address: string;
     employment_status: string;
-    date_created: string;
+    created_at: string;
+    created_by: string;
     date_updated: string;
-    Actions?: string;
 };
 
-export const employeeColumns: Column<Employee>[] = [
-    { key: "id", label: "ID", sortable: true },
-    { key: "name", label: "Name", sortable: true },
-    { key: "agency_id", label: "Agency", sortable: true },
-    { key: "branch_id", label: "Branch", sortable: true },
-    { key: "department", label: "Department", sortable: true },
-    { key: "permission", label: "Permission", sortable: true },
-    { key: "id_number", label: "ID Number", sortable: true },
-    { key: "personal_email_address", label: "Email", sortable: true },
-    { key: "employment_status", label: "Status" },
-    { key: "created_at", label: "Created" },
-    { key: "updated_at", label: "Updated" },
+const columns: TableColumn<Employee>[] = [
     {
-        key: "Actions",
-        header: "Actions",
-        render: (row) => (
-            <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => alert(`Edit ${row.id}`)}
-            >
-                <MoreHorizontal className="h-4 w-4" />
+        name: "ID",
+        selector: (row) => row.id,
+        maxWidth: "20px",
+        sortable: true,
+    },
+    {
+        name: "ID Number",
+        selector: (row) => row.id_number,
+        maxWidth: "150px",
+    },
+    {
+        name: "Email",
+        selector: (row) => row.personal_email_address,
+        maxWidth: "200px",
+    },
+    {
+        name: "Name",
+        selector: (row) => row.name,
+        maxWidth: "250px",
+    },
+    {
+        name: "Branch",
+        selector: (row) => row.branch_id,
+        maxWidth: "200px",
+    },
+    {
+        name: "Department",
+        selector: (row) => row.department,
+        maxWidth: "130px",
+    },
+    {
+        name: "Status",
+        selector: (row) => row.employment_status,
+        maxWidth: "50px",
+        cell: (row) => {
+            if (row.employment_status === "Active") {
+                return (
+                    <Badge className="bg-green-700 text-white">
+                        {row.employment_status}
+                    </Badge>
+                );
+            }
+
+            if (row.employment_status === "Resign") {
+                return <Badge variant="destructive">Resigned</Badge>;
+            }
+
+            if (row.employment_status === "Terminate") {
+                return (
+                    <Badge className="bg-gray-600 text-white">Terminated</Badge>
+                );
+            }
+        },
+    },
+    {
+        name: "Created At",
+        selector: (row) => row.created_at,
+        format: (row) => formateToMonthDayYear(row.created_at),
+        maxWidth: "160px",
+        sortable: true,
+    },
+    {
+        name: "Created By",
+        selector: (row) => row.created_by,
+    },
+    {
+        cell: (row) => (
+            <Button size="sm" variant="outline" asChild>
+                <Link to={`/employees/${row.id}`} className="w-full">
+                    View
+                </Link>
             </Button>
         ),
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
     },
 ];
 
 export default function Employees() {
+    const [page, setPage] = useState<number>(1);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(25);
+
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["employees", page, rowsPerPage],
+        queryFn: async function () {
+            const response = await api.get<
+                ApiResponse<{ total: number; records: Employee[] }>
+            >(`/api/v2/employees?page=${page}&limit=${rowsPerPage}`);
+            return response.data;
+        },
+        placeholderData: (previousData) => previousData,
+    });
+
+    function handleSort(rows: any, selector: any, direction: any) {}
+
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
-            <DataTableFetch
-                columns={employeeColumns}
-                apiUrl="/api/v2/employees"
-            />
+            <div className="flex flex-col gap-8">
+                <h3>Employees</h3>
+                <div className="align-items-center flex justify-between gap-2">
+                    <Input
+                        type="text"
+                        placeholder="Search record... "
+                        className="max-w-[300px]"
+                    />
+                </div>
+            </div>
+            <Card>
+                <CardContent>
+                    <DataTable
+                        columns={columns}
+                        data={data?.data.records as Employee[]}
+                        pagination
+                        paginationServer
+                        theme="dark"
+                        responsive
+                        progressPending={isLoading}
+                        paginationPerPage={rowsPerPage}
+                        sortServer
+                        onSort={handleSort}
+                        onChangePage={(page) => setPage(page)}
+                        onChangeRowsPerPage={(value) => setRowsPerPage(value)}
+                        paginationTotalRows={data?.data.total || 0}
+                    />
+                </CardContent>
+            </Card>
         </div>
     );
 }

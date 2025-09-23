@@ -16,8 +16,10 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { useParams } from "react-router-dom";
 import { ApiResponse } from "@/index";
-import { format } from "date-fns";
-import isValidateDateString from "@/helpers/isValidDateString";
+import { cn } from "@/lib/utils";
+import { formatToPeso } from "@/helpers/formatToPeso";
+import { formateToMonthDayYear } from "@/helpers/formatDates";
+import TimeLogsTable from "@/components/employees/time-logs-table";
 
 export interface Employee {
     info: {
@@ -45,6 +47,7 @@ export interface Employee {
         branch_name: string;
         agency_name: string;
         address: string;
+        is_active: boolean;
         contact_number: string;
         personal_email_address: string;
         company_email_address: string;
@@ -177,7 +180,7 @@ export default function EmployeeProfile() {
     if (isError) return <div>Error loading employee data.</div>;
 
     return (
-        <div className="mx-auto w-full max-w-[1500px] space-y-8 p-6">
+        <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
             <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white shadow-md">
                 <div className="flex items-center gap-4">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
@@ -194,13 +197,6 @@ export default function EmployeeProfile() {
                         </p>
                     </div>
                 </div>
-
-                <button
-                    onClick={() => navigate(`/employee/edit/${employee.id}`)}
-                    className="rounded bg-white px-4 py-2 text-sm font-semibold text-indigo-700 shadow hover:bg-indigo-50"
-                >
-                    Edit Profile
-                </button>
             </div>
 
             <Tabs defaultValue="data" className="w-full">
@@ -213,7 +209,6 @@ export default function EmployeeProfile() {
                     <TabsTrigger value="overtime">Overtime</TabsTrigger>
                 </TabsList>
 
-                {/* ── Employee Data ── */}
                 <TabsContent value="data" className="space-y-10">
                     <section>
                         <h2 className="mb-4 text-xl font-semibold">
@@ -222,14 +217,11 @@ export default function EmployeeProfile() {
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {/* Personal */}
                             <Card className="p-6 shadow-sm">
-                                <Badge className="mb-3 bg-indigo-100 text-indigo-700">
-                                    Personal
-                                </Badge>
+                                <Badge className="mb-3">Personal</Badge>
                                 <InfoRow
                                     label="Birth Date"
-                                    value={format(
-                                        new Date(data!.info.birth_date),
-                                        "MMMM d, yyyy",
+                                    value={formateToMonthDayYear(
+                                        data!.info.birth_date,
                                     )}
                                 />
                                 <InfoRow
@@ -261,11 +253,8 @@ export default function EmployeeProfile() {
                                 />
                             </Card>
 
-                            {/* Company */}
                             <Card className="p-6 shadow-sm">
-                                <Badge className="mb-3 bg-indigo-100 text-indigo-700">
-                                    Company
-                                </Badge>
+                                <Badge className="mb-3">Company</Badge>
                                 <InfoRow
                                     label="Agency Name"
                                     value={data?.info.agency_name}
@@ -282,67 +271,76 @@ export default function EmployeeProfile() {
                                     label="Position"
                                     value={data?.info.position_name}
                                 />
-                                <hr className="my-3" />
                                 <p className="text-sm font-medium">
                                     Employment Timeline
-                                </p>{" "}
-                                x
+                                </p>
                                 <InfoRow
                                     label="Trial Date"
-                                    value={
-                                        isValidateDateString(
-                                            data!.info.trial_date,
-                                        )
-                                            ? format(
-                                                  new Date(
-                                                      data!.info.trial_date,
-                                                  ),
-                                                  "MMMM d, yyyy",
-                                              )
-                                            : "N/A"
-                                    }
+                                    value={formateToMonthDayYear(
+                                        data!.info.trial_date,
+                                    )}
                                 />
                                 <InfoRow
                                     label="Date Hired"
-                                    value={format(
-                                        new Date(data!.info.date_hired),
-                                        "MMMM d, yyyy",
+                                    value={formateToMonthDayYear(
+                                        data!.info.date_hired,
                                     )}
                                 />
                                 <InfoRow
                                     label="Regularization"
-                                    value={data!.info.date_regularization}
+                                    value={formateToMonthDayYear(
+                                        data!.info.date_regularization,
+                                    )}
                                 />
                                 <InfoRow
                                     label="Tenureship"
                                     value={data!.info.tenureship || "N/A"}
                                 />
-                                <hr className="my-3" />
                                 <InfoRow
                                     label="Status"
                                     value={
-                                        <span className="rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
-                                            Active
-                                        </span>
+                                        <Badge
+                                            className={cn(
+                                                "bg-green-600 text-white",
+                                                !data?.info.is_active &&
+                                                    "bg-red-600 text-white",
+                                            )}
+                                        >
+                                            {data?.info.is_active
+                                                ? "Active"
+                                                : "Inactive"}
+                                        </Badge>
                                     }
                                 />
                             </Card>
 
-                            {/* Salary */}
                             <Card className="p-6 shadow-sm">
-                                <Badge className="mb-3 bg-indigo-100 text-indigo-700">
-                                    Salary
-                                </Badge>
-                                <InfoRow label="Pay Divisor" value="313" />
+                                <Badge className="mb-3">Salary</Badge>
+                                <InfoRow
+                                    label="Pay Divisor"
+                                    value={data?.info.pay_divisor}
+                                />
                                 <InfoRow
                                     label="Basic Salary"
-                                    value="₱18,127.92"
+                                    value={formatToPeso(data!.info.salary_rate)}
                                 />
-                                <InfoRow label="Daily Rate" value="₱695.00" />
-                                <InfoRow label="Hourly Rate" value="₱86.88" />
+                                <InfoRow
+                                    label="Daily Rate"
+                                    value={formatToPeso(data!.info.daily_rate)}
+                                />
+                                <InfoRow
+                                    label="Hourly Rate"
+                                    value={formatToPeso(data!.info.hourly_rate)}
+                                />
                                 <InfoRow
                                     label="Billing Rate"
-                                    value="₱1,043.23"
+                                    value={
+                                        data!.info.billing_rate
+                                            ? formatToPeso(
+                                                  data!.info.billing_rate,
+                                              )
+                                            : "N/A"
+                                    }
                                 />
                             </Card>
                         </div>
@@ -355,33 +353,45 @@ export default function EmployeeProfile() {
                         </h2>
                         <div className="grid gap-6 md:grid-cols-2">
                             <Card className="p-6 shadow-sm">
-                                <Badge className="mb-3 bg-indigo-100 text-indigo-700">
-                                    Emergency
-                                </Badge>
+                                <Badge className="mb-3">Emergency</Badge>
                                 <InfoRow
                                     label="Contact Name"
-                                    value="Ronald Radhir A. Noscal"
+                                    value={data!.info.emergency_contact_name}
                                 />
-                                <InfoRow label="Relationship" value="Husband" />
+                                <InfoRow
+                                    label="Relationship"
+                                    value={data!.info.emergency_relation}
+                                />
                                 <InfoRow
                                     label="Mobile Number"
-                                    value="09395196698"
+                                    value={data!.info.emergency_mobile_no}
                                 />
                                 <InfoRow
                                     label="Address"
-                                    value="Blk 2 Lot 27 Phase 3 Marinig Cabuyao, Laguna"
+                                    value={data!.info.emergency_address}
                                 />
                             </Card>
 
                             <Card className="p-6 shadow-sm">
-                                <Badge className="mb-3 bg-indigo-100 text-indigo-700">
-                                    Government IDs
-                                </Badge>
-                                <InfoRow label="TIN" value="515-079-756" />
-                                <InfoRow label="SSS" value="35-0194357-9" />
+                                <Badge className="mb-3">Government IDs</Badge>
+                                <InfoRow
+                                    label="TIN"
+                                    value={
+                                        data?.info.government_tin_nos || "N/A"
+                                    }
+                                />
+                                <InfoRow
+                                    label="SSS"
+                                    value={
+                                        data?.info.government_sss_nos || "N/A"
+                                    }
+                                />
                                 <InfoRow
                                     label="PhilHealth"
-                                    value="0825-3737-5368"
+                                    value={
+                                        data?.info.government_philhealth_nos ||
+                                        "N/A"
+                                    }
                                 />
                                 <InfoRow
                                     label="PAGIBIG"
@@ -447,13 +457,22 @@ export default function EmployeeProfile() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {trainings.map((t, i) => (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={3}
+                                        className="text-center"
+                                    >
+                                        No training records available.
+                                    </TableCell>
+                                </TableRow>
+
+                                {/* {trainings.map((t, i) => (
                                     <TableRow key={i}>
                                         <TableCell>{t.title}</TableCell>
                                         <TableCell>{t.date}</TableCell>
                                         <TableCell>{t.status}</TableCell>
                                     </TableRow>
-                                ))}
+                                ))} */}
                             </TableBody>
                         </Table>
                     </Card>
@@ -465,24 +484,7 @@ export default function EmployeeProfile() {
                         <h2 className="mb-4 text-xl font-semibold">
                             Recent Time Logs
                         </h2>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Time In</TableHead>
-                                    <TableHead>Time Out</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {timeLogs.map((log, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>{log.date}</TableCell>
-                                        <TableCell>{log.in}</TableCell>
-                                        <TableCell>{log.out}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <TimeLogsTable employeeId={data!.info.id} />
                     </Card>
                 </TabsContent>
 

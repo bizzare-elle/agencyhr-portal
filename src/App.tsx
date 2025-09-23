@@ -12,6 +12,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route element={<AuthLayout />}>
                 <Route path="/" element={<Dashboard />} />
+
                 <Route path="/employees">
                     <Route index element={<Employees />} />
                     <Route path="form" element={<EmployeeForm />} />

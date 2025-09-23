@@ -11,24 +11,20 @@ import { Button } from "@/components/ui/button";
 import { X, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-interface ImageUploaderProps<T extends FieldValues> {
-    name: keyof T;
+interface ImageUploaderProps {
+    name: string;
     label: string;
-    control: any; // from useForm
+    control: any;
 }
 
-export function ImageUploader<T extends FieldValues>({
-    name,
-    label,
-    control,
-}: ImageUploaderProps<T>) {
+export function ImageUploader({ name, label, control }: ImageUploaderProps) {
     const [preview, setPreview] = React.useState<string | null>(null);
 
     return (
         <FormField
             control={control}
             name={name as string}
-            render={({ field }: { field: ControllerRenderProps<T> }) => (
+            render={({ field }: { field: ControllerRenderProps }) => (
                 <FormItem className="space-y-2">
                     <FormLabel>{label}</FormLabel>
                     <FormControl>

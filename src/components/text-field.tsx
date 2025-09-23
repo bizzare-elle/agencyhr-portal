@@ -1,15 +1,14 @@
-import * as React from "react";
 import {
     FormField,
     FormItem,
     FormControl,
     FormMessage,
 } from "@/components/ui/form";
-import { ControllerRenderProps, FieldValues } from "react-hook-form";
+import { ControllerRenderProps } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 
-interface TextFieldProps<T extends FieldValues> {
-    name: keyof T;
+interface TextFieldProps {
+    name: string;
     label: string;
     control: any;
     type?: string;
@@ -17,19 +16,19 @@ interface TextFieldProps<T extends FieldValues> {
     disabled?: boolean;
 }
 
-export function TextField<T extends FieldValues>({
+export function TextField({
     name,
     label,
     control,
     type = "text",
     placeholder,
     disabled = false,
-}: TextFieldProps<T>) {
+}: TextFieldProps) {
     return (
         <FormField
             control={control}
             name={name}
-            render={({ field }: { field: ControllerRenderProps<T> }) => (
+            render={({ field }: { field: ControllerRenderProps }) => (
                 <FormItem>
                     <FormControl>
                         <div className="relative w-full">

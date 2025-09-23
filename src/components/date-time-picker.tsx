@@ -23,17 +23,13 @@ import {
 } from "@/components/ui/form";
 import { ControllerRenderProps, FieldValues } from "react-hook-form";
 
-interface DateTimeFieldProps<T extends FieldValues> {
-    name: keyof T;
+interface DateTimeFieldProps {
+    name: string;
     label: string;
     control: any;
 }
 
-export function DateTimeField<T extends FieldValues>({
-    name,
-    label,
-    control,
-}: DateTimeFieldProps<T>) {
+export function DateTimeField({ name, label, control }: DateTimeFieldProps) {
     const [isOpen, setIsOpen] = React.useState(false);
 
     const hours = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -42,12 +38,16 @@ export function DateTimeField<T extends FieldValues>({
         <FormField
             control={control}
             name={name}
-            render={({ field }: { field: ControllerRenderProps<T> }) => {
-                const date = field.value as Date | undefined;
+            render={({ field }: { field: ControllerRenderProps }) => {
+                const date = field.value ? new Date(field.value) : undefined;
 
                 const handleDateSelect = (selectedDate: Date | undefined) => {
                     if (selectedDate) {
-                        field.onChange(selectedDate);
+                        const formatted = format(
+                            selectedDate,
+                            "yyyy-MM-dd HH:mm:ss",
+                        );
+                        field.onChange(formatted);
                     }
                 };
 
@@ -74,7 +74,11 @@ export function DateTimeField<T extends FieldValues>({
                                       : currentHours,
                             );
                         }
-                        field.onChange(newDate);
+                        const formatted = format(
+                            newDate,
+                            "yyyy-MM-dd HH:mm:ss",
+                        );
+                        field.onChange(formatted);
                     }
                 };
 
@@ -93,7 +97,7 @@ export function DateTimeField<T extends FieldValues>({
                                     >
                                         <Calendar1Icon className="mr-2 h-4 w-4" />
                                         {date ? (
-                                            format(date, "MM/dd/yyyy hh:mm aa")
+                                            format(date, "yyyy-MM-dd HH:mm:ss")
                                         ) : (
                                             <span>Select Date and Time</span>
                                         )}
@@ -105,7 +109,6 @@ export function DateTimeField<T extends FieldValues>({
                                             mode="single"
                                             selected={date}
                                             onSelect={handleDateSelect}
-                                            initialFocus
                                         />
                                         <div className="flex flex-col divide-y sm:h-[300px] sm:flex-row sm:divide-x sm:divide-y-0">
                                             {/* Hours */}
@@ -144,12 +147,11 @@ export function DateTimeField<T extends FieldValues>({
                                                 />
                                             </ScrollArea>
 
-                                            {/* Minutes */}
                                             <ScrollArea className="w-64 sm:w-auto">
                                                 <div className="flex p-2 sm:flex-col">
                                                     {Array.from(
-                                                        { length: 12 },
-                                                        (_, i) => i * 5,
+                                                        { length: 60 },
+                                                        (_, i) => i,
                                                     ).map((minute) => (
                                                         <Button
                                                             key={minute}
@@ -169,7 +171,12 @@ export function DateTimeField<T extends FieldValues>({
                                                                 )
                                                             }
                                                         >
-                                                            {minute}
+                                                            {minute
+                                                                .toString()
+                                                                .padStart(
+                                                                    2,
+                                                                    "0",
+                                                                )}
                                                         </Button>
                                                     ))}
                                                 </div>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useForm, ControllerRenderProps } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { DateTimeField } from "@/components/date-time-picker";
 import { z } from "zod";
 import { TextField } from "@/components/text-field";
@@ -14,7 +14,6 @@ import {
     FormControl,
     FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -24,12 +23,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
     Card,
     CardHeader,
     CardTitle,
@@ -37,80 +30,77 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui/card";
-import { format } from "date-fns";
+import { useMutation } from "@tanstack/react-query";
+import api from "@/lib/axios";
+import { useNavigate } from "react-router-dom";
 
 const schema = z.object({
-    employeeId: z.int().min(1, "Employee Name is required."),
-    clockType: z.enum(["clock-in", "clock-out", "break-in", "break-out"]),
+    clockType: z.enum(["Clock-In", "Clock-Out", "Break-In", "Break-Out"]),
     dateTime: z.string().min(1, "Enter date and time"),
     remarks: z.string().min(1, "Enter remarks"),
     imageReference: z
         .any()
         .refine(
-            (file) => file.size <= 5 * 1024 * 1024,
-            "File must be less than than 5MB",
+            (file) => !file || file.size <= 5 * 1024 * 1024,
+            "File must be less than 5MB",
         )
         .refine(
-            (file) => ["image/jpeg", "image/png"].includes(file?.type),
+            (file) => !file || ["image/jpeg", "image/png"].includes(file?.type),
             "Only JPEG and PNG files are allowed",
         ),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-function ClockType({
-    name,
-    label,
-    control,
-}: {
-    name: keyof FormValues;
-    label: string;
-    control: any;
-}) {
-    return (
-        <FormField
-            control={control}
-            name={name}
-            render={({ field }) => (
-                <FormItem className="space-y-1">
-                    <FormLabel>{label}</FormLabel>
-                    <Select>
-                        <FormControl>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Clock Type" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="clock-in">Clock-in</SelectItem>
-                            <SelectItem value="clock-out">Clock-out</SelectItem>
-                            <SelectItem value="break-in">Break-in</SelectItem>
-                            <SelectItem value="break-out">Break-out</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-            )}
-        ></FormField>
-    );
-}
-
 export default function LogoverrideForm() {
+    const navigate = useNavigate();
+
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
-        defaultValues: {},
+        defaultValues: {
+            remarks: "",
+        },
+    });
+
+    const { isPending, mutate } = useMutation({
+        mutationFn: async function (formValues: FormValues) {
+            const formData = new FormData();
+
+            Object.entries(formValues).forEach(([key, value]) => {
+                if (value instanceof FileList) {
+                    Array.from(value).forEach((file) => {
+                        formData.append(key, file);
+                    });
+                } else if (value instanceof File) {
+                    formData.append(key, value);
+                } else if (value !== undefined && value !== null) {
+                    formData.append(key, String(value));
+                }
+            });
+
+            const response = await api.post("/api/v2/logoverrides", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            return response.data;
+        },
     });
 
     function onSubmit(data: FormValues) {
-        toast("You submitted the following values", {
-            description: (
-                <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                    <code className="text-white">
-                        {JSON.stringify(data, null, 2)}
-                    </code>
-                </pre>
-            ),
+        mutate(data, {
+            onSuccess: function () {
+                toast.success("Success! Your Logoverride has been saved!");
+                navigate("/logoverrides/123");
+            },
+            onError: function () {
+                toast.error("Error! Please try again.");
+            },
         });
     }
+
+    console.log(form.formState.errors);
 
     return (
         <div className="mx-auto flex w-full max-w-[800px] justify-center p-10">
@@ -121,16 +111,49 @@ export default function LogoverrideForm() {
                         Enter your information to file your logoverride.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                        <CardContent>
                             <div className="flex flex-col gap-y-5">
                                 <div className="flex flex-row gap-5">
                                     <div className="w-full">
-                                        <ClockType
-                                            name="clockType"
-                                            label="Select Clock Type"
+                                        <FormField
                                             control={form.control}
+                                            name="clockType"
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-1">
+                                                    <FormLabel>
+                                                        Select Clock Type
+                                                    </FormLabel>
+                                                    <Select
+                                                        onValueChange={
+                                                            field.onChange
+                                                        }
+                                                        value={field.value}
+                                                    >
+                                                        <FormControl>
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select Clock Type" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="Clock-In">
+                                                                Clock-in
+                                                            </SelectItem>
+                                                            <SelectItem value="Clock-Out">
+                                                                Clock-out
+                                                            </SelectItem>
+                                                            <SelectItem value="Break-In">
+                                                                Break-in
+                                                            </SelectItem>
+                                                            <SelectItem value="Break-Out">
+                                                                Break-out
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
                                         />
                                     </div>
                                     <div className="w-full">
@@ -160,12 +183,12 @@ export default function LogoverrideForm() {
                                     </div>
                                 </div>
                             </div>
-                        </form>
-                    </Form>
-                </CardContent>
-                <CardFooter className="justify-end pt-4">
-                    <Button type="submit">Submit</Button>
-                </CardFooter>
+                        </CardContent>
+                        <CardFooter className="justify-end pt-8">
+                            <Button type="submit">Submit</Button>
+                        </CardFooter>
+                    </form>
+                </Form>
             </Card>
         </div>
     );

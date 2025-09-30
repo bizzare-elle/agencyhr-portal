@@ -22,6 +22,17 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { jwtDecode } from "jwt-decode";
+
+type TokenPayload = {
+    data: {
+        user_id: string;
+        role: string;
+    };
+    iat: number;
+    exp: number;
+};
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -44,11 +55,19 @@ export default function LoginPage() {
         },
     });
 
+    const setToken = useAuth((state) => state.setToken);
+
     const onSubmit = (data: LoginValues) => {
         loginMutation.mutate(data, {
-            onSuccess: (data) => {
-                toast.success("Login successful!");
-                navigate("/");
+            onSuccess: (response) => {
+                if (response?.token) {
+                    setToken(response.token);
+
+                    const decoded = jwtDecode<TokenPayload>(response.token);
+                    const userId = decoded.data.user_id;
+
+                    navigate(`/${userId}`);
+                }
             },
             onError: (error: any) => {
                 toast.error(
@@ -141,14 +160,13 @@ export default function LoginPage() {
                     </Form>
                 </CardContent>
 
-                <CardFooter className="flex justify-center">
+                {/* <CardFooter className="flex justify-start">
                     <p className="text-sm">
-                        Don’t have an account?
-                        <a href="/register" className="ml-1 hover:underline">
-                            Create one
+                        <a className="underline" href="">
+                            Forgot Password?
                         </a>
                     </p>
-                </CardFooter>
+                </CardFooter> */}
             </Card>
         </div>
     );

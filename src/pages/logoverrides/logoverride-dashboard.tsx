@@ -9,16 +9,19 @@ import api from "@/lib/axios";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
+    CardDescription,
 } from "@/components/ui/card";
 import { ApiResponse } from "@/index";
+import { formatToDateTime } from "@/helpers/formatDates";
 
 export interface Logoverride {
     id: string;
     app_key: string;
     employee_id: string;
+    employee_name: string;
+    agency_name: string;
     useremail: string;
     date_time: string;
     clock_type: string;
@@ -26,6 +29,7 @@ export interface Logoverride {
     branch_id: string | null;
     image: string;
     is_range: string;
+    remarks: string;
     is_logoverride: string;
     status: string;
     created_by: string;
@@ -36,18 +40,87 @@ export interface Logoverride {
     deleted_at: string | null;
 }
 
+export interface Employee {
+    id: string;
+    user_id: string | null;
+    firstname: string;
+    middlename: string | null;
+    lastname: string;
+    name: string | null;
+    birth_date: string | null;
+    age: string | null;
+    citizenship: string | null;
+    gender: string | null;
+    civil_status: string | null;
+    trial_date: string | null;
+    date_hired: string | null;
+    date_regularization: string | null;
+    tenureship: string | null;
+    employment_status: string | null;
+    agency_id: string | null;
+    id_number: string | null;
+    branch_id: string | null;
+    transfer_date_id: string | null;
+    address: string | null;
+    contact_number: string | null;
+    personal_email_address: string | null;
+    company_email_address: string | null;
+    schedule_type: string | null;
+    department_id: string | null;
+    permission_id: string | null;
+    position_id: string | null;
+    salary_rate: string | null;
+    daily_rate: string | null;
+    hourly_rate: string | null;
+    billing_rate: string | null;
+    allowance: string | null;
+    status: string;
+    leave_type: string | null;
+    leave_remarks: string | null;
+    date_resigned: string | null;
+    remarks: string | null;
+    government_tin_nos: string | null;
+    government_sss_nos: string | null;
+    government_philhealth_nos: string | null;
+    government_pagibig_nos: string | null;
+    emergency_contact_name: string | null;
+    emergency_address: string | null;
+    emergency_mobile_no: string | null;
+    emergency_relation: string | null;
+    pay_divisor: string | null;
+    access: string;
+    is_chef: string | null;
+    chef_downline_id: string | null;
+    is_direct: string | null;
+    user_access: string | null;
+    created_at: string | null;
+    created_by: string | null;
+    updated_at: string | null;
+    updated_by: string | null;
+    deleted_at: string | null;
+    deleted_by: string | null;
+    gross_pay: string | null;
+}
+
+export interface LogoverrideResponse {
+    info: Logoverride[];
+    recent_file: Logoverride[];
+    employees: Employee[];
+}
+
 export default function LogoverrideDashboard() {
     const navigate = useNavigate();
-    const employeedId = useParams().id;
-    const { isLoading, isError, data, isSuccess } = useQuery({
-        queryKey: ["logoverrideDashboard", employeedId],
+    const employeeId = useParams().id;
+
+    const { isLoading, isError, data } = useQuery<LogoverrideResponse>({
+        queryKey: ["logoverrideDashboard"],
         queryFn: async () => {
-            const response = await api.get<ApiResponse<Logoverride[]>>(
-                `/api/v2/logoverrides/${employeedId}`,
+            const response = await api.get<ApiResponse<LogoverrideResponse>>(
+                `/api/v2/logoverrides/${employeeId}`,
             );
-            return response.data.data || [];
+            return response.data.data;
         },
-        enabled: !!employeedId,
+        enabled: !!employeeId,
     });
 
     if (isLoading)
@@ -68,47 +141,58 @@ export default function LogoverrideDashboard() {
 
     return (
         <ParentComponent>
-            {data?.length === 0 ? (
+            {data?.info.length === 0 ? (
                 <div className="w-full">
                     <Card>
-                        <span className="text-2xl font-bold">
+                        <span className="text-center text-2xl font-bold">
                             No log overrides found.
                         </span>
                     </Card>
                 </div>
             ) : (
                 <>
-                    <div className="py-5">
+                    <div>
                         <Card>
-                            <div className="flex items-center justify-start gap-x-3 p-5">
-                                <User size={40} strokeWidth={1} />
-                                <div className="text-3xl font-bold">
-                                    {data?.[0]?.employee_id}
+                            <div className="flex items-center gap-4 p-5">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
+                                    {data?.info[0].employee_name.charAt(0)}
                                 </div>
-                                <Badge className="flex items-center gap-x-1">
-                                    Active <BadgeCheckIcon size={16} />
-                                </Badge>
+                                <div>
+                                    <div className="flex flex-row space-x-3">
+                                        <h1 className="text-2xl font-bold tracking-wide">
+                                            {data?.info[0].employee_name}{" "}
+                                        </h1>
+                                        <Badge>
+                                            {" "}
+                                            {data?.employees[0].agency_id}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm opacity-90">
+                                        ID: {data?.info[0].employee_id} •{" "}
+                                        {data?.employees[0].branch_id}
+                                    </p>
+                                </div>
                             </div>
                         </Card>
                     </div>
 
                     <div className="flex justify-between gap-x-5">
                         <Card className="w-full">
-                            <CardHeader className="justify-start text-start">
+                            <CardHeader>
                                 <CardTitle>Total Logoverrides</CardTitle>
                                 <CardDescription>
                                     Total number of logoverrides you filed.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex justify-start text-2xl font-bold">
-                                    {data?.length}
+                                <div className="text-2xl font-bold">
+                                    {data?.info.length}
                                 </div>
                             </CardContent>
                         </Card>
 
                         <Card className="w-full">
-                            <CardHeader className="justify-start text-start">
+                            <CardHeader>
                                 <CardTitle>
                                     Total Approved Logoverrides
                                 </CardTitle>
@@ -118,9 +202,9 @@ export default function LogoverrideDashboard() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex justify-start text-2xl font-bold">
+                                <div className="text-2xl font-bold">
                                     {
-                                        data?.filter(
+                                        data?.info.filter(
                                             (item) => item.status === "2",
                                         ).length
                                     }
@@ -129,7 +213,7 @@ export default function LogoverrideDashboard() {
                         </Card>
 
                         <Card className="w-full">
-                            <CardHeader className="justify-start text-start">
+                            <CardHeader>
                                 <CardTitle>
                                     Total Pending Logoverrides
                                 </CardTitle>
@@ -139,15 +223,75 @@ export default function LogoverrideDashboard() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex justify-start text-2xl font-bold">
+                                <div className="text-2xl font-bold">
                                     {
-                                        data?.filter(
+                                        data?.info.filter(
                                             (item) => item.status !== "2",
                                         ).length
                                     }
                                 </div>
                             </CardContent>
                         </Card>
+                    </div>
+
+                    <div className="w-full">
+                        {data?.recent_file.length === 0 ? (
+                            <Card>
+                                <span className="text-center text-2xl font-bold">
+                                    No recent application
+                                </span>
+                            </Card>
+                        ) : (
+                            <Card className="p-5">
+                                <div className="flex flex-col space-y-3">
+                                    <CardHeader className="pb-5">
+                                        <CardTitle>Recent Activities</CardTitle>
+                                        <CardDescription>
+                                            Here are your most recent
+                                            logoverride applications.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3">
+                                            {data?.recent_file.map((r) => (
+                                                <Card
+                                                    key={r.id}
+                                                    className="pl-none flex flex-col"
+                                                >
+                                                    <div className="flex justify-between">
+                                                        <div className="w-full text-center">
+                                                            {formatToDateTime(
+                                                                r.date_time,
+                                                            )}
+                                                        </div>
+                                                        <div className="w-full text-center">
+                                                            {r.clock_type}
+                                                        </div>
+                                                        <div className="w-full text-center capitalize">
+                                                            {r?.remarks ||
+                                                                "N/A"}
+                                                        </div>
+                                                        <div className="w-full text-center">
+                                                            {r.status ===
+                                                            "Approved" ? (
+                                                                <Badge className="bg-green-500">
+                                                                    {r.status}
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge className="bg-yellow-500">
+                                                                    Pending for
+                                                                    Approval
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </div>
+                            </Card>
+                        )}
                     </div>
                 </>
             )}

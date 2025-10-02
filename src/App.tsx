@@ -1,3 +1,8 @@
+import {
+    createBrowserRouter,
+    redirect,
+    RouterProvider,
+} from "react-router-dom";
 import AuthLayout from "./components/layouts/auth-layout";
 import Dashboard from "./pages/dashboard";
 import EmployeeForm from "./pages/employees/employee-form";
@@ -6,37 +11,69 @@ import Employees from "./pages/employees/employees";
 import LogoverrideDashboard from "./pages/logoverrides/logoverride-dashboard";
 import LogoverrideForm from "./pages/logoverrides/logoverride-form";
 import Login from "./pages/login";
-import { Routes, Route } from "react-router-dom";
 import OvertimeDashboard from "./pages/overtimes/overtime-dashboard";
 import OvertimeForm from "./pages/overtimes/overtime-form";
+import api from "./lib/axios";
+import FullPageLoader from "./components/page-loader";
+import { useAuthStore } from "./hooks/use-auth";
 
 export default function App() {
-    return (
-        <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route element={<AuthLayout />}>
-                <Route path="/" element={<Dashboard />} />
+    const router = createBrowserRouter([
+        {
+            path: "/login",
+            element: <Login />,
+        },
+        {
+            element: <AuthLayout />,
+            loader: async () => {
+                const token = useAuthStore.getState().token;
 
-                <Route path="/employees">
-                    <Route index element={<Employees />} />
-                    <Route path="form" element={<EmployeeForm />} />
-                    <Route path=":id" element={<EmployeeProfile />} />
-                </Route>
+                if (!token) {
+                    return redirect(`/login`);
+                }
+                try {
+                    const res = await api.get("/api/v2/auth/me", {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
 
-                <Route path="/logoverrides">
-                    <Route
-                        index
-                        path=":id"
-                        element={<LogoverrideDashboard />}
-                    />
-                    <Route path="form" element={<LogoverrideForm />} />
-                </Route>
+                    return res.data.data;
+                } catch (err) {
+                    return redirect("login");
+                }
+            },
+            hydrateFallbackElement: <FullPageLoader />,
+            children: [
+                {
+                    path: "/",
+                    element: <Dashboard />,
+                },
+                {
+                    path: "/employees",
+                    children: [
+                        { index: true, element: <Employees /> },
+                        { path: "form", element: <EmployeeForm /> },
+                        { path: ":id", element: <EmployeeProfile /> },
+                    ],
+                },
+                {
+                    path: "/logoverrides",
+                    children: [
+                        { path: ":id", element: <LogoverrideDashboard /> },
+                        { path: "form/:id", element: <LogoverrideForm /> },
+                    ],
+                },
+                {
+                    path: "/overtime",
+                    children: [
+                        { path: ":id", element: <OvertimeDashboard /> },
+                        { path: "form/:id", element: <OvertimeForm /> },
+                    ],
+                },
+            ],
+        },
+    ]);
 
-                <Route path="/overtime">
-                    <Route index element={<OvertimeDashboard />} />
-                    <Route path="form" element={<OvertimeForm />} />
-                </Route>
-            </Route>
-        </Routes>
-    );
+    return <RouterProvider router={router} />;
 }

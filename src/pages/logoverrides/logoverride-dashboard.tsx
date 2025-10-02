@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/card";
 import { ApiResponse } from "@/index";
 import { formatToDateTime } from "@/helpers/formatDates";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useAuthStore } from "@/hooks/use-auth";
 
 export interface Logoverride {
     id: string;
@@ -110,15 +113,31 @@ export interface LogoverrideResponse {
 
 export default function LogoverrideDashboard() {
     const navigate = useNavigate();
-    const employeeId = useParams().id;
 
+    const { setToken } = useAuthStore.getState();
+    const { data: me } = useQuery({
+        queryKey: ["me"],
+        queryFn: async () => {
+            const response =
+                await api.get<ApiResponse<{ id: string }>>(`/api/v2/auth/me`);
+            return response.data.data;
+        },
+    });
+
+    const employeeId = me?.id;
     const { isLoading, isError, data } = useQuery<LogoverrideResponse>({
         queryKey: ["logoverrideDashboard"],
         queryFn: async () => {
             const response = await api.get<ApiResponse<LogoverrideResponse>>(
                 `/api/v2/logoverrides/${employeeId}`,
             );
-            return response.data.data;
+            return (
+                response.data.data ?? {
+                    info: [],
+                    employees: [],
+                    recent_file: [],
+                }
+            );
         },
         enabled: !!employeeId,
     });
@@ -152,8 +171,8 @@ export default function LogoverrideDashboard() {
             ) : (
                 <>
                     <div>
-                        <Card>
-                            <div className="flex items-center gap-4 p-5">
+                        <Card className="flex flex-row items-center justify-between px-5 py-8">
+                            <div className="flex items-center gap-4">
                                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
                                     {data?.info[0].employee_name.charAt(0)}
                                 </div>
@@ -172,6 +191,12 @@ export default function LogoverrideDashboard() {
                                         {data?.employees[0].branch_id}
                                     </p>
                                 </div>
+                            </div>
+                            <div>
+                                <Link to={`/logoverrides/form/${employeeId}`}>
+                                    {" "}
+                                    <Button>File Logoverride</Button>
+                                </Link>
                             </div>
                         </Card>
                     </div>
@@ -242,7 +267,7 @@ export default function LogoverrideDashboard() {
                                 </span>
                             </Card>
                         ) : (
-                            <Card className="p-5">
+                            <Card className="p-5 px-0">
                                 <div className="flex flex-col space-y-3">
                                     <CardHeader className="pb-5">
                                         <CardTitle>Recent Activities</CardTitle>
@@ -256,7 +281,7 @@ export default function LogoverrideDashboard() {
                                             {data?.recent_file.map((r) => (
                                                 <Card
                                                     key={r.id}
-                                                    className="pl-none flex flex-col"
+                                                    className="pl-none flex flex-col transition delay-200 duration-300 ease-in-out hover:-translate-y-1 hover:scale-102"
                                                 >
                                                     <div className="flex justify-between">
                                                         <div className="w-full text-center">

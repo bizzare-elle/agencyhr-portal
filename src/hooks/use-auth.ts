@@ -1,27 +1,73 @@
-import * as React from "react";
 import { create } from "zustand";
+import api from "@/lib/axios";
 import { persist } from "zustand/middleware";
 
-interface AuthStore {
-    token: string | null;
-    setToken: (token: string) => void;
-    getToken: () => string | null;
-    clearToken: () => void;
+interface User {
+    id: number;
+    name?: string;
+    email?: string;
+    role: string;
+    department_id?: number;
+    status?: string;
 }
 
-export const useAuth = create<AuthStore>()(
+interface AuthState {
+    token: string | null;
+    user: User | null;
+    setToken: (token: string) => void;
+    getToken: () => string;
+    clear: () => void;
+    loadUser: () => Promise<User | null>;
+}
+
+export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => ({
             token: null,
-            setToken: (token) => set({ token }),
-            clearToken: () => set({ token: null }),
-            getToken: () => get().token,
+            user: null,
+
+            setToken: (token: string) => {
+                set({ token });
+                api.defaults.headers.common["Authorization"] =
+                    `Bearer ${token}`;
+            },
+
+            getToken: () => get().token as string,
+
+            clear: () => {
+                set({ token: null, user: null });
+                delete api.defaults.headers.common["Authorization"];
+            },
+
+            loadUser: async () => {
+                const token = get().token;
+                if (!token) return null;
+
+                try {
+                    const res = await api.get("/api/v2/auth/me");
+                    if (res.data?.data) {
+                        set({ user: res.data.data });
+                        return res.data.data;
+                    } else {
+                        console.error(
+                            "Unexpected response structure:",
+                            res.data,
+                        );
+                        get().clear();
+                        return null;
+                    }
+                } catch (err: any) {
+                    console.error(
+                        "Failed to load user:",
+                        err.response?.data || err.message,
+                    );
+                    get().clear();
+                    return null;
+                }
+            },
         }),
         {
-            name: "access-token",
+            name: "auth",
         },
     ),
 );
-
-                    
-// const setToken = useAuth((state) => state.setToken);

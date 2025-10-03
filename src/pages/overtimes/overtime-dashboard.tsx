@@ -1,225 +1,310 @@
-"use client";
-import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { ParentComponent } from "@/components/parent-container";
+import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { User } from "lucide-react";
+import { BadgeCheckIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import api from "@/lib/axios";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
+    CardDescription,
 } from "@/components/ui/card";
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from "@/components/ui/chart";
-export const description = "An interactive bar chart";
-import { ParentComponent } from "@/components/parent-container";
+import { ApiResponse } from "@/index";
+import { formatToDateTime } from "@/helpers/formatDates";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useAuthStore } from "@/hooks/use-auth";
 
-const chartData = [
-    { date: "2024-04-01", desktop: 222, mobile: 150 },
-    { date: "2024-04-02", desktop: 97, mobile: 180 },
-    { date: "2024-04-03", desktop: 167, mobile: 120 },
-    { date: "2024-04-04", desktop: 242, mobile: 260 },
-    { date: "2024-04-05", desktop: 373, mobile: 290 },
-    { date: "2024-04-06", desktop: 301, mobile: 340 },
-    { date: "2024-04-07", desktop: 245, mobile: 180 },
-    { date: "2024-04-08", desktop: 409, mobile: 320 },
-    { date: "2024-04-09", desktop: 59, mobile: 110 },
-    { date: "2024-04-10", desktop: 261, mobile: 190 },
-    { date: "2024-04-11", desktop: 327, mobile: 350 },
-    { date: "2024-04-12", desktop: 292, mobile: 210 },
-    { date: "2024-04-13", desktop: 342, mobile: 380 },
-    { date: "2024-04-14", desktop: 137, mobile: 220 },
-    { date: "2024-04-15", desktop: 120, mobile: 170 },
-    { date: "2024-04-16", desktop: 138, mobile: 190 },
-    { date: "2024-04-17", desktop: 446, mobile: 360 },
-    { date: "2024-04-18", desktop: 364, mobile: 410 },
-    { date: "2024-04-19", desktop: 243, mobile: 180 },
-    { date: "2024-04-20", desktop: 89, mobile: 150 },
-    { date: "2024-04-21", desktop: 137, mobile: 200 },
-    { date: "2024-04-22", desktop: 224, mobile: 170 },
-    { date: "2024-04-23", desktop: 138, mobile: 230 },
-    { date: "2024-04-24", desktop: 387, mobile: 290 },
-    { date: "2024-04-25", desktop: 215, mobile: 250 },
-    { date: "2024-04-26", desktop: 75, mobile: 130 },
-    { date: "2024-04-27", desktop: 383, mobile: 420 },
-    { date: "2024-04-28", desktop: 122, mobile: 180 },
-    { date: "2024-04-29", desktop: 315, mobile: 240 },
-    { date: "2024-04-30", desktop: 454, mobile: 380 },
-    { date: "2024-05-01", desktop: 165, mobile: 220 },
-    { date: "2024-05-02", desktop: 293, mobile: 310 },
-    { date: "2024-05-03", desktop: 247, mobile: 190 },
-    { date: "2024-05-04", desktop: 385, mobile: 420 },
-    { date: "2024-05-05", desktop: 481, mobile: 390 },
-    { date: "2024-05-06", desktop: 498, mobile: 520 },
-    { date: "2024-05-07", desktop: 388, mobile: 300 },
-    { date: "2024-05-08", desktop: 149, mobile: 210 },
-    { date: "2024-05-09", desktop: 227, mobile: 180 },
-    { date: "2024-05-10", desktop: 293, mobile: 330 },
-    { date: "2024-05-11", desktop: 335, mobile: 270 },
-    { date: "2024-05-12", desktop: 197, mobile: 240 },
-    { date: "2024-05-13", desktop: 197, mobile: 160 },
-    { date: "2024-05-14", desktop: 448, mobile: 490 },
-    { date: "2024-05-15", desktop: 473, mobile: 380 },
-    { date: "2024-05-16", desktop: 338, mobile: 400 },
-    { date: "2024-05-17", desktop: 499, mobile: 420 },
-    { date: "2024-05-18", desktop: 315, mobile: 350 },
-    { date: "2024-05-19", desktop: 235, mobile: 180 },
-    { date: "2024-05-20", desktop: 177, mobile: 230 },
-    { date: "2024-05-21", desktop: 82, mobile: 140 },
-    { date: "2024-05-22", desktop: 81, mobile: 120 },
-    { date: "2024-05-23", desktop: 252, mobile: 290 },
-    { date: "2024-05-24", desktop: 294, mobile: 220 },
-    { date: "2024-05-25", desktop: 201, mobile: 250 },
-    { date: "2024-05-26", desktop: 213, mobile: 170 },
-    { date: "2024-05-27", desktop: 420, mobile: 460 },
-    { date: "2024-05-28", desktop: 233, mobile: 190 },
-    { date: "2024-05-29", desktop: 78, mobile: 130 },
-    { date: "2024-05-30", desktop: 340, mobile: 280 },
-    { date: "2024-05-31", desktop: 178, mobile: 230 },
-    { date: "2024-06-01", desktop: 178, mobile: 200 },
-    { date: "2024-06-02", desktop: 470, mobile: 410 },
-    { date: "2024-06-03", desktop: 103, mobile: 160 },
-    { date: "2024-06-04", desktop: 439, mobile: 380 },
-    { date: "2024-06-05", desktop: 88, mobile: 140 },
-    { date: "2024-06-06", desktop: 294, mobile: 250 },
-    { date: "2024-06-07", desktop: 323, mobile: 370 },
-    { date: "2024-06-08", desktop: 385, mobile: 320 },
-    { date: "2024-06-09", desktop: 438, mobile: 480 },
-    { date: "2024-06-10", desktop: 155, mobile: 200 },
-    { date: "2024-06-11", desktop: 92, mobile: 150 },
-    { date: "2024-06-12", desktop: 492, mobile: 420 },
-    { date: "2024-06-13", desktop: 81, mobile: 130 },
-    { date: "2024-06-14", desktop: 426, mobile: 380 },
-    { date: "2024-06-15", desktop: 307, mobile: 350 },
-    { date: "2024-06-16", desktop: 371, mobile: 310 },
-    { date: "2024-06-17", desktop: 475, mobile: 520 },
-    { date: "2024-06-18", desktop: 107, mobile: 170 },
-    { date: "2024-06-19", desktop: 341, mobile: 290 },
-    { date: "2024-06-20", desktop: 408, mobile: 450 },
-    { date: "2024-06-21", desktop: 169, mobile: 210 },
-    { date: "2024-06-22", desktop: 317, mobile: 270 },
-    { date: "2024-06-23", desktop: 480, mobile: 530 },
-    { date: "2024-06-24", desktop: 132, mobile: 180 },
-    { date: "2024-06-25", desktop: 141, mobile: 190 },
-    { date: "2024-06-26", desktop: 434, mobile: 380 },
-    { date: "2024-06-27", desktop: 448, mobile: 490 },
-    { date: "2024-06-28", desktop: 149, mobile: 200 },
-    { date: "2024-06-29", desktop: 103, mobile: 160 },
-    { date: "2024-06-30", desktop: 446, mobile: 400 },
-];
-const chartConfig = {
-    views: {
-        label: "Page Views",
-    },
-    desktop: {
-        label: "Desktop",
-        color: "var(--chart-2)",
-    },
-    mobile: {
-        label: "Mobile",
-        color: "var(--chart-1)",
-    },
-} satisfies ChartConfig;
+export interface Overtime {
+    id: string;
+    employee_id: string;
+    employee_name: string;
+    date: string;
+    no_of_hours: string;
+    image: string;
+    remarks: string;
+    status: string;
+    created_by: string;
+    created_at: string;
+    updated_by: string | null;
+    updated_at: string | null;
+    deleted_by: string | null;
+    deleted_at: string | null;
+}
 
-export default function ChartBarInteractive() {
-    const [activeChart, setActiveChart] =
-        React.useState<keyof typeof chartConfig>("desktop");
-    const total = React.useMemo(
-        () => ({
-            desktop: chartData.reduce((acc, curr) => acc + curr.desktop, 0),
-            mobile: chartData.reduce((acc, curr) => acc + curr.mobile, 0),
-        }),
-        [],
-    );
+export interface Employee {
+    id: string;
+    user_id: string | null;
+    firstname: string;
+    middlename: string | null;
+    lastname: string;
+    name: string | null;
+    birth_date: string | null;
+    age: string | null;
+    citizenship: string | null;
+    gender: string | null;
+    civil_status: string | null;
+    trial_date: string | null;
+    date_hired: string | null;
+    date_regularization: string | null;
+    tenureship: string | null;
+    employment_status: string | null;
+    agency_id: string | null;
+    id_number: string | null;
+    branch_id: string | null;
+    transfer_date_id: string | null;
+    address: string | null;
+    contact_number: string | null;
+    personal_email_address: string | null;
+    company_email_address: string | null;
+    schedule_type: string | null;
+    department_id: string | null;
+    permission_id: string | null;
+    position_id: string | null;
+    salary_rate: string | null;
+    daily_rate: string | null;
+    hourly_rate: string | null;
+    billing_rate: string | null;
+    allowance: string | null;
+    status: string;
+    leave_type: string | null;
+    leave_remarks: string | null;
+    date_resigned: string | null;
+    remarks: string | null;
+    government_tin_nos: string | null;
+    government_sss_nos: string | null;
+    government_philhealth_nos: string | null;
+    government_pagibig_nos: string | null;
+    emergency_contact_name: string | null;
+    emergency_address: string | null;
+    emergency_mobile_no: string | null;
+    emergency_relation: string | null;
+    pay_divisor: string | null;
+    access: string;
+    is_chef: string | null;
+    chef_downline_id: string | null;
+    is_direct: string | null;
+    user_access: string | null;
+    created_at: string | null;
+    created_by: string | null;
+    updated_at: string | null;
+    updated_by: string | null;
+    deleted_at: string | null;
+    deleted_by: string | null;
+    gross_pay: string | null;
+}
+
+export interface OvertimeResponse {
+    info: Overtime[];
+    recent_file: Overtime[];
+    employees: Employee[];
+}
+
+export default function OvertimeDashboard() {
+    const navigate = useNavigate();
+
+    const { setToken } = useAuthStore.getState();
+    const { data: me } = useQuery({
+        queryKey: ["me"],
+        queryFn: async () => {
+            const response =
+                await api.get<ApiResponse<{ id: string }>>(`/api/v2/auth/me`);
+            return response.data.data;
+        },
+    });
+
+    const employeeId = me?.id;
+    const { isLoading, isError, data } = useQuery<OvertimeResponse>({
+        queryKey: ["overtimeDashboard"],
+        queryFn: async () => {
+            const response = await api.get<ApiResponse<OvertimeResponse>>(
+                `/api/v2/overtime/${employeeId}`,
+            );
+            return (
+                response.data.data ?? {
+                    info: [],
+                    employees: [],
+                    recent_file: [],
+                }
+            );
+        },
+        enabled: !!employeeId,
+    });
+
+    if (isLoading)
+        return (
+            <ParentComponent>
+                <div className="text-2xl font-bold">Loading...</div>
+            </ParentComponent>
+        );
+
+    if (isError)
+        return (
+            <ParentComponent>
+                <div className="text-2xl font-bold">
+                    Error fetching the data.
+                </div>
+            </ParentComponent>
+        );
+
     return (
         <ParentComponent>
-            <Card className="py-0">
-                <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
-                    <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:!py-0">
-                        <CardTitle>Bar Chart - Interactive</CardTitle>
-                        <CardDescription>
-                            Showing total visitors for the last 3 months
-                        </CardDescription>
+            {data?.info.length === 0 ? (
+                <div className="w-full">
+                    <Card>
+                        <span className="text-center text-2xl font-bold">
+                            No filed overtime found.
+                        </span>
+                    </Card>
+                </div>
+            ) : (
+                <>
+                    <div>
+                        <Card className="flex flex-row items-center justify-between px-5 py-8">
+                            <div className="flex items-center gap-4">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
+                                    {data?.info[0].employee_name.charAt(0)}
+                                </div>
+                                <div>
+                                    <div className="flex flex-row space-x-3">
+                                        <h1 className="text-2xl font-bold tracking-wide">
+                                            {data?.info[0].employee_name}{" "}
+                                        </h1>
+                                        <Badge>
+                                            {" "}
+                                            {data?.employees[0].agency_id}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm opacity-90">
+                                        ID: {data?.info[0].employee_id} •{" "}
+                                        {data?.employees[0].branch_id}
+                                    </p>
+                                </div>
+                            </div>
+                            <div>
+                                <Link to={`/overtime/form/${employeeId}`}>
+                                    {" "}
+                                    <Button>File Overtime</Button>
+                                </Link>
+                            </div>
+                        </Card>
                     </div>
-                    <div className="flex">
-                        {["desktop", "mobile"].map((key) => {
-                            const chart = key as keyof typeof chartConfig;
-                            return (
-                                <button
-                                    key={chart}
-                                    data-active={activeChart === chart}
-                                    className="data-[active=true]:bg-muted/50 relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-8 sm:py-6"
-                                    onClick={() => setActiveChart(chart)}
-                                >
-                                    <span className="text-muted-foreground text-xs">
-                                        {chartConfig[chart].label}
-                                    </span>
-                                    <span className="text-lg leading-none font-bold sm:text-3xl">
-                                        {total[
-                                            key as keyof typeof total
-                                        ].toLocaleString()}
-                                    </span>
-                                </button>
-                            );
-                        })}
+
+                    <div className="flex justify-between gap-x-5">
+                        <Card className="w-full">
+                            <CardHeader>
+                                <CardTitle>Total Overtime</CardTitle>
+                                <CardDescription>
+                                    Total number of overtime you filed.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {data?.info.length}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="w-full">
+                            <CardHeader>
+                                <CardTitle>Total Approved Overtime</CardTitle>
+                                <CardDescription>
+                                    Total number of approved overtime you filed.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {
+                                        data?.info.filter(
+                                            (item) => item.status === "2",
+                                        ).length
+                                    }
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="w-full">
+                            <CardHeader>
+                                <CardTitle>Total Pending Overtime</CardTitle>
+                                <CardDescription>
+                                    Total number of pending overtime you filed.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {
+                                        data?.info.filter(
+                                            (item) => item.status !== "2",
+                                        ).length
+                                    }
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
-                </CardHeader>
-                <CardContent className="px-2 sm:p-6">
-                    <ChartContainer
-                        config={chartConfig}
-                        className="aspect-auto h-[250px] w-full"
-                    >
-                        <BarChart
-                            accessibilityLayer
-                            data={chartData}
-                            margin={{
-                                left: 12,
-                                right: 12,
-                            }}
-                        >
-                            <CartesianGrid vertical={false} />
-                            <XAxis
-                                dataKey="date"
-                                tickLine={false}
-                                axisLine={false}
-                                tickMargin={8}
-                                minTickGap={32}
-                                tickFormatter={(value) => {
-                                    const date = new Date(value);
-                                    return date.toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                    });
-                                }}
-                            />
-                            <ChartTooltip
-                                content={
-                                    <ChartTooltipContent
-                                        className="w-[150px]"
-                                        nameKey="views"
-                                        labelFormatter={(value) => {
-                                            return new Date(
-                                                value,
-                                            ).toLocaleDateString("en-US", {
-                                                month: "short",
-                                                day: "numeric",
-                                                year: "numeric",
-                                            });
-                                        }}
-                                    />
-                                }
-                            />
-                            <Bar
-                                dataKey={activeChart}
-                                fill={`var(--color-${activeChart})`}
-                            />
-                        </BarChart>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
+
+                    <div className="w-full">
+                        {data?.recent_file.length === 0 ? (
+                            <Card>
+                                <span className="text-center text-2xl font-bold">
+                                    No recent application
+                                </span>
+                            </Card>
+                        ) : (
+                            <Card className="p-5 px-0">
+                                <div className="flex flex-col space-y-3">
+                                    <CardHeader className="pb-5">
+                                        <CardTitle>Recent Activities</CardTitle>
+                                        <CardDescription>
+                                            Here are your most recent overtime
+                                            applications.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-3">
+                                            {data?.recent_file.map((r) => (
+                                                <Card
+                                                    key={r.id}
+                                                    className="pl-none flex flex-col transition delay-200 duration-300 ease-in-out hover:-translate-y-1 hover:scale-102"
+                                                >
+                                                    <div className="flex justify-between">
+                                                        <div className="w-full text-center">
+                                                            {formatToDateTime(
+                                                                r.date,
+                                                            )}
+                                                        </div>
+
+                                                        <div className="w-full text-center capitalize">
+                                                            {r?.remarks ||
+                                                                "N/A"}
+                                                        </div>
+                                                        <div className="w-full text-center">
+                                                            {r.status ===
+                                                            "Approved" ? (
+                                                                <Badge className="bg-green-500">
+                                                                    {r.status}
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge className="bg-yellow-500">
+                                                                    Pending for
+                                                                    Approval
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </div>
+                            </Card>
+                        )}
+                    </div>
+                </>
+            )}
         </ParentComponent>
     );
 }

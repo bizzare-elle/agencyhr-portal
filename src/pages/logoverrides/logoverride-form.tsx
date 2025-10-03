@@ -33,6 +33,8 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/hooks/use-auth";
 
 const schema = z.object({
     clockType: z.enum(["Clock-In", "Clock-Out", "Break-In", "Break-Out"]),
@@ -62,6 +64,16 @@ export default function LogoverrideForm() {
         },
     });
 
+    const { setToken } = useAuthStore.getState();
+    const { data: me } = useQuery({
+        queryKey: ["me"],
+        queryFn: async () => {
+            const response = await api.get("/api/v2/auth/me");
+            return response.data.data;
+        },
+    });
+
+    const employeeId = me?.id;
     const { isPending, mutate } = useMutation({
         mutationFn: async function (formValues: FormValues) {
             const formData = new FormData();
@@ -78,11 +90,15 @@ export default function LogoverrideForm() {
                 }
             });
 
-            const response = await api.post("/api/v2/logoverrides", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
+            const response = await api.post(
+                `/api/v2/logoverrides/${employeeId}`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
                 },
-            });
+            );
 
             return response.data;
         },
@@ -90,17 +106,17 @@ export default function LogoverrideForm() {
 
     function onSubmit(data: FormValues) {
         mutate(data, {
-            onSuccess: function () {
+            onSuccess: () => {
                 toast.success("Success! Your Logoverride has been saved!");
-                navigate("/logoverrides/123");
+                navigate(`/logoverrides/${me?.id}`);
             },
-            onError: function () {
-                toast.error("Error! Please try again.");
+            onError: (err: any) => {
+                toast.error(
+                    err?.response?.data?.message || "Error! Please try again.",
+                );
             },
         });
     }
-
-    console.log(form.formState.errors);
 
     return (
         <div className="mx-auto flex w-full max-w-[800px] justify-center p-10">

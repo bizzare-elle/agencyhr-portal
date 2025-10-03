@@ -14,7 +14,6 @@ import { Input } from "../components/ui/input";
 import {
     Card,
     CardContent,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "../components/ui/card";
@@ -22,16 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
-
-type TokenPayload = {
-    data: {
-        user_id: string;
-        role: string;
-    };
-    iat: number;
-    exp: number;
-};
+import { useAuthStore } from "@/hooks/use-auth";
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -47,25 +37,36 @@ export default function LoginPage() {
     });
 
     const navigate = useNavigate();
+    const setToken = useAuthStore((s) => s.setToken);
+    const loadUser = useAuthStore((s) => s.loadUser);
+
     const loginMutation = useMutation({
         mutationFn: async (data: LoginValues) => {
-            const response = await api.post("api/v2/auth/login", data);
+            const response = await api.post("/api/v2/auth/login", data);
             return response.data;
         },
     });
 
-    const onSubmit = (data: LoginValues) => {
-        loginMutation.mutate(data, {
-            onSuccess: (response) => {
-                if (response?.token) {
-                    navigate(`/`);
+    const onSubmit = (values: LoginValues) => {
+        loginMutation.mutate(values, {
+            onSuccess: async (response) => {
+                const token = response?.data?.token;
+                if (!token) return;
+
+                setToken(token);
+
+                const user = await loadUser();
+
+                if (user?.id) {
+                    toast.success("Login successful!");
+                    navigate(`/overtime/${user.id}`);
+                    // navigate(`/logoverrides/form/${user.id}`);
+                } else {
+                    toast.error("Failed to load user info.");
                 }
             },
-            onError: (error: any) => {
-                toast.error(
-                    error?.response?.data?.message ||
-                        "An error occurred during login.",
-                );
+            onError: (err: any) => {
+                toast.error(err?.response?.data?.message || "Login failed");
             },
         });
     };
@@ -151,14 +152,6 @@ export default function LoginPage() {
                         </form>
                     </Form>
                 </CardContent>
-
-                {/* <CardFooter className="flex justify-start">
-                    <p className="text-sm">
-                        <a className="underline" href="">
-                            Forgot Password?
-                        </a>
-                    </p>
-                </CardFooter> */}
             </Card>
         </div>
     );

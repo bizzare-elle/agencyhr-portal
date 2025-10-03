@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import EmployeesFilter from "@/components/employees/employees-filter";
 
 export type Employee = {
     id: number;
@@ -114,13 +115,16 @@ const columns: TableColumn<Employee>[] = [
 export default function Employees() {
     const [page, setPage] = useState<number>(1);
     const [rowsPerPage, setRowsPerPage] = useState<number>(25);
+    const [search, setSearch] = useState<string>("");
 
     const { data, isLoading, isError } = useQuery({
-        queryKey: ["employees", page, rowsPerPage],
+        queryKey: ["employees", page, rowsPerPage, search],
         queryFn: async function () {
             const response = await api.get<
                 ApiResponse<{ total: number; records: Employee[] }>
-            >(`/api/v2/employees?page=${page}&limit=${rowsPerPage}`);
+            >(
+                `/api/v2/employees?search=${search}&page=${page}&limit=${rowsPerPage}`,
+            );
             return response.data;
         },
         placeholderData: (previousData) => previousData,
@@ -132,11 +136,13 @@ export default function Employees() {
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
             <div className="flex flex-col gap-8">
                 <h3>Employees</h3>
-                <div className="align-items-center flex justify-between gap-2">
+                <div className="align-items-center flex gap-4">
+                    <EmployeesFilter />
                     <Input
                         type="text"
                         placeholder="Search record... "
-                        className="max-w-[300px]"
+                        className="max-w-[250px]"
+                        onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
             </div>

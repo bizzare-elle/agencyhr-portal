@@ -23,7 +23,6 @@ import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { jwtDecode } from "jwt-decode";
 
 type TokenPayload = {
     data: {
@@ -55,18 +54,11 @@ export default function LoginPage() {
         },
     });
 
-    const setToken = useAuth((state) => state.setToken);
-
     const onSubmit = (data: LoginValues) => {
         loginMutation.mutate(data, {
             onSuccess: (response) => {
                 if (response?.token) {
-                    setToken(response.token);
-
-                    const decoded = jwtDecode<TokenPayload>(response.token);
-                    const userId = decoded.data.user_id;
-
-                    navigate(`/${userId}`);
+                    navigate(`/`);
                 }
             },
             onError: (error: any) => {

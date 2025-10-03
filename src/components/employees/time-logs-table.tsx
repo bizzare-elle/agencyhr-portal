@@ -97,7 +97,11 @@ const columns: TableColumn<TimeLog>[] = [
             return (
                 <Dialog>
                     <DialogTrigger className="cursor-pointer">
-                        <img className="max-h-[50px]" src={imageSrc} />
+                        <img
+                            className="h-[50px]"
+                            src={imageSrc}
+                            loading="lazy"
+                        />
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
@@ -108,7 +112,11 @@ const columns: TableColumn<TimeLog>[] = [
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-center object-contain">
-                            <img className="max-h-[400px]" src={imageSrc} />
+                            <img
+                                className="h-[400px]"
+                                src={imageSrc}
+                                loading="lazy"
+                            />
                         </div>
                         <DialogFooter className="mt-4">
                             <DialogClose asChild>

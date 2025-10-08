@@ -1,7 +1,14 @@
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardContent,
+    CardDescription,
+    CardFooter,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
     Table,
@@ -14,85 +21,96 @@ import {
 import { ClipboardList } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
-import { useParams } from "react-router-dom";
 import { ApiResponse } from "@/index";
 import { cn } from "@/lib/utils";
 import { formatToPeso } from "@/helpers/formatToPeso";
-import { formateToMonthDayYear } from "@/helpers/formatDates";
+import { formateToMonthDayYear, formatToDateTime } from "@/helpers/formatDates";
 import TimeLogsTable from "@/components/employees/time-logs-table";
+import FullPageLoader from "@/components/page-loader";
+import { useAuthStore } from "@/hooks/use-auth";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import OvertimeRequestsCard from "@/components/employee-overtime";
+import LogoverrideRequests from "@/components/employee-logoverride";
 
 export interface Employee {
-    info: {
-        id: number;
-        firstname: string;
-        middlename: string;
-        lastname: string;
-        name: string;
-        birth_date: string;
-        age: number | null;
-        citizenship: string;
-        gender: string;
-        civil_status: string;
-        trial_date: string;
-        date_hired: string;
-        date_regularization: string;
-        department_name: string;
-        tenureship: string | null;
-        gender_display: string;
-        civil_status_display: string;
-        employment_status: string;
-        agency_id: string;
-        id_number: string;
-        branch_id: string;
-        branch_name: string;
-        agency_name: string;
-        address: string;
-        is_active: boolean;
-        contact_number: string;
-        personal_email_address: string;
-        company_email_address: string;
-        schedule_type: string | null;
-        department_id: number;
-        position_id: number;
-        position_name: string;
-        salary_rate: string;
-        daily_rate: string;
-        hourly_rate: string;
-        billing_rate: string;
-        allowance: string;
-        status: string;
-        date_resigned: string | null;
-        remarks: string;
-        government_tin_nos: string;
-        government_sss_nos: string;
-        government_philhealth_nos: string;
-        government_pagibig_nos: string;
-        emergency_contact_name: string;
-        emergency_address: string;
-        emergency_mobile_no: string;
-        emergency_relation: string;
-        pay_divisor: string;
-        access: string;
-        is_chef: string;
-        chef_downline_id: string;
-        is_direct: string;
-        created_at: string;
-        created_by: string;
-        updated_at: string;
-        updated_by: string;
-        deleted_at: string | null;
-        deleted_by: string | null;
-        gross_pay: string | null;
-        schedules: Schedule[];
-    };
+    id: number;
+    firstname: string;
+    middlename: string;
+    lastname: string;
+    name: string;
+    birth_date: string;
+    age: number | null;
+    citizenship: string;
+    gender: string;
+    civil_status: string;
+    trial_date: string;
+    date_hired: string;
+    date_regularization: string;
+    department_name: string;
+    tenureship: string | null;
+    gender_display: string;
+    civil_status_display: string;
+    employment_status: string;
+    agency_id: string;
+    id_number: string;
+    branch_id: string;
+    branch_name: string;
+    agency_name: string;
+    address: string;
+    is_active: boolean;
+    contact_number: string;
+    personal_email_address: string;
+    company_email_address: string;
+    schedule_type: string | null;
+    department_id: number;
+    position_id: number;
+    position_name: string;
+    salary_rate: string;
+    daily_rate: string;
+    hourly_rate: string;
+    billing_rate: string;
+    allowance: string;
+    status: string;
+    date_resigned: string | null;
+    remarks: string;
+    government_tin_nos: string;
+    government_sss_nos: string;
+    government_philhealth_nos: string;
+    government_pagibig_nos: string;
+    emergency_contact_name: string;
+    emergency_address: string;
+    emergency_mobile_no: string;
+    emergency_relation: string;
+    pay_divisor: string;
+    access: string;
+    is_chef: string;
+    chef_downline_id: string;
+    is_direct: string;
+    created_at: string;
+    created_by: string;
+    updated_at: string;
+    updated_by: string;
+    deleted_at: string | null;
+    deleted_by: string | null;
+    gross_pay: string | null;
 }
 
 export interface Schedule {
     id: string;
     emp_sched_date_id: string;
     branch_id: string;
+    branch_name: string;
     date: string;
     employee_id: string;
+    schedule_name: string;
     schedule_type: string;
     created_by: string;
     created_at: string;
@@ -100,6 +118,54 @@ export interface Schedule {
     updated_at: string | null;
     deleted_by: string | null;
     deleted_at: string | null;
+}
+
+export interface Logoverride {
+    id: string;
+    app_key: string;
+    employee_id: string;
+    employee_name: string;
+    agency_name: string;
+    useremail: string;
+    date_time: string;
+    clock_type: string;
+    location: string;
+    branch_id: string | null;
+    image: string;
+    is_range: string;
+    remarks: string;
+    is_logoverride: string;
+    status: string;
+    created_by: string;
+    created_at: string;
+    updated_by: string | null;
+    updated_at: string | null;
+    deleted_by: string | null;
+    deleted_at: string | null;
+}
+
+export interface Overtime {
+    id: string;
+    employee_id: string;
+    employee_name: string;
+    date: string;
+    no_of_hours: string;
+    image: string;
+    remarks: string;
+    status: string;
+    created_by: string;
+    created_at: string;
+    updated_by: string | null;
+    updated_at: string | null;
+    deleted_by: string | null;
+    deleted_at: string | null;
+}
+
+export interface EmployeeResponse {
+    info: Employee;
+    schedules: Schedule[];
+    logoverrides: Logoverride[];
+    overtimes: Overtime[];
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -113,71 +179,110 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 export default function EmployeeProfile() {
     const navigate = useNavigate();
-    const employeedId = useParams().id;
-    const { isLoading, isError, data, isSuccess } = useQuery({
-        queryKey: ["employeeProfile"],
+    const { setToken } = useAuthStore.getState();
+
+    const { data: me } = useQuery({
+        queryKey: ["me"],
         queryFn: async () => {
-            const response = await api.get<ApiResponse<Employee>>(
-                `/api/v2/employees/${employeedId}`,
-            );
+            const response =
+                await api.get<ApiResponse<{ id: string }>>(`/api/v2/auth/me`);
             return response.data.data;
         },
     });
 
-    const employee = {
-        name: "LEONILA ALULOD GALASAO",
-        id: "A1264",
-        birthDate: "2003-03-03",
-        age: "22",
-        gender: "Female",
-        civilStatus: "Single",
-        phone: "09193709989",
-        email: "leeyon032511@gmail.com",
-        address: "Blk 2 Lot 27 Phase 3 Marinig Cabuyao, Laguna",
-    };
+    const employeeId = me?.id;
 
-    const trainings = [
-        {
-            title: "Safety Orientation",
-            date: "2025-01-15",
-            status: "Completed",
+    const { data, isLoading, isError } = useQuery<EmployeeResponse>({
+        queryKey: ["employeeProfile", employeeId],
+        queryFn: async () => {
+            const response = await api.get<ApiResponse<EmployeeResponse>>(
+                `/api/v2/employees/${employeeId}`,
+            );
+            return (
+                response.data.data ?? {
+                    info: [],
+                    schedules: [],
+                    logoverrides: [],
+                    overtimes: [],
+                }
+            );
         },
-        { title: "Data Security", date: "2025-03-02", status: "Scheduled" },
-    ];
+        enabled: !!employeeId,
+    });
 
-    const timeLogs = [
-        { date: "2025-09-18", in: "09:05", out: "18:00" },
-        { date: "2025-09-19", in: "09:00", out: "18:10" },
-    ];
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const midMonth = new Date(today.getFullYear(), today.getMonth(), 15);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    const schedule = [
-        { day: "Mon–Fri", shift: "9:00 AM – 6:00 PM" },
-        { day: "Sat", shift: "Off" },
-    ];
+    const defaultRange =
+        today.getDate() <= 15
+            ? { from: startOfMonth, to: midMonth }
+            : {
+                  from: new Date(today.getFullYear(), today.getMonth(), 16),
+                  to: endOfMonth,
+              };
 
-    const logOverrides = [
-        {
-            date: "2025-09-10",
-            reason: "Forgot to time-out",
-            status: "Approved",
-        },
-    ];
+    const [dateRange, setDateRange] = React.useState<{
+        from: Date | undefined;
+        to: Date | undefined;
+    }>(defaultRange);
 
-    const overtime = [
-        {
-            date: "2025-09-12",
-            hours: 3,
-            reason: "System deployment",
-            status: "Pending",
-        },
-    ];
+    const days: Date[] = React.useMemo(() => {
+        const from = dateRange.from ?? startOfMonth;
+        const to = dateRange.to ?? endOfMonth;
+        const list: Date[] = [];
+
+        const cursor = new Date(from);
+        while (cursor <= to) {
+            list.push(new Date(cursor));
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        return list;
+    }, [dateRange, startOfMonth, endOfMonth]);
+
+    const filteredSchedules = React.useMemo(() => {
+        if (!Array.isArray(data?.schedules)) return [];
+
+        const from = dateRange.from ?? new Date(-8640000000000000);
+        const to = dateRange.to ?? new Date(8640000000000000);
+
+        return data.schedules.filter((s) => {
+            const scheduleDate = new Date(s.date);
+            return scheduleDate >= from && scheduleDate <= to;
+        });
+    }, [data?.schedules, dateRange]);
+
+    const filteredLogoverrides = React.useMemo(() => {
+        if (!Array.isArray(data?.logoverrides)) return [];
+
+        const from = dateRange.from ?? new Date(-8640000000000000);
+        const to = dateRange.to ?? new Date(8640000000000000);
+
+        return data.logoverrides.filter((log) => {
+            const logDate = new Date(log.date_time);
+            return logDate >= from && logDate <= to;
+        });
+    }, [data?.logoverrides, dateRange]);
+
+    const filteredOvertimes = React.useMemo(() => {
+        if (!Array.isArray(data?.overtimes)) return [];
+
+        const from = dateRange.from ?? new Date(-8640000000000000);
+        const to = dateRange.to ?? new Date(8640000000000000);
+
+        return data.overtimes.filter((log) => {
+            const logDate = new Date(log.date);
+            return logDate >= from && logDate <= to;
+        });
+    }, [data?.overtimes, dateRange]);
 
     const transferLogs: { id: number; date: string; description: string }[] =
         [];
 
-    if (isLoading) return <div>Loading...</div>;
-
+    if (isLoading) return <FullPageLoader />;
     if (isError) return <div>Error loading employee data.</div>;
+    if (!data || !data.info) return <FullPageLoader />;
 
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
@@ -202,13 +307,11 @@ export default function EmployeeProfile() {
             <Tabs defaultValue="data" className="w-full">
                 <TabsList className="border-muted-foreground/20 mb-4 justify-start space-x-2 border-b">
                     <TabsTrigger value="data">Profile</TabsTrigger>
-                    <TabsTrigger value="trainings">Trainings</TabsTrigger>
                     <TabsTrigger value="logs">Time Logs</TabsTrigger>
                     <TabsTrigger value="schedule">Schedule</TabsTrigger>
                     <TabsTrigger value="logOverride">Log Override</TabsTrigger>
                     <TabsTrigger value="overtime">Overtime</TabsTrigger>
                 </TabsList>
-
                 <TabsContent value="data" className="space-y-10">
                     <section>
                         <h2 className="mb-4 text-xl font-semibold">
@@ -442,42 +545,6 @@ export default function EmployeeProfile() {
                     </section>
                 </TabsContent>
 
-                {/* Trainings */}
-                <TabsContent value="trainings">
-                    <Card className="mt-6 p-6 shadow-sm">
-                        <h2 className="mb-4 text-xl font-semibold">
-                            Trainings
-                        </h2>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={3}
-                                        className="text-center"
-                                    >
-                                        No training records available.
-                                    </TableCell>
-                                </TableRow>
-
-                                {/* {trainings.map((t, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>{t.title}</TableCell>
-                                        <TableCell>{t.date}</TableCell>
-                                        <TableCell>{t.status}</TableCell>
-                                    </TableRow>
-                                ))} */}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </TabsContent>
-
                 {/* Time Logs */}
                 <TabsContent value="logs">
                     <Card className="mt-6 p-6 shadow-sm">
@@ -488,74 +555,183 @@ export default function EmployeeProfile() {
                     </Card>
                 </TabsContent>
 
-                {/* Schedule */}
                 <TabsContent value="schedule">
-                    <Card className="mt-6 space-y-2 p-6 shadow-sm">
-                        <h2 className="mb-4 text-xl font-semibold">
-                            Weekly Schedule
-                        </h2>
-                        {schedule.map((s, i) => (
-                            <p key={i}>
-                                <strong>{s.day}:</strong> {s.shift}
+                    <Card className="mt-6 space-y-4 p-6 shadow-sm">
+                        {/* Header + Date Picker */}
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <h2 className="text-xl font-semibold">
+                                Employee Schedule
+                            </h2>
+
+                            {/* Date Range Picker */}
+                            <div className="flex items-center gap-2">
+                                <label className="text-muted-foreground text-sm">
+                                    Select Cut-off
+                                </label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-[260px] justify-start text-left font-normal",
+                                                "rounded-md border px-3 py-2",
+                                                "hover:bg-muted/50",
+                                                !dateRange &&
+                                                    "text-muted-foreground",
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {dateRange?.from ? (
+                                                dateRange.to ? (
+                                                    <>
+                                                        {format(
+                                                            dateRange.from,
+                                                            "MMM d, yyyy",
+                                                        )}{" "}
+                                                        –{" "}
+                                                        {format(
+                                                            dateRange.to,
+                                                            "MMM d, yyyy",
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    format(
+                                                        dateRange.from,
+                                                        "MMM d, yyyy",
+                                                    )
+                                                )
+                                            ) : (
+                                                <span>Pick a date range</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-auto p-0"
+                                        align="start"
+                                    >
+                                        <Calendar
+                                            initialFocus
+                                            mode="range"
+                                            selected={dateRange}
+                                            onSelect={(range) => {
+                                                if (range?.from) {
+                                                    setDateRange({
+                                                        from: range.from,
+                                                        to:
+                                                            range.to ??
+                                                            range.from,
+                                                    });
+                                                } else {
+                                                    setDateRange({
+                                                        from: undefined,
+                                                        to: undefined,
+                                                    });
+                                                }
+                                            }}
+                                            numberOfMonths={2}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
+
+                        {dateRange?.from && (
+                            <p className="text-muted-foreground text-sm">
+                                Showing schedule for{" "}
+                                <span className="font-medium">
+                                    {format(dateRange.from, "MMM d, yyyy")}
+                                    {dateRange.to &&
+                                        ` – ${format(dateRange.to, "MMM d, yyyy")}`}
+                                </span>
                             </p>
-                        ))}
+                        )}
+
+                        <div className="grid grid-cols-7 gap-2 text-left text-xs">
+                            {days.map((day, i) => {
+                                const daySchedules = filteredSchedules?.filter(
+                                    (s) =>
+                                        format(
+                                            new Date(s.date),
+                                            "yyyy-MM-dd",
+                                        ) === format(day, "yyyy-MM-dd"),
+                                );
+
+                                const isToday =
+                                    format(day, "yyyy-MM-dd") ===
+                                    format(new Date(), "yyyy-MM-dd");
+
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`min-h-[100px] rounded-md border p-2 transition ${
+                                            isToday
+                                                ? "bg-primary/10 border-primary"
+                                                : "bg-background hover:bg-muted/50"
+                                        }`}
+                                    >
+                                        <div className="mb-1 text-[11px] font-semibold">
+                                            {format(day, "d")} -{" "}
+                                            {format(day, "EEE")}
+                                        </div>
+
+                                        {daySchedules &&
+                                        daySchedules.length > 0 ? (
+                                            <ul className="space-y-1">
+                                                {daySchedules.map((s, idx) => (
+                                                    <li
+                                                        key={idx}
+                                                        className="truncate rounded px-1 py-1 text-[11px] leading-tight"
+                                                    >
+                                                        {s.schedule_name ===
+                                                        "NO SCHEDULE" ? (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="bg-blue-500 text-white"
+                                                            >
+                                                                {
+                                                                    s.schedule_name
+                                                                }
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge>
+                                                                {
+                                                                    s.schedule_name
+                                                                }
+                                                            </Badge>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <div className="text-muted-foreground text-[10px]">
+                                                —
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </Card>
                 </TabsContent>
 
-                {/* Log Overrides */}
                 <TabsContent value="logOverride">
-                    <Card className="mt-6 p-6 shadow-sm">
-                        <h2 className="mb-4 text-xl font-semibold">
-                            Log Override Requests
-                        </h2>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Reason</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {logOverrides.map((req, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>{req.date}</TableCell>
-                                        <TableCell>{req.reason}</TableCell>
-                                        <TableCell>{req.status}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Card>
+                    <LogoverrideRequests
+                        dateRange={dateRange}
+                        setDateRange={setDateRange}
+                        days={days}
+                        filteredLogoverrides={filteredLogoverrides}
+                        filteredSchedules={filteredSchedules}
+                        employeeId={employeeId}
+                    />
                 </TabsContent>
 
-                {/* Overtime */}
                 <TabsContent value="overtime">
-                    <Card className="mt-6 p-6 shadow-sm">
-                        <h2 className="mb-4 text-xl font-semibold">
-                            Overtime Requests
-                        </h2>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Hours</TableHead>
-                                    <TableHead>Reason</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {overtime.map((ot, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>{ot.date}</TableCell>
-                                        <TableCell>{ot.hours}</TableCell>
-                                        <TableCell>{ot.reason}</TableCell>
-                                        <TableCell>{ot.status}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </Card>
+                    <OvertimeRequestsCard
+                        employeeId={employeeId}
+                        dateRange={dateRange}
+                        setDateRange={setDateRange}
+                        filteredOvertimes={filteredOvertimes}
+                    />
                 </TabsContent>
             </Tabs>
         </div>

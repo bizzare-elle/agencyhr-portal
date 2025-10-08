@@ -17,6 +17,7 @@ interface AuthState {
     setToken: (token: string) => void;
     getToken: () => string;
     clear: () => void;
+    logout: () => void;
     loadUser: () => Promise<User | null>;
 }
 
@@ -37,6 +38,11 @@ export const useAuthStore = create<AuthState>()(
             clear: () => {
                 set({ token: null, user: null });
                 delete api.defaults.headers.common["Authorization"];
+            },
+
+            logout: () => {
+                get().clear();
+                console.log("Logged Out.");
             },
 
             loadUser: async () => {

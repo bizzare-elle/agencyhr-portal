@@ -11,9 +11,10 @@ import api from "@/lib/axios";
 import { TextField } from "@/components/text-field";
 import { ImageUploader } from "@/components/image-dropzone";
 import { Label } from "@/components/ui/label";
-import { Form } from "@/components/ui/form";
+import { Form, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
     Popover,
     PopoverContent,
@@ -30,27 +31,27 @@ import {
 } from "@/components/ui/card";
 import { useAuthStore } from "@/hooks/use-auth";
 
-const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const schema = z.object({
-    date: z.date({ error: "Date is required" }),
+    date: z.date({ error: () => ({ message: "Date is required" }) }),
     startTime: z.string().regex(timeRegex, {
-        message: "Enter a valid time in 24-hour format (HH:mm).",
+        message: "Start time is required (HH:mm)",
     }),
     endTime: z.string().regex(timeRegex, {
-        message: "Enter a valid time in 24-hour format (HH:mm).",
+        message: "End time is required (HH:mm)",
     }),
     totalOt: z.string().optional(),
-    remarks: z.string().min(1, { message: "Enter remarks." }),
+    remarks: z.string().min(1, { message: "Remarks are required" }),
     imageReference: z
-        .any()
+        .instanceof(File, { message: "Image is required" })
+        .refine((file) => file.size <= 5 * 1024 * 1024, {
+            message: "File must be less than 5MB",
+        })
         .refine(
-            (file) => !file || file.size <= 5 * 1024 * 1024,
-            "File must be less than 5MB",
-        )
-        .refine(
-            (file) => !file || ["image/jpeg", "image/png"].includes(file?.type),
-            "Only JPEG and PNG files are allowed",
+            (file) =>
+                ["image/jpeg", "image/png", "image/webp"].includes(file.type),
+            { message: "Only JPEG, PNG, or WebP files are allowed" },
         ),
 });
 
@@ -60,13 +61,10 @@ function calculateOtHours(start: string, end: string): string {
     if (!start || !end) return "";
     const [sh, sm] = start.split(":").map(Number);
     const [eh, em] = end.split(":").map(Number);
-
     const startDate = new Date(0, 0, 0, sh, sm);
     const endDate = new Date(0, 0, 0, eh, em);
-
     let diff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
     if (diff < 0) diff += 24;
-
     return diff.toFixed(2);
 }
 
@@ -76,23 +74,19 @@ export default function OvertimeForm() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
-        defaultValues: {
-            remarks: "",
-        },
+        defaultValues: { remarks: "" },
     });
 
-    const { setToken } = useAuthStore.getState();
     const { data: me } = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
-            const response = await api.get(`/api/v2/auth/me`);
-            return response.data.data;
+            const res = await api.get(`/api/v2/auth/me`);
+            return res.data.data;
         },
     });
 
     const startTime = form.watch("startTime");
     const endTime = form.watch("endTime");
-
     const totalOt = React.useMemo(
         () => calculateOtHours(startTime, endTime),
         [startTime, endTime],
@@ -104,28 +98,30 @@ export default function OvertimeForm() {
 
     const employeeId = me?.id;
 
-    const { isPending, mutate } = useMutation({
+    const overtimeMutation = useMutation({
         mutationFn: async (formValues: FormValues) => {
             const formData = new FormData();
 
-            Object.entries(formValues).forEach(([key, value]) => {
-                if (value instanceof FileList) {
-                    Array.from(value).forEach((file) => {
-                        formData.append(key, file);
-                    });
-                } else if (value instanceof File) {
-                    formData.append(key, value);
-                } else if (value instanceof Date) {
-                    formData.append(key, value.toISOString().split("T")[0]);
-                } else if (value !== undefined && value !== null) {
-                    formData.append(key, String(value));
-                }
-            });
+            formData.append(
+                "date",
+                formValues.date.toISOString().split("T")[0],
+            );
+
+            formData.append("startTime", formValues.startTime);
+            formData.append("endTime", formValues.endTime);
+            formData.append("totalOt", formValues.totalOt || "0");
+            formData.append("remarks", formValues.remarks);
+
+            if (formValues.imageReference instanceof File) {
+                formData.append("imageReference", formValues.imageReference);
+            }
 
             const response = await api.post(
                 `/api/v2/overtime/${employeeId}`,
                 formData,
-                { headers: { "Content-Type": "multipart/form-data" } },
+                {
+                    headers: { "Content-Type": "multipart/form-data" },
+                },
             );
 
             return response.data;
@@ -138,11 +134,9 @@ export default function OvertimeForm() {
             return;
         }
 
-        mutate(data, {
+        overtimeMutation.mutate(data, {
             onSuccess: () => {
-                toast.success(
-                    "Success! Your overtime has been successfully filed!",
-                );
+                toast.success("Success! Your overtime has been filed!");
                 navigate(`/overtime/${me?.id}`);
             },
             onError: (err: any) => {
@@ -154,7 +148,7 @@ export default function OvertimeForm() {
     }
 
     return (
-        <div className="mx-auto flex w-full max-w-[800px] justify-center p-10">
+        <div className="mx-auto flex w-full max-w-[800px] justify-center p-4 sm:p-6 md:p-10">
             <Card className="w-full">
                 <CardHeader>
                     <CardTitle className="text-2xl">Overtime</CardTitle>
@@ -166,98 +160,74 @@ export default function OvertimeForm() {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <CardContent>
-                            <div className="flex flex-col space-y-5">
-                                <div className="w-full">
-                                    <div className="flex flex-col gap-3">
-                                        <Label htmlFor="date" className="px-1">
-                                            Date
-                                        </Label>
-                                        <Popover
-                                            open={open}
-                                            onOpenChange={setOpen}
-                                        >
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    id="date"
-                                                    className="w-full justify-between font-normal"
-                                                >
-                                                    {form.watch("date")
-                                                        ? form
-                                                              .watch("date")
-                                                              .toLocaleDateString(
-                                                                  "en-CA",
-                                                              )
-                                                        : "Select date"}
-                                                    <ChevronDownIcon />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent
-                                                className="w-auto overflow-hidden p-0"
-                                                align="start"
+                            <div className="flex flex-col gap-5">
+                                {/* Date Picker */}
+                                <div className="flex flex-col gap-3">
+                                    <Label htmlFor="date">Date</Label>
+                                    <Popover open={open} onOpenChange={setOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className="w-full justify-between font-normal"
                                             >
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={form.watch(
-                                                        "date",
-                                                    )}
-                                                    captionLayout="dropdown"
-                                                    onSelect={(date) => {
-                                                        if (date) {
-                                                            form.setValue(
-                                                                "date",
-                                                                date,
-                                                                {
-                                                                    shouldValidate: true,
-                                                                },
-                                                            );
-                                                        }
-                                                        setOpen(false);
-                                                    }}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
+                                                {form.watch("date")
+                                                    ? form
+                                                          .watch("date")
+                                                          .toLocaleDateString(
+                                                              "en-CA",
+                                                          )
+                                                    : "Select date"}
+                                                <ChevronDownIcon />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            className="w-auto p-0"
+                                            align="start"
+                                        >
+                                            <Calendar
+                                                mode="single"
+                                                selected={form.watch("date")}
+                                                onSelect={(date) => {
+                                                    if (date) {
+                                                        form.setValue(
+                                                            "date",
+                                                            date,
+                                                            {
+                                                                shouldValidate: true,
+                                                            },
+                                                        );
+                                                    }
+                                                    setOpen(false);
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
 
-                                <div className="flex flex-row space-x-5">
-                                    <div className="flex w-full flex-col gap-y-3">
-                                        <Label
-                                            htmlFor="startTime"
-                                            className="px-1"
-                                        >
-                                            From
-                                        </Label>
+                                {/* From / To / Overtime Hours */}
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <div className="flex flex-col gap-y-2">
+                                        <Label>From</Label>
                                         <Input
                                             {...form.register("startTime")}
                                             type="time"
                                             step="60"
-                                            defaultValue={"10:00"}
-                                            className="bg-background"
+                                            defaultValue="10:00"
                                         />
                                     </div>
-                                    <div className="flex w-full flex-col gap-y-3">
-                                        <Label
-                                            htmlFor="endTime"
-                                            className="px-1"
-                                        >
-                                            To
-                                        </Label>
+
+                                    <div className="flex flex-col gap-y-2">
+                                        <Label>To</Label>
                                         <Input
                                             {...form.register("endTime")}
                                             type="time"
                                             step="60"
-                                            defaultValue={"10:00"}
-                                            className="bg-background"
+                                            defaultValue="10:00"
                                         />
                                     </div>
-                                    <div className="flex w-full flex-col gap-y-3">
-                                        <Label
-                                            htmlFor="totalOt"
-                                            className="px-1"
-                                        >
-                                            Overtime Hour/s
-                                        </Label>
+
+                                    <div className="flex flex-col gap-y-2">
+                                        <Label>Overtime Hour/s</Label>
                                         <Input
                                             id="totalOt"
                                             value={totalOt}
@@ -267,12 +237,14 @@ export default function OvertimeForm() {
                                     </div>
                                 </div>
 
+                                {/* Remarks */}
                                 <TextField
                                     name="remarks"
                                     label="Add remarks"
                                     control={form.control}
                                 />
 
+                                {/* Image Upload */}
                                 <ImageUploader
                                     name="imageReference"
                                     label="Upload an image"
@@ -282,8 +254,19 @@ export default function OvertimeForm() {
                         </CardContent>
 
                         <CardFooter className="justify-end pt-8">
-                            <Button type="submit" disabled={isPending}>
-                                {isPending ? "Submitting..." : "Submit"}
+                            <Button
+                                type="submit"
+                                disabled={overtimeMutation.isPending}
+                                className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                            >
+                                {overtimeMutation.isPending ? (
+                                    <>
+                                        <Spinner className="h-4 w-4" />
+                                        <span>Submitting...</span>
+                                    </>
+                                ) : (
+                                    "Submit"
+                                )}
                             </Button>
                         </CardFooter>
                     </form>

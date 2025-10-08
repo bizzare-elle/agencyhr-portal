@@ -1,8 +1,5 @@
 import { ParentComponent } from "@/components/parent-container";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
-import { User } from "lucide-react";
-import { BadgeCheckIcon } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import api from "@/lib/axios";
@@ -12,97 +9,48 @@ import {
     CardHeader,
     CardTitle,
     CardDescription,
+    CardFooter,
 } from "@/components/ui/card";
 import { ApiResponse } from "@/index";
 import { formatToDateTime } from "@/helpers/formatDates";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { useAuthStore } from "@/hooks/use-auth";
+import FullPageLoader from "@/components/page-loader";
+import {
+    Table,
+    TableCell,
+    TableBody,
+    TableHeader,
+    TableRow,
+    TableHead,
+} from "@/components/ui/table";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { format } from "date-fns";
 
 export interface Logoverride {
     id: string;
-    app_key: string;
     employee_id: string;
     employee_name: string;
-    agency_name: string;
-    useremail: string;
-    date_time: string;
     clock_type: string;
-    location: string;
-    branch_id: string | null;
-    image: string;
-    is_range: string;
+    date_time: string;
     remarks: string;
-    is_logoverride: string;
     status: string;
-    created_by: string;
+    image: string;
     created_at: string;
-    updated_by: string | null;
-    updated_at: string | null;
-    deleted_by: string | null;
-    deleted_at: string | null;
 }
 
 export interface Employee {
     id: string;
-    user_id: string | null;
     firstname: string;
-    middlename: string | null;
     lastname: string;
-    name: string | null;
-    birth_date: string | null;
-    age: string | null;
-    citizenship: string | null;
-    gender: string | null;
-    civil_status: string | null;
-    trial_date: string | null;
-    date_hired: string | null;
-    date_regularization: string | null;
-    tenureship: string | null;
-    employment_status: string | null;
     agency_id: string | null;
-    id_number: string | null;
     branch_id: string | null;
-    transfer_date_id: string | null;
-    address: string | null;
-    contact_number: string | null;
-    personal_email_address: string | null;
-    company_email_address: string | null;
-    schedule_type: string | null;
-    department_id: string | null;
-    permission_id: string | null;
-    position_id: string | null;
-    salary_rate: string | null;
-    daily_rate: string | null;
-    hourly_rate: string | null;
-    billing_rate: string | null;
-    allowance: string | null;
-    status: string;
-    leave_type: string | null;
-    leave_remarks: string | null;
-    date_resigned: string | null;
-    remarks: string | null;
-    government_tin_nos: string | null;
-    government_sss_nos: string | null;
-    government_philhealth_nos: string | null;
-    government_pagibig_nos: string | null;
-    emergency_contact_name: string | null;
-    emergency_address: string | null;
-    emergency_mobile_no: string | null;
-    emergency_relation: string | null;
-    pay_divisor: string | null;
-    access: string;
-    is_chef: string | null;
-    chef_downline_id: string | null;
-    is_direct: string | null;
-    user_access: string | null;
-    created_at: string | null;
-    created_by: string | null;
-    updated_at: string | null;
-    updated_by: string | null;
-    deleted_at: string | null;
-    deleted_by: string | null;
-    gross_pay: string | null;
 }
 
 export interface LogoverrideResponse {
@@ -113,9 +61,9 @@ export interface LogoverrideResponse {
 
 export default function LogoverrideDashboard() {
     const navigate = useNavigate();
-
     const { setToken } = useAuthStore.getState();
-    const { data: me } = useQuery({
+
+    const meQuery = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
             const response =
@@ -124,9 +72,10 @@ export default function LogoverrideDashboard() {
         },
     });
 
-    const employeeId = me?.id;
-    const { isLoading, isError, data } = useQuery<LogoverrideResponse>({
-        queryKey: ["logoverrideDashboard"],
+    const employeeId = meQuery.data?.id;
+
+    const logoverrideQuery = useQuery<LogoverrideResponse>({
+        queryKey: ["logoverrideDashboard", employeeId],
         queryFn: async () => {
             const response = await api.get<ApiResponse<LogoverrideResponse>>(
                 `/api/v2/logoverrides/${employeeId}`,
@@ -142,71 +91,67 @@ export default function LogoverrideDashboard() {
         enabled: !!employeeId,
     });
 
-    if (isLoading)
-        return (
-            <ParentComponent>
-                <div className="text-2xl font-bold">Loading...</div>
-            </ParentComponent>
-        );
+    if (meQuery.isLoading || logoverrideQuery.isLoading)
+        return <FullPageLoader />;
 
-    if (isError)
+    if (meQuery.isError || logoverrideQuery.isError)
         return (
             <ParentComponent>
-                <div className="text-2xl font-bold">
-                    Error fetching the data.
+                <div className="text-center text-2xl font-bold">
+                    Error fetching data.
                 </div>
             </ParentComponent>
         );
+
+    const data = logoverrideQuery.data;
 
     return (
         <ParentComponent>
             {data?.info.length === 0 ? (
-                <div className="w-full">
-                    <Card>
-                        <span className="text-center text-2xl font-bold">
-                            No log overrides found.
-                        </span>
-                    </Card>
-                </div>
+                <Card>
+                    <span className="block py-8 text-center text-2xl font-bold">
+                        No log overrides found.
+                    </span>
+                </Card>
             ) : (
                 <>
-                    <div>
-                        <Card className="flex flex-row items-center justify-between px-5 py-8">
+                    {/* Employee Info Card */}
+                    <div className="mb-4 w-full">
+                        <Card className="flex flex-col items-center justify-between gap-4 px-5 py-6 md:flex-row md:gap-0">
                             <div className="flex items-center gap-4">
                                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
                                     {data?.info[0].employee_name.charAt(0)}
                                 </div>
                                 <div>
-                                    <div className="flex flex-row space-x-3">
-                                        <h1 className="text-2xl font-bold tracking-wide">
-                                            {data?.info[0].employee_name}{" "}
+                                    <div className="flex flex-col md:flex-row md:items-center md:gap-3">
+                                        <h1 className="text-xl font-bold tracking-wide md:text-2xl">
+                                            {data?.info[0].employee_name}
                                         </h1>
-                                        <Badge>
-                                            {" "}
-                                            {data?.employees[0].agency_id}
+                                        <Badge className="mt-1 md:mt-0">
+                                            {data?.employees[0]?.agency_id}
                                         </Badge>
                                     </div>
                                     <p className="text-sm opacity-90">
                                         ID: {data?.info[0].employee_id} •{" "}
-                                        {data?.employees[0].branch_id}
+                                        {data?.employees[0]?.branch_id}
                                     </p>
                                 </div>
                             </div>
                             <div>
                                 <Link to={`/logoverrides/form/${employeeId}`}>
-                                    {" "}
                                     <Button>File Logoverride</Button>
                                 </Link>
                             </div>
                         </Card>
                     </div>
 
-                    <div className="flex justify-between gap-x-5">
-                        <Card className="w-full">
+                    {/* Summary Cards */}
+                    <div className="mb-4 flex flex-col gap-4 sm:flex-row">
+                        <Card className="flex-1">
                             <CardHeader>
                                 <CardTitle>Total Logoverrides</CardTitle>
                                 <CardDescription>
-                                    Total number of logoverrides you filed.
+                                    Total number of logoverrides filed.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -216,14 +161,11 @@ export default function LogoverrideDashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="w-full">
+                        <Card className="flex-1">
                             <CardHeader>
-                                <CardTitle>
-                                    Total Approved Logoverrides
-                                </CardTitle>
+                                <CardTitle>Total Approved</CardTitle>
                                 <CardDescription>
-                                    Total number of approved logoverrides you
-                                    filed.
+                                    Approved logoverrides count.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -237,14 +179,11 @@ export default function LogoverrideDashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="w-full">
+                        <Card className="flex-1">
                             <CardHeader>
-                                <CardTitle>
-                                    Total Pending Logoverrides
-                                </CardTitle>
+                                <CardTitle>Total Pending</CardTitle>
                                 <CardDescription>
-                                    Total number of pending logoverrides you
-                                    filed.
+                                    Pending logoverrides count.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -259,62 +198,209 @@ export default function LogoverrideDashboard() {
                         </Card>
                     </div>
 
+                    {/* Recent Activities */}
                     <div className="w-full">
                         {data?.recent_file.length === 0 ? (
                             <Card>
-                                <span className="text-center text-2xl font-bold">
-                                    No recent application
+                                <span className="block py-8 text-center text-2xl font-bold">
+                                    No recent applications
                                 </span>
                             </Card>
                         ) : (
                             <Card className="p-5 px-0">
-                                <div className="flex flex-col space-y-3">
-                                    <CardHeader className="pb-5">
-                                        <CardTitle>Recent Activities</CardTitle>
-                                        <CardDescription>
-                                            Here are your most recent
-                                            logoverride applications.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3">
+                                <CardHeader className="pb-5">
+                                    <CardTitle>Recent Activities</CardTitle>
+                                    <CardDescription>
+                                        Your most recent logoverride
+                                        applications.
+                                    </CardDescription>
+                                </CardHeader>
+
+                                <CardContent className="overflow-x-auto">
+                                    <Table className="border-border min-w-[600px] overflow-hidden rounded-md border">
+                                        <TableHeader className="bg-muted/50">
+                                            <TableRow>
+                                                <TableHead className="px-4 py-5 text-center">
+                                                    Date
+                                                </TableHead>
+                                                <TableHead className="px-4 py-5 text-center">
+                                                    Clock Type
+                                                </TableHead>
+                                                <TableHead className="px-4 py-5 text-center">
+                                                    Remarks
+                                                </TableHead>
+                                                <TableHead className="px-4 py-5 text-center">
+                                                    Status
+                                                </TableHead>
+                                                <TableHead className="px-4 py-5 text-center">
+                                                    Actions
+                                                </TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+
+                                        <TableBody>
                                             {data?.recent_file.map((r) => (
-                                                <Card
+                                                <TableRow
                                                     key={r.id}
-                                                    className="pl-none flex flex-col transition delay-200 duration-300 ease-in-out hover:-translate-y-1 hover:scale-102"
+                                                    className="hover:bg-muted/10 transition"
                                                 >
-                                                    <div className="flex justify-between">
-                                                        <div className="w-full text-center">
-                                                            {formatToDateTime(
-                                                                r.date_time,
-                                                            )}
-                                                        </div>
-                                                        <div className="w-full text-center">
-                                                            {r.clock_type}
-                                                        </div>
-                                                        <div className="w-full text-center capitalize">
-                                                            {r?.remarks ||
-                                                                "N/A"}
-                                                        </div>
-                                                        <div className="w-full text-center">
-                                                            {r.status ===
-                                                            "Approved" ? (
-                                                                <Badge className="bg-green-500">
-                                                                    {r.status}
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge className="bg-yellow-500">
-                                                                    Pending for
-                                                                    Approval
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </Card>
+                                                    <TableCell className="px-4 py-5 text-center">
+                                                        {formatToDateTime(
+                                                            r.date_time,
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="px-4 py-5 text-center">
+                                                        {r.clock_type}
+                                                    </TableCell>
+                                                    <TableCell className="px-4 py-5 text-center capitalize">
+                                                        {r?.remarks || "N/A"}
+                                                    </TableCell>
+                                                    <TableCell className="px-4 py-5 text-center">
+                                                        {r.status ===
+                                                        "Approved" ? (
+                                                            <Badge className="bg-green-500 text-white">
+                                                                {r.status}
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge className="bg-yellow-500 text-black">
+                                                                Pending or
+                                                                Approval
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+
+                                                    <TableCell className="px-4 py-5 text-center">
+                                                        <Dialog>
+                                                            <DialogTrigger
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                >
+                                                                    View
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="max-w-md">
+                                                                <Card className="border-none bg-transparent shadow-none">
+                                                                    <CardHeader className="pb-2">
+                                                                        <DialogTitle className="text-lg font-semibold">
+                                                                            Logoverride
+                                                                            Details
+                                                                        </DialogTitle>
+                                                                        <CardDescription>
+                                                                            Review
+                                                                            your
+                                                                            filed
+                                                                            logoverride
+                                                                            details.
+                                                                        </CardDescription>
+                                                                    </CardHeader>
+
+                                                                    <CardContent className="space-y-4 text-sm">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <Badge>
+                                                                                Date:
+                                                                            </Badge>
+                                                                            <span className="font-medium">
+                                                                                {formatToDateTime(
+                                                                                    r.date_time,
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <div className="flex items-center justify-between">
+                                                                            <Badge>
+                                                                                Clock
+                                                                                Type:
+                                                                            </Badge>
+                                                                            <span className="font-medium capitalize">
+                                                                                {r.clock_type ||
+                                                                                    "N/A"}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <div className="flex items-start justify-between">
+                                                                            <Badge>
+                                                                                Remarks:
+                                                                            </Badge>
+                                                                            <span className="max-w-[65%] text-right font-medium break-words capitalize">
+                                                                                {r.remarks ||
+                                                                                    "N/A"}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <div className="flex items-center justify-between">
+                                                                            <Badge>
+                                                                                Status:
+                                                                            </Badge>
+                                                                            <span
+                                                                                className={`font-medium ${r.status === "Approved" ? "text-green-600" : "text-yellow-600"}`}
+                                                                            >
+                                                                                {
+                                                                                    r.status
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+
+                                                                        <div className="flex items-start justify-between">
+                                                                            <Badge>
+                                                                                Date
+                                                                                Created:
+                                                                            </Badge>
+                                                                            <span className="max-w-[65%] text-right font-medium break-words capitalize">
+                                                                                {format(
+                                                                                    new Date(
+                                                                                        r.created_at,
+                                                                                    ),
+                                                                                    "MMM d, yyyy hh:mm a",
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {r.image ? (
+                                                                            <div className="my-4">
+                                                                                <img
+                                                                                    src={
+                                                                                        r.image
+                                                                                    }
+                                                                                    alt="Logoverride Reference"
+                                                                                    className="max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
+                                                                                    onClick={() =>
+                                                                                        window.open(
+                                                                                            r.image,
+                                                                                            "_blank",
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
+                                                                                No
+                                                                                image
+                                                                                attached
+                                                                            </div>
+                                                                        )}
+                                                                    </CardContent>
+
+                                                                    <CardFooter className="flex justify-end pt-2">
+                                                                        <DialogClose
+                                                                            asChild
+                                                                        >
+                                                                            <Button variant="secondary">
+                                                                                Close
+                                                                            </Button>
+                                                                        </DialogClose>
+                                                                    </CardFooter>
+                                                                </Card>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </TableCell>
+                                                </TableRow>
                                             ))}
-                                        </div>
-                                    </CardContent>
-                                </div>
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
                             </Card>
                         )}
                     </div>

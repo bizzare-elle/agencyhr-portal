@@ -1,8 +1,5 @@
 import { ParentComponent } from "@/components/parent-container";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
-import { User } from "lucide-react";
-import { BadgeCheckIcon } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import api from "@/lib/axios";
@@ -16,8 +13,24 @@ import {
 import { ApiResponse } from "@/index";
 import { formatToDateTime } from "@/helpers/formatDates";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { useAuthStore } from "@/hooks/use-auth";
+import {
+    Table,
+    TableCell,
+    TableBody,
+    TableHeader,
+    TableRow,
+    TableHead,
+} from "@/components/ui/table";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import FullPageLoader from "@/components/page-loader";
+import { format } from "date-fns";
 
 export interface Overtime {
     id: string;
@@ -40,62 +53,15 @@ export interface Employee {
     id: string;
     user_id: string | null;
     firstname: string;
-    middlename: string | null;
     lastname: string;
     name: string | null;
-    birth_date: string | null;
-    age: string | null;
-    citizenship: string | null;
-    gender: string | null;
-    civil_status: string | null;
-    trial_date: string | null;
-    date_hired: string | null;
-    date_regularization: string | null;
-    tenureship: string | null;
-    employment_status: string | null;
     agency_id: string | null;
-    id_number: string | null;
     branch_id: string | null;
-    transfer_date_id: string | null;
-    address: string | null;
-    contact_number: string | null;
-    personal_email_address: string | null;
-    company_email_address: string | null;
-    schedule_type: string | null;
-    department_id: string | null;
-    permission_id: string | null;
-    position_id: string | null;
-    salary_rate: string | null;
-    daily_rate: string | null;
-    hourly_rate: string | null;
-    billing_rate: string | null;
-    allowance: string | null;
     status: string;
-    leave_type: string | null;
-    leave_remarks: string | null;
-    date_resigned: string | null;
-    remarks: string | null;
-    government_tin_nos: string | null;
-    government_sss_nos: string | null;
-    government_philhealth_nos: string | null;
-    government_pagibig_nos: string | null;
-    emergency_contact_name: string | null;
-    emergency_address: string | null;
-    emergency_mobile_no: string | null;
-    emergency_relation: string | null;
-    pay_divisor: string | null;
     access: string;
-    is_chef: string | null;
-    chef_downline_id: string | null;
-    is_direct: string | null;
-    user_access: string | null;
     created_at: string | null;
-    created_by: string | null;
     updated_at: string | null;
-    updated_by: string | null;
     deleted_at: string | null;
-    deleted_by: string | null;
-    gross_pay: string | null;
 }
 
 export interface OvertimeResponse {
@@ -106,9 +72,9 @@ export interface OvertimeResponse {
 
 export default function OvertimeDashboard() {
     const navigate = useNavigate();
-
     const { setToken } = useAuthStore.getState();
-    const { data: me } = useQuery({
+
+    const meQuery = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
             const response =
@@ -117,9 +83,10 @@ export default function OvertimeDashboard() {
         },
     });
 
-    const employeeId = me?.id;
-    const { isLoading, isError, data } = useQuery<OvertimeResponse>({
-        queryKey: ["overtimeDashboard"],
+    const employeeId = meQuery.data?.id;
+
+    const overtimeQuery = useQuery<OvertimeResponse>({
+        queryKey: ["overtimeDashboard", employeeId],
         queryFn: async () => {
             const response = await api.get<ApiResponse<OvertimeResponse>>(
                 `/api/v2/overtime/${employeeId}`,
@@ -135,14 +102,9 @@ export default function OvertimeDashboard() {
         enabled: !!employeeId,
     });
 
-    if (isLoading)
-        return (
-            <ParentComponent>
-                <div className="text-2xl font-bold">Loading...</div>
-            </ParentComponent>
-        );
+    if (meQuery.isLoading || overtimeQuery.isLoading) return <FullPageLoader />;
 
-    if (isError)
+    if (meQuery.isError || overtimeQuery.isError)
         return (
             <ParentComponent>
                 <div className="text-2xl font-bold">
@@ -150,6 +112,8 @@ export default function OvertimeDashboard() {
                 </div>
             </ParentComponent>
         );
+
+    const data = overtimeQuery.data;
 
     return (
         <ParentComponent>
@@ -163,39 +127,39 @@ export default function OvertimeDashboard() {
                 </div>
             ) : (
                 <>
-                    <div>
-                        <Card className="flex flex-row items-center justify-between px-5 py-8">
+                    {/* Employee Info Card */}
+                    <div className="mb-4 w-full">
+                        <Card className="flex flex-col items-center justify-between gap-4 px-5 py-6 md:flex-row md:gap-0">
                             <div className="flex items-center gap-4">
                                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
                                     {data?.info[0].employee_name.charAt(0)}
                                 </div>
                                 <div>
-                                    <div className="flex flex-row space-x-3">
-                                        <h1 className="text-2xl font-bold tracking-wide">
-                                            {data?.info[0].employee_name}{" "}
+                                    <div className="flex flex-col md:flex-row md:items-center md:gap-3">
+                                        <h1 className="text-xl font-bold tracking-wide md:text-2xl">
+                                            {data?.info[0].employee_name}
                                         </h1>
-                                        <Badge>
-                                            {" "}
-                                            {data?.employees[0].agency_id}
+                                        <Badge className="mt-1 md:mt-0">
+                                            {data?.employees[0]?.agency_id}
                                         </Badge>
                                     </div>
                                     <p className="text-sm opacity-90">
                                         ID: {data?.info[0].employee_id} •{" "}
-                                        {data?.employees[0].branch_id}
+                                        {data?.employees[0]?.branch_id}
                                     </p>
                                 </div>
                             </div>
                             <div>
                                 <Link to={`/overtime/form/${employeeId}`}>
-                                    {" "}
                                     <Button>File Overtime</Button>
                                 </Link>
                             </div>
                         </Card>
                     </div>
 
-                    <div className="flex justify-between gap-x-5">
-                        <Card className="w-full">
+                    {/* Summary Cards */}
+                    <div className="mb-4 flex flex-col gap-4 md:flex-row">
+                        <Card className="w-full md:w-1/3">
                             <CardHeader>
                                 <CardTitle>Total Overtime</CardTitle>
                                 <CardDescription>
@@ -209,7 +173,7 @@ export default function OvertimeDashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="w-full">
+                        <Card className="w-full md:w-1/3">
                             <CardHeader>
                                 <CardTitle>Total Approved Overtime</CardTitle>
                                 <CardDescription>
@@ -227,7 +191,7 @@ export default function OvertimeDashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="w-full">
+                        <Card className="w-full md:w-1/3">
                             <CardHeader>
                                 <CardTitle>Total Pending Overtime</CardTitle>
                                 <CardDescription>
@@ -246,7 +210,8 @@ export default function OvertimeDashboard() {
                         </Card>
                     </div>
 
-                    <div className="w-full">
+                    {/* Recent Activities Table */}
+                    <div className="w-full overflow-x-auto">
                         {data?.recent_file.length === 0 ? (
                             <Card>
                                 <span className="text-center text-2xl font-bold">
@@ -255,33 +220,57 @@ export default function OvertimeDashboard() {
                             </Card>
                         ) : (
                             <Card className="p-5 px-0">
-                                <div className="flex flex-col space-y-3">
-                                    <CardHeader className="pb-5">
-                                        <CardTitle>Recent Activities</CardTitle>
-                                        <CardDescription>
-                                            Here are your most recent overtime
-                                            applications.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3">
-                                            {data?.recent_file.map((r) => (
-                                                <Card
-                                                    key={r.id}
-                                                    className="pl-none flex flex-col transition delay-200 duration-300 ease-in-out hover:-translate-y-1 hover:scale-102"
-                                                >
-                                                    <div className="flex justify-between">
-                                                        <div className="w-full text-center">
+                                <CardHeader className="pb-5">
+                                    <CardTitle>Recent Activities</CardTitle>
+                                    <CardDescription>
+                                        Here are your most recent overtime
+                                        applications.
+                                    </CardDescription>
+                                </CardHeader>
+
+                                <CardContent>
+                                    <div className="overflow-x-auto">
+                                        <Table className="border-border min-w-[600px] overflow-hidden rounded-md border">
+                                            <TableHeader className="bg-muted/50">
+                                                <TableRow>
+                                                    <TableHead className="px-4 py-5 text-center">
+                                                        Date
+                                                    </TableHead>
+                                                    <TableHead className="px-4 py-5 text-center">
+                                                        Number of Hour/s
+                                                    </TableHead>
+                                                    <TableHead className="px-4 py-5 text-center">
+                                                        Remarks
+                                                    </TableHead>
+                                                    <TableHead className="px-4 py-5 text-center">
+                                                        Status
+                                                    </TableHead>
+                                                    <TableHead className="px-4 py-5 text-center">
+                                                        Actions
+                                                    </TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+
+                                            <TableBody>
+                                                {data?.recent_file.map((r) => (
+                                                    <TableRow
+                                                        key={r.id}
+                                                        className="hover:bg-muted/10 cursor-pointer transition-colors"
+                                                    >
+                                                        <TableCell className="px-4 py-5 text-center">
                                                             {formatToDateTime(
                                                                 r.date,
                                                             )}
-                                                        </div>
-
-                                                        <div className="w-full text-center capitalize">
+                                                        </TableCell>
+                                                        <TableCell className="px-4 py-5 text-center capitalize">
+                                                            {r?.no_of_hours ||
+                                                                "N/A"}
+                                                        </TableCell>
+                                                        <TableCell className="px-4 py-5 text-center capitalize">
                                                             {r?.remarks ||
                                                                 "N/A"}
-                                                        </div>
-                                                        <div className="w-full text-center">
+                                                        </TableCell>
+                                                        <TableCell className="px-4 py-5 text-center">
                                                             {r.status ===
                                                             "Approved" ? (
                                                                 <Badge className="bg-green-500">
@@ -293,13 +282,141 @@ export default function OvertimeDashboard() {
                                                                     Approval
                                                                 </Badge>
                                                             )}
-                                                        </div>
-                                                    </div>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </div>
+                                                        </TableCell>
+
+                                                        <TableCell className="px-4 py-5 text-center">
+                                                            <Dialog>
+                                                                <DialogTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                    >
+                                                                        View
+                                                                    </Button>
+                                                                </DialogTrigger>
+
+                                                                <DialogContent className="max-w-md">
+                                                                    <Card className="border-none bg-transparent">
+                                                                        <CardHeader className="mb-4 text-lg font-semibold">
+                                                                            <CardTitle>
+                                                                                Overtime
+                                                                                Details
+                                                                            </CardTitle>
+                                                                        </CardHeader>
+                                                                        <CardContent>
+                                                                            <div className="space-y-4 text-sm">
+                                                                                <div className="flex justify-between">
+                                                                                    <Badge>
+                                                                                        Date:
+                                                                                    </Badge>
+                                                                                    <div className="font-medium">
+                                                                                        {formatToDateTime(
+                                                                                            r.date,
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex justify-between">
+                                                                                    <Badge>
+                                                                                        Remarks:
+                                                                                    </Badge>
+                                                                                    <div className="font-medium capitalize">
+                                                                                        {r?.remarks ||
+                                                                                            "N/A"}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex justify-between">
+                                                                                    <Badge>
+                                                                                        Total
+                                                                                        Number
+                                                                                        of
+                                                                                        Hour/s:
+                                                                                    </Badge>
+                                                                                    <div className="font-medium capitalize">
+                                                                                        {r?.no_of_hours ||
+                                                                                            "N/A"}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex justify-between">
+                                                                                    <Badge>
+                                                                                        Status:
+                                                                                    </Badge>
+                                                                                    <div className="font-medium">
+                                                                                        <span
+                                                                                            className={`font-medium ${
+                                                                                                r.status ===
+                                                                                                "Approved"
+                                                                                                    ? "text-green-600"
+                                                                                                    : "text-yellow-600"
+                                                                                            }`}
+                                                                                        >
+                                                                                            {
+                                                                                                r.status
+                                                                                            }
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div className="flex items-start justify-between">
+                                                                                    <Badge>
+                                                                                        Date
+                                                                                        Created:
+                                                                                    </Badge>
+                                                                                    <span className="max-w-[65%] text-right font-medium break-words capitalize">
+                                                                                        {format(
+                                                                                            new Date(
+                                                                                                r.created_at,
+                                                                                            ),
+                                                                                            "MMM d, yyyy hh:mm a",
+                                                                                        )}
+                                                                                    </span>
+                                                                                </div>
+
+                                                                                {r.image ? (
+                                                                                    <div className="my-4">
+                                                                                        <img
+                                                                                            src={
+                                                                                                r.image
+                                                                                            }
+                                                                                            alt="Overtime Reference"
+                                                                                            className="max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
+                                                                                            onClick={() =>
+                                                                                                window.open(
+                                                                                                    r.image,
+                                                                                                    "_blank",
+                                                                                                )
+                                                                                            }
+                                                                                        />
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
+                                                                                        No
+                                                                                        image
+                                                                                        attached
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </CardContent>
+                                                                        <DialogFooter className="flex justify-end pt-2">
+                                                                            <DialogClose
+                                                                                asChild
+                                                                            >
+                                                                                <Button variant="secondary">
+                                                                                    Close
+                                                                                </Button>
+                                                                            </DialogClose>
+                                                                        </DialogFooter>
+                                                                    </Card>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </CardContent>
                             </Card>
                         )}
                     </div>

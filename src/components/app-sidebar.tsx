@@ -1,25 +1,11 @@
 import * as React from "react";
+import { NavLink } from "react-router-dom";
 import {
-    IconCamera,
-    IconChartBar,
     IconDashboard,
-    IconDatabase,
-    IconFileAi,
-    IconFileDescription,
-    IconFileWord,
-    IconFolder,
-    IconHelp,
+    IconFileTime,
     IconInnerShadowTop,
-    IconListDetails,
-    IconReport,
-    IconSearch,
-    IconSettings,
     IconUsers,
 } from "@tabler/icons-react";
-
-import { NavDocuments } from "@/components/nav-documents";
-import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
     Sidebar,
@@ -30,120 +16,53 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAuthStore } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/axios";
+import { ApiResponse } from "..";
+import { Timer } from "lucide-react";
 
-const data = {
-    user: {
-        name: "shadcn",
-        email: "m@example.com",
-        avatar: "/avatars/shadcn.jpg",
+const navMainItems = (userId?: string) => [
+    {
+        title: "Time Records",
+        url: "/",
+        icon: IconDashboard,
     },
-    navMain: [
-        {
-            title: "Dashboard",
-            url: "#",
-            icon: IconDashboard,
-        },
-        {
-            title: "Lifecycle",
-            url: "#",
-            icon: IconListDetails,
-        },
-        {
-            title: "Analytics",
-            url: "#",
-            icon: IconChartBar,
-        },
-        {
-            title: "Projects",
-            url: "#",
-            icon: IconFolder,
-        },
-    ],
-    navClouds: [
-        {
-            title: "Capture",
-            icon: IconCamera,
-            isActive: true,
-            url: "#",
-            items: [
-                {
-                    title: "Active Proposals",
-                    url: "#",
-                },
-                {
-                    title: "Archived",
-                    url: "#",
-                },
-            ],
-        },
-        {
-            title: "Proposal",
-            icon: IconFileDescription,
-            url: "#",
-            items: [
-                {
-                    title: "Active Proposals",
-                    url: "#",
-                },
-                {
-                    title: "Archived",
-                    url: "#",
-                },
-            ],
-        },
-        {
-            title: "Prompts",
-            icon: IconFileAi,
-            url: "#",
-            items: [
-                {
-                    title: "Active Proposals",
-                    url: "#",
-                },
-                {
-                    title: "Archived",
-                    url: "#",
-                },
-            ],
-        },
-    ],
-    navSecondary: [
-        {
-            title: "Settings",
-            url: "#",
-            icon: IconSettings,
-        },
-        {
-            title: "Get Help",
-            url: "#",
-            icon: IconHelp,
-        },
-        {
-            title: "Search",
-            url: "#",
-            icon: IconSearch,
-        },
-    ],
-    documents: [
-        {
-            name: "Data Library",
-            url: "#",
-            icon: IconDatabase,
-        },
-        {
-            name: "Reports",
-            url: "#",
-            icon: IconReport,
-        },
-        {
-            name: "Word Assistant",
-            url: "#",
-            icon: IconFileWord,
-        },
-    ],
-};
+    {
+        title: "Profile",
+        url: `/employees/${userId ?? ""}`,
+        icon: IconUsers,
+    },
+    {
+        title: "Logoverride",
+        url: `/logoverrides/${userId ?? ""}`,
+        icon: IconFileTime,
+    },
+    {
+        title: "Overtime",
+        url: `/overtime/${userId ?? ""}`,
+        icon: Timer,
+    },
+];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { setToken } = useAuthStore.getState();
+
+    const { data: me, isLoading } = useQuery({
+        queryKey: ["me"],
+        queryFn: async () => {
+            const response = await api.get<
+                ApiResponse<{
+                    id: string;
+                    name: string;
+                    email: string;
+                    avatar?: string;
+                }>
+            >(`/api/v2/auth/me`);
+            return response.data.data;
+        },
+    });
+
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader>
@@ -153,22 +72,56 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             asChild
                             className="data-[slot=sidebar-menu-button]:!p-1.5"
                         >
-                            <a href="#">
+                            <NavLink to="/">
                                 <IconInnerShadowTop className="!size-5" />
                                 <span className="text-base font-semibold">
                                     Agency HR
                                 </span>
-                            </a>
+                            </NavLink>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
-            <SidebarContent>
-                <NavMain items={data.navMain} />
-                <NavSecondary items={data.navSecondary} className="mt-auto" />
+
+            <SidebarContent className="mt-10">
+                {navMainItems(me?.id).map((item) => (
+                    <SidebarMenu key={item.title}>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild>
+                                <NavLink
+                                    to={item.url}
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-2 rounded-md px-4 py-4 transition-colors ${
+                                            isActive
+                                                ? "bg-red-500 font-semibold text-white"
+                                                : "text-muted-foreground hover:bg-muted/10"
+                                        }`
+                                    }
+                                    end
+                                >
+                                    <item.icon className="!size-5" />
+                                    {item.title}
+                                </NavLink>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                ))}
             </SidebarContent>
+
             <SidebarFooter>
-                <NavUser user={data.user} />
+                {!isLoading && me ? (
+                    <NavUser
+                        user={{
+                            name: me.name,
+                            email: me.email,
+                            avatar: me.avatar ?? "/avatars/shadcn.jpg",
+                        }}
+                    />
+                ) : (
+                    <div className="text-muted-foreground px-4 py-2 text-sm">
+                        Loading user...
+                    </div>
+                )}
             </SidebarFooter>
         </Sidebar>
     );

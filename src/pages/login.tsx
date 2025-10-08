@@ -22,6 +22,7 @@ import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { useAuthStore } from "@/hooks/use-auth";
+import bgImg from "../assets/images/5590457.jpg";
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -59,8 +60,9 @@ export default function LoginPage() {
 
                 if (user?.id) {
                     toast.success("Login successful!");
-                    navigate(`/overtime/${user.id}`);
+                    // navigate(`/overtime/${user.id}`);
                     // navigate(`/logoverrides/form/${user.id}`);
+                    navigate(`/employees/${user.id}`);
                 } else {
                     toast.error("Failed to load user info.");
                 }
@@ -71,9 +73,19 @@ export default function LoginPage() {
         });
     };
 
+    const back = {
+        backgroundImage: `url(${bgImg})`,
+        backgroundSize: "fit",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+    };
+
     return (
-        <div className="flex min-h-screen items-center justify-center p-4">
-            <Card className="w-full max-w-md shadow-xl">
+        <div
+            className="flex min-h-screen items-center justify-center p-4"
+            style={back}
+        >
+            <Card className="bg-background/50 w-full max-w-md shadow-xl">
                 <CardHeader className="space-y-2 text-center">
                     <CardTitle className="text-3xl font-bold">
                         Welcome Back

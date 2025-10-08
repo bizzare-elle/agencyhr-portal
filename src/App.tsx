@@ -28,19 +28,15 @@ export default function App() {
             loader: async () => {
                 const token = useAuthStore.getState().token;
 
-                if (!token) {
-                    return redirect(`/login`);
-                }
+                if (!token) return redirect(`/login`);
+
                 try {
                     const res = await api.get("/api/v2/auth/me", {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
+                        headers: { Authorization: `Bearer ${token}` },
                     });
-
                     return res.data.data;
-                } catch (err) {
-                    return redirect("login");
+                } catch {
+                    return redirect("/login");
                 }
             },
             hydrateFallbackElement: <FullPageLoader />,
@@ -48,27 +44,56 @@ export default function App() {
                 {
                     path: "/",
                     element: <Dashboard />,
+                    handle: { title: "Dashboard" },
                 },
                 {
                     path: "/employees",
                     children: [
-                        { index: true, element: <Employees /> },
-                        { path: "form", element: <EmployeeForm /> },
-                        { path: ":id", element: <EmployeeProfile /> },
+                        {
+                            index: true,
+                            element: <Employees />,
+                            handle: { title: "Employees" },
+                        },
+                        {
+                            path: "form",
+                            element: <EmployeeForm />,
+                            handle: { title: "Employee Form" },
+                        },
+                        {
+                            path: ":id",
+                            element: <EmployeeProfile />,
+                            handle: { title: "Employee Profile" },
+                        },
                     ],
                 },
                 {
                     path: "/logoverrides",
                     children: [
-                        { path: ":id", element: <LogoverrideDashboard /> },
-                        { path: "form/:id", element: <LogoverrideForm /> },
+                        {
+                            path: ":id",
+                            element: <LogoverrideDashboard />,
+                            handle: { title: "Log Override" },
+                        },
+                        {
+                            path: "form/:id",
+                            element: <LogoverrideForm />,
+                            handle: { title: "Log Override Form" },
+                        },
                     ],
                 },
                 {
                     path: "/overtime",
                     children: [
-                        { path: ":id", element: <OvertimeDashboard /> },
-                        { path: "form/:id", element: <OvertimeForm /> },
+                        {
+                            path: ":id",
+                            element: <OvertimeDashboard />,
+                            handle: { title: "Overtime" },
+                        },
+                        {
+                            path: "form/:id",
+                            element: <OvertimeForm />,
+                            handle: { title: "Overtime Form" },
+                        },
                     ],
                 },
             ],

@@ -20,6 +20,7 @@ import {
     DialogClose,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { Image } from "lucide-react";
 
 export interface TimeLog {
     id: string;
@@ -81,38 +82,50 @@ const columns: TableColumn<TimeLog>[] = [
         name: "Image",
         cell: (row) => {
             let imageSrc = "";
-            const cutoffDate = new Date("2025-06-01T00:00:00");
-            const recordDate = new Date(row.date_time);
 
-            if (recordDate >= cutoffDate) {
-                imageSrc =
-                    "https://www.appsheet.com/template/getappfileurl?appName=WFPhonetrics-373955958&tableName=Sheet1&fileName=" +
-                    row.image;
-            } else {
-                imageSrc =
-                    "https://www.appsheet.com/template/getappfileurl?appName=AtlasAgencyTimeTrackerv2-373955958&tableName=hr_time_tracker&fileName=" +
-                    row.image;
+            if (row.image && row.image.startsWith("http")) {
+                imageSrc = row.image;
+            } else if (row.image) {
+                const cutoffDate = new Date("2025-06-01T00:00:00");
+                const recordDate = new Date(row.date_time);
+
+                if (recordDate >= cutoffDate) {
+                    imageSrc =
+                        "https://www.appsheet.com/template/getappfileurl?appName=WFPhonetrics-373955958&tableName=Sheet1&fileName=" +
+                        row.image;
+                } else {
+                    imageSrc =
+                        "https://www.appsheet.com/template/getappfileurl?appName=AtlasAgencyTimeTrackerv2-373955958&tableName=hr_time_tracker&fileName=" +
+                        row.image;
+                }
             }
 
             return (
                 <Dialog>
                     <DialogTrigger className="cursor-pointer">
-                        <img className="max-h-[50px]" src={imageSrc} />
+                        <img
+                            className="max-h-[50px]"
+                            src={imageSrc}
+                            alt="N/A"
+                        />
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Time Log Image</DialogTitle>
                             <DialogDescription>
-                                {formatToDateTime(row.date_time)} &middot;{" "}
-                                {row.clock_type}
+                                {formatToDateTime(row.date_time)}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-center object-contain">
-                            <img className="max-h-[400px]" src={imageSrc} />
+                            <img
+                                className="max-h-[400px]"
+                                src={imageSrc}
+                                alt="Time Log"
+                            />
                         </div>
                         <DialogFooter className="mt-4">
                             <DialogClose asChild>
-                                <Button>Close</Button>
+                                <Button variant="secondary">Close</Button>
                             </DialogClose>
                         </DialogFooter>
                     </DialogContent>
@@ -120,6 +133,7 @@ const columns: TableColumn<TimeLog>[] = [
             );
         },
     },
+
     {
         name: "Status",
         cell: () => <Badge className="bg-green-600 text-white">Approved</Badge>,
@@ -160,7 +174,7 @@ export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
             customStyles={{
                 cells: {
                     style: {
-                        paddingBlock: "8px",
+                        paddingBlock: "10px",
                     },
                 },
             }}

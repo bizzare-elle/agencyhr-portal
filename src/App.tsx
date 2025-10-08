@@ -42,7 +42,7 @@ export default function App() {
             hydrateFallbackElement: <FullPageLoader />,
             children: [
                 {
-                    path: "/",
+                    path: "/:id",
                     element: <Dashboard />,
                     handle: { title: "Dashboard" },
                 },

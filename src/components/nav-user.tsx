@@ -39,10 +39,8 @@ export function NavUser({
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        // Remove JWT token from store
         logout();
 
-        // Redirect to login page
         navigate("/login");
     };
 
@@ -90,34 +88,22 @@ export function NavUser({
                                         src={user.avatar}
                                         alt={user.name}
                                     />
-                                    <AvatarFallback className="rounded-lg"></AvatarFallback>
+                                    <AvatarFallback className="rounded-2xl">
+                                        CN
+                                    </AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">
                                         {user.name}
                                     </span>
                                     <span className="text-muted-foreground truncate text-xs">
-                                        {user.email}
+                                        {/* {user.email ?? user.email : "agencyuser@gmail.com"} */}
                                     </span>
                                 </div>
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem>
-                                <IconUserCircle />
-                                Account
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <IconCreditCard />
-                                Billing
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <IconNotification />
-                                Notifications
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
+
                         <DropdownMenuItem onClick={handleLogout}>
                             <IconLogout />
                             Log out

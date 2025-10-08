@@ -16,11 +16,15 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
+<<<<<<< HEAD
 import { useAuthStore } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { ApiResponse } from "..";
 import { Timer } from "lucide-react";
+=======
+import { Users } from "lucide-react";
+>>>>>>> 0e77a60b29fbbf70085311f977e2e4969fc20df7
 
 const navMainItems = (userId?: string) => [
     {
@@ -28,6 +32,7 @@ const navMainItems = (userId?: string) => [
         url: "/",
         icon: IconDashboard,
     },
+<<<<<<< HEAD
     {
         title: "Profile",
         url: `/employees/${userId ?? ""}`,
@@ -44,6 +49,86 @@ const navMainItems = (userId?: string) => [
         icon: Timer,
     },
 ];
+=======
+    navMain: [
+        {
+            title: "Dashboard",
+            url: "#",
+            icon: IconDashboard,
+        },
+        {
+            title: "Employees",
+            url: "/employees",
+            icon: Users,
+        },
+        {
+            title: "Analytics",
+            url: "#",
+            icon: IconChartBar,
+        },
+        {
+            title: "Projects",
+            url: "#",
+            icon: IconFolder,
+        },
+    ],
+    navClouds: [
+        {
+            title: "Capture",
+            icon: IconCamera,
+            isActive: true,
+            url: "#",
+            items: [
+                {
+                    title: "Active Proposals",
+                    url: "#",
+                },
+                {
+                    title: "Archived",
+                    url: "#",
+                },
+            ],
+        },
+        {
+            title: "Proposal",
+            icon: IconFileDescription,
+            url: "#",
+            items: [
+                {
+                    title: "Active Proposals",
+                    url: "#",
+                },
+                {
+                    title: "Archived",
+                    url: "#",
+                },
+            ],
+        },
+        {
+            title: "Prompts",
+            icon: IconFileAi,
+            url: "#",
+            items: [
+                {
+                    title: "Active Proposals",
+                    url: "#",
+                },
+                {
+                    title: "Archived",
+                    url: "#",
+                },
+            ],
+        },
+    ],
+    navSecondary: [
+        {
+            title: "Settings",
+            url: "#",
+            icon: IconSettings,
+        },
+    ],
+};
+>>>>>>> 0e77a60b29fbbf70085311f977e2e4969fc20df7
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { setToken } = useAuthStore.getState();

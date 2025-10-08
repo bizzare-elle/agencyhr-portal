@@ -273,11 +273,11 @@ export default function OvertimeDashboard() {
                                                         <TableCell className="px-4 py-5 text-center">
                                                             {r.status ===
                                                             "Approved" ? (
-                                                                <Badge className="bg-green-500">
+                                                                <Badge className="bg-green-500 text-white">
                                                                     {r.status}
                                                                 </Badge>
                                                             ) : (
-                                                                <Badge className="bg-yellow-500">
+                                                                <Badge className="bg-yellow-500 text-white">
                                                                     Pending for
                                                                     Approval
                                                                 </Badge>

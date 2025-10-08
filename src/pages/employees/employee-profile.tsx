@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
     Card,
@@ -185,12 +185,19 @@ export default function EmployeeProfile() {
         queryKey: ["me"],
         queryFn: async () => {
             const response =
-                await api.get<ApiResponse<{ id: string }>>(`/api/v2/auth/me`);
+                await api.get<ApiResponse<{ id: string; role: string }>>(
+                    `/api/v2/auth/me`,
+                );
             return response.data.data;
         },
     });
 
-    const employeeId = me?.id;
+    // const employeeId = me?.id;
+
+    const { id: paramId } = useParams<{ id: string }>();
+
+    const employeeId =
+        me?.role === "agency_coordinator" && paramId ? paramId : me?.id;
 
     const { data, isLoading, isError } = useQuery<EmployeeResponse>({
         queryKey: ["employeeProfile", employeeId],

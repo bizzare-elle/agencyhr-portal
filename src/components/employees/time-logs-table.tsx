@@ -172,9 +172,41 @@ export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
             onChangePage={(page) => setPage(page)}
             onChangeRowsPerPage={(value) => setRowsPerPage(value)}
             customStyles={{
+                header: {
+                    style: {
+                        fontSize: "16px",
+                        fontWeight: 600,
+                        color: "#fff",
+                        backgroundColor: "#1f2937",
+                    },
+                },
+                headRow: {
+                    style: {
+                        borderBottom: "1px solid #374151",
+                    },
+                },
+                headCells: {
+                    style: {
+                        padding: "10px",
+                    },
+                },
+                rows: {
+                    style: {
+                        minHeight: "55px",
+                        borderBottom: "1px solid #374151",
+                        borderRadius: "8px",
+                    },
+                },
                 cells: {
                     style: {
-                        paddingBlock: "10px",
+                        padding: "10px 8px",
+                        color: "#d1d5db",
+                    },
+                },
+                pagination: {
+                    style: {
+                        backgroundColor: "#111827",
+                        color: "#fff",
                     },
                 },
             }}

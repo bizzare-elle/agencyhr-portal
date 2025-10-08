@@ -262,8 +262,8 @@ export default function LogoverrideDashboard() {
                                                                 {r.status}
                                                             </Badge>
                                                         ) : (
-                                                            <Badge className="bg-yellow-500 text-black">
-                                                                Pending or
+                                                            <Badge className="bg-yellow-500 text-white">
+                                                                Pending for
                                                                 Approval
                                                             </Badge>
                                                         )}

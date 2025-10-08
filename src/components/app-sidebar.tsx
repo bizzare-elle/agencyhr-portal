@@ -1,11 +1,12 @@
 import * as React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 import {
     IconDashboard,
     IconFileTime,
     IconInnerShadowTop,
     IconUsers,
 } from "@tabler/icons-react";
+import { Timer } from "lucide-react";
 import { NavUser } from "@/components/nav-user";
 import {
     Sidebar,
@@ -20,30 +21,43 @@ import { useAuthStore } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { ApiResponse } from "..";
-import { Timer } from "lucide-react";
 
-const navMainItems = (userId?: string) => [
-    {
-        title: "Time Records",
-        url: `/${userId ?? ""}`,
-        icon: IconDashboard,
-    },
-    {
-        title: "Profile",
-        url: `/employees/${userId ?? ""}`,
-        icon: IconUsers,
-    },
-    {
-        title: "Logoverride",
-        url: `/logoverrides/${userId ?? ""}`,
-        icon: IconFileTime,
-    },
-    {
-        title: "Overtime",
-        url: `/overtime/${userId ?? ""}`,
-        icon: Timer,
-    },
-];
+const navMainItems = (userId?: string, role?: string) => {
+    const items = [];
+
+    if (role === "hr_employee") {
+        items.push(
+            {
+                title: "Time Records",
+                url: `/${userId ?? ""}`,
+                icon: IconDashboard,
+            },
+            {
+                title: "Profile",
+                url: `/employees/${userId ?? ""}`,
+                icon: IconUsers,
+            },
+            {
+                title: "Logoverride",
+                url: `/logoverrides/${userId ?? ""}`,
+                icon: IconFileTime,
+            },
+            {
+                title: "Overtime",
+                url: `/overtime/${userId ?? ""}`,
+                icon: Timer,
+            },
+        );
+    } else if (role === "agency_coordinator") {
+        items.push({
+            title: "Employees",
+            url: "/employees",
+            icon: IconUsers,
+        });
+    }
+
+    return items;
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { setToken } = useAuthStore.getState();
@@ -56,6 +70,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     id: string;
                     name: string;
                     email: string;
+                    role: string;
                     avatar?: string;
                 }>
             >(`/api/v2/auth/me`);
@@ -84,28 +99,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarHeader>
 
             <SidebarContent className="mt-10">
-                {navMainItems(me?.id).map((item) => (
-                    <SidebarMenu key={item.title}>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton asChild>
-                                <NavLink
-                                    to={item.url}
-                                    className={({ isActive }) =>
-                                        `flex items-center gap-2 rounded-md px-4 py-4 transition-colors ${
-                                            isActive
-                                                ? "bg-red-500 font-semibold text-white"
-                                                : "text-muted-foreground hover:bg-muted/10"
-                                        }`
-                                    }
-                                    end
-                                >
-                                    <item.icon className="!size-5" />
-                                    {item.title}
-                                </NavLink>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
-                ))}
+                {!isLoading &&
+                    me &&
+                    navMainItems(me.id, me.role).map((item) => (
+                        <SidebarMenu key={item.title}>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild>
+                                    <NavLink
+                                        to={item.url}
+                                        className={({ isActive }) =>
+                                            `flex items-center gap-2 rounded-md px-4 py-4 transition-colors ${
+                                                isActive
+                                                    ? "bg-red-500 font-semibold text-white"
+                                                    : "text-muted-foreground hover:bg-muted/10"
+                                            }`
+                                        }
+                                        end
+                                    >
+                                        <item.icon className="!size-5" />
+                                        {item.title}
+                                    </NavLink>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    ))}
             </SidebarContent>
 
             <SidebarFooter>

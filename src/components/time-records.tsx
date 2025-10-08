@@ -9,13 +9,21 @@ import {
 } from "./ui/table";
 import { DateRangePicker } from "./ui/date-range-picker";
 import moment from "moment";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { ApiResponse } from "..";
 import { cn } from "@/lib/utils";
 import FullPageLoader from "./page-loader";
 import { useAuthStore } from "@/hooks/use-auth";
+import { Badge } from "./ui/badge";
+import {
+    Pagination,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "./ui/pagination";
 
 interface TimeRecord {
     employee_schedule_id: string;
@@ -29,15 +37,10 @@ interface TimeRecord {
     overtime_hours: string | null;
 }
 
-interface UserResponse {
-    id: number;
-    employee_id: number;
-    name: string;
-    // ...other user fields from /auth/me
-}
-
 export default function TimeRecords() {
     const [datesToRender, setDatesToRender] = useState<Date[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
 
     const { setToken } = useAuthStore.getState();
 
@@ -72,31 +75,140 @@ export default function TimeRecords() {
         enabled: !!employeeId && !!queryFrom && !!queryTo,
     });
 
-    function getDatesInRange(from: Date, to: Date) {
+    const getDatesInRange = (from: Date, to: Date) => {
         const dates: Date[] = [];
         let day = moment(from);
         const end = moment(to);
         while (day.isSameOrBefore(end)) {
-            dates.push(new Date(day.format("YYYY-MM-DD")));
+            dates.push(day.toDate());
             day.add(1, "day");
         }
         return dates;
-    }
+    };
 
-    // Default to current month
     useEffect(() => {
-        const startOfMonth = moment().startOf("month").toDate();
-        const endOfMonth = moment().endOf("month").toDate();
-        setDatesToRender(getDatesInRange(startOfMonth, endOfMonth));
-    }, []);
+        const today = moment();
+        let start: moment.Moment;
+        let end: moment.Moment;
 
-    if (isLoading || isFetching) return <FullPageLoader />;
+        if (today.date() <= 15) {
+            start = today.clone().startOf("month");
+            end = today.clone().date(15);
+        } else {
+            start = today.clone().date(16);
+            end = today.clone().endOf("month");
+        }
+
+        setDatesToRender(getDatesInRange(start.toDate(), end.toDate()));
+    }, []);
 
     const records = data?.time_records ?? [];
 
+    const parseScheduleTime = (
+        scheduleDate: string,
+        scheduleTime: string | null,
+    ) => {
+        if (!scheduleTime) return null;
+        const m = moment(
+            `${scheduleDate} ${scheduleTime}`,
+            "YYYY-MM-DD HH:mm",
+            true,
+        );
+        return m.isValid() ? m : null;
+    };
+
+    const parseActualTime = (actualDateTime: string | null) => {
+        if (!actualDateTime) return null;
+        const m = moment(
+            actualDateTime,
+            ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD hh:mm A"],
+            true,
+        );
+        return m.isValid() ? m : null;
+    };
+
+    const computeTimeDiff = (
+        scheduleDate: string,
+        scheduleTime: string | null,
+        actualDateTime: string | null,
+        type: "late" | "undertime",
+    ): string => {
+        const sched = parseScheduleTime(scheduleDate, scheduleTime);
+        const actual = parseActualTime(actualDateTime);
+
+        if (!sched || !actual) return "";
+
+        let diffMinutes: number;
+        if (type === "late") diffMinutes = actual.diff(sched, "minutes");
+        else diffMinutes = sched.diff(actual, "minutes");
+
+        if (isNaN(diffMinutes) || diffMinutes <= 0) return "";
+
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+        return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    };
+
+    const formatTime = (actualDateTime: string | null) => {
+        const m = parseActualTime(actualDateTime);
+        return m ? m.format("hh:mm A") : "";
+    };
+
+    const tableData = useMemo(() => {
+        return datesToRender.map((day) => {
+            const rowDate = moment(day).format("YYYY-MM-DD");
+            const record = records.find((r) => r.schedule_date === rowDate);
+
+            const schedule = record?.schedule_name || "";
+            const schedIn = record?.schedule_time_in || "";
+            const schedOut = record?.schedule_time_out || "";
+            const timeIn = record?.time_in || "";
+            const timeOut = record?.time_out || "";
+            const overtime = record?.overtime_hours || "";
+
+            const isPastDate = moment(rowDate).isBefore(moment(), "day");
+            const isOffDay =
+                schedule.toUpperCase() === "OFF" ||
+                schedule.toUpperCase() === "NO SCHEDULE";
+
+            const late =
+                !isOffDay && timeIn
+                    ? computeTimeDiff(rowDate, schedIn, timeIn, "late")
+                    : "";
+            const undertime =
+                !isOffDay && timeOut
+                    ? computeTimeDiff(rowDate, schedOut, timeOut, "undertime")
+                    : "";
+
+            const remarks: string[] = [];
+            if (!isOffDay && isPastDate && schedule) {
+                if (!timeIn) remarks.push("No Time-In");
+                if (!timeOut) remarks.push("No Time-Out");
+            }
+
+            return {
+                date: day,
+                dayName: moment(day).format("dddd"),
+                schedule,
+                timeIn,
+                timeOut,
+                late,
+                undertime,
+                overtime,
+                remarks: remarks.join(", "),
+                isOffDay,
+            };
+        });
+    }, [datesToRender, records]);
+
+    const totalPages = Math.ceil(tableData.length / pageSize);
+    const paginatedData = tableData.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+    );
+
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                 <CardTitle className="space-y-1">
                     <h3 className="text-foreground text-lg font-bold tracking-wide">
@@ -114,92 +226,114 @@ export default function TimeRecords() {
                         const from = value.range.from;
                         const to = value.range.to || value.range.from;
                         setDatesToRender(getDatesInRange(from, to));
+                        setCurrentPage(1);
                     }}
                 />
             </div>
 
-            {/* Table */}
+            {(isLoading || isFetching) && <FullPageLoader />}
+
             <div className="bg-card overflow-x-auto rounded-md border shadow-sm">
-                <Table>
+                <Table className="min-w-full divide-y divide-gray-200">
                     <TableHeader>
-                        <TableRow className="bg-muted/50 text-sm">
-                            <TableHead>Date</TableHead>
-                            <TableHead>Day</TableHead>
-                            <TableHead>Shift</TableHead>
-                            <TableHead className="text-center">
+                        <TableRow className="bg-muted text-sm">
+                            <TableHead className="px-2 py-6">Date</TableHead>
+                            <TableHead className="px-2 py-6">Day</TableHead>
+                            <TableHead className="hidden px-2 py-6 sm:table-cell">
+                                Shift
+                            </TableHead>
+                            <TableHead className="px-2 py-6 text-center">
                                 Time In
                             </TableHead>
-                            <TableHead className="text-center">
+                            <TableHead className="px-2 py-6 text-center">
                                 Time Out
                             </TableHead>
-                            <TableHead className="text-center">
-                                Overtime (hrs)
+                            <TableHead className="hidden px-2 py-6 text-center md:table-cell">
+                                Late
+                            </TableHead>
+                            <TableHead className="hidden px-2 py-6 text-center md:table-cell">
+                                Undertime
+                            </TableHead>
+                            <TableHead className="hidden px-2 py-6 text-center lg:table-cell">
+                                Overtime
+                            </TableHead>
+                            <TableHead className="px-2 py-6 text-center">
+                                Remarks
                             </TableHead>
                         </TableRow>
                     </TableHeader>
 
                     <TableBody>
-                        {datesToRender.map((day, i) => {
-                            const rowDate = moment(day).format("YYYY-MM-DD");
-                            const record = records.find(
-                                (r) => r.schedule_date === rowDate,
-                            );
-
-                            const schedule = record?.schedule_name || "--";
-                            const timeIn = record?.time_in
-                                ? moment(record.time_in).format("hh:mm A")
-                                : null;
-                            const timeOut = record?.time_out
-                                ? moment(record.time_out).format("hh:mm A")
-                                : null;
-                            const overtime = record?.overtime_hours || "--";
-
-                            return (
+                        {paginatedData.length ? (
+                            paginatedData.map((row, i) => (
                                 <TableRow
                                     key={i}
-                                    className="hover:bg-muted/30 transition-colors"
+                                    className={cn(
+                                        "transition-colors",
+                                        row.isOffDay
+                                            ? "bg-muted/70 text-muted-foreground opacity-70"
+                                            : "hover:bg-muted/20",
+                                    )}
                                 >
-                                    <TableCell>
-                                        {moment(day).format("LL")}
+                                    <TableCell className="px-2 py-5">
+                                        {moment(row.date).format("LL")}
                                     </TableCell>
-                                    <TableCell className="capitalize">
-                                        {moment(day).format("dddd")}
+                                    <TableCell className="px-2 py-5 capitalize">
+                                        {row.dayName}
                                     </TableCell>
-                                    <TableCell className="font-medium">
-                                        {schedule}
+                                    <TableCell className="hidden px-2 py-5 sm:table-cell">
+                                        {row.schedule}
                                     </TableCell>
-
-                                    <TableCell
-                                        className={cn(
-                                            "text-center",
-                                            !timeIn &&
-                                                "font-medium text-red-500",
+                                    <TableCell className="px-2 py-5 text-center">
+                                        {!row.isOffDay
+                                            ? formatTime(row.timeIn)
+                                            : ""}
+                                    </TableCell>
+                                    <TableCell className="px-2 py-5 text-center">
+                                        {!row.isOffDay
+                                            ? formatTime(row.timeOut)
+                                            : ""}
+                                    </TableCell>
+                                    <TableCell className="hidden px-2 py-5 text-center md:table-cell">
+                                        {row.late && (
+                                            <Badge
+                                                variant="destructive"
+                                                className="px-1 text-xs"
+                                            >
+                                                {row.late}
+                                            </Badge>
                                         )}
-                                    >
-                                        {timeIn || "Missing"}
                                     </TableCell>
-
-                                    <TableCell
-                                        className={cn(
-                                            "text-center",
-                                            !timeOut &&
-                                                "font-medium text-red-500",
+                                    <TableCell className="hidden px-2 py-5 text-center md:table-cell">
+                                        {row.undertime && (
+                                            <Badge
+                                                variant="destructive"
+                                                className="px-1 text-xs"
+                                            >
+                                                {row.undertime}
+                                            </Badge>
                                         )}
-                                    >
-                                        {timeOut || "Missing"}
                                     </TableCell>
-
-                                    <TableCell className="text-center font-semibold">
-                                        {overtime}
+                                    <TableCell className="hidden px-2 py-5 text-center font-semibold text-green-500 lg:table-cell">
+                                        {row.overtime &&
+                                            row.overtime !== "0.00" && (
+                                                <Badge
+                                                    variant="default"
+                                                    className="px-1 text-xs"
+                                                >
+                                                    {row.overtime}
+                                                </Badge>
+                                            )}
+                                    </TableCell>
+                                    <TableCell className="px-2 py-5 text-center break-words text-yellow-500">
+                                        {row.remarks}
                                     </TableCell>
                                 </TableRow>
-                            );
-                        })}
-
-                        {!records.length && (
+                            ))
+                        ) : (
                             <TableRow>
                                 <TableCell
-                                    colSpan={6}
+                                    colSpan={9}
                                     className="text-muted-foreground py-6 text-center"
                                 >
                                     No records found for this range.
@@ -208,6 +342,50 @@ export default function TimeRecords() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between">
+                {/* Current page / total pages */}
+                <div className="text-muted-foreground text-sm">
+                    Page {currentPage} of {totalPages}
+                </div>
+
+                {/* Pagination buttons */}
+                <div>
+                    {totalPages > 1 && (
+                        <Pagination>
+                            <PaginationPrevious
+                                onClick={() =>
+                                    setCurrentPage((prev) =>
+                                        Math.max(prev - 1, 1),
+                                    )
+                                }
+                                className={
+                                    currentPage === 1
+                                        ? "pointer-events-none opacity-50"
+                                        : "cursor-pointer"
+                                }
+                            >
+                                Previous
+                            </PaginationPrevious>
+
+                            <PaginationNext
+                                onClick={() =>
+                                    setCurrentPage((prev) =>
+                                        Math.min(prev + 1, totalPages),
+                                    )
+                                }
+                                className={
+                                    currentPage === totalPages
+                                        ? "pointer-events-none opacity-50"
+                                        : "cursor-pointer"
+                                }
+                            >
+                                Next
+                            </PaginationNext>
+                        </Pagination>
+                    )}
+                </div>
             </div>
         </div>
     );

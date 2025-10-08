@@ -62,14 +62,14 @@ export default function LoginPage() {
                 if (user?.id) {
                     toast.success("Login successful!");
 
-                    // console.log(user);
-                    // if (user.role == "agency_coordinator") {
-                    //     navigate(`/employees`);
-                    // } else {
-                    //     navigate(`/employees/${user.id}`);
-                    // }
-                    navigate(`/overtime/${user.id}`);
-                    // navigate(`/logoverrides/form/${user.id}`);
+                    console.log(user);
+                    if (user.role == "agency_coordinator") {
+                        navigate(`/employees`);
+                    } else {
+                        navigate(`/employees/${user.id}`);
+                    }
+                    // navigate(`/overtime/${user.id}`);
+                    // // navigate(`/logoverrides/form/${user.id}`);
                 } else {
                     toast.error("Failed to load user info.");
                 }

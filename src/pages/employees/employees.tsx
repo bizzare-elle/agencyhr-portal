@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import EmployeesFilter from "@/components/employees/employees-filter";
+import FullPageLoader from "@/components/page-loader";
 
 export type Employee = {
     id: number;
@@ -132,10 +133,21 @@ export default function Employees() {
 
     function handleSort(rows: any, selector: any, direction: any) {}
 
+    if (isLoading) {
+        <FullPageLoader />;
+    }
+
+    if (isError) {
+    }
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
             <div className="flex flex-col gap-8">
-                <h3>Employees</h3>
+                <div>
+                    <h3>Employees</h3>
+                    <span className="text-small text-white/50">
+                        List of employees
+                    </span>
+                </div>
                 <div className="align-items-center flex gap-4">
                     <EmployeesFilter />
                     <Input
@@ -162,6 +174,44 @@ export default function Employees() {
                         onChangePage={(page) => setPage(page)}
                         onChangeRowsPerPage={(value) => setRowsPerPage(value)}
                         paginationTotalRows={data?.data.total || 0}
+                        customStyles={{
+                            header: {
+                                style: {
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    color: "#fff",
+                                },
+                            },
+                            headRow: {
+                                style: {
+                                    borderBottom: "1px solid #374151",
+                                },
+                            },
+                            headCells: {
+                                style: {
+                                    padding: "10px",
+                                },
+                            },
+                            rows: {
+                                style: {
+                                    minHeight: "55px",
+                                    borderBottom: "1px solid #374151",
+                                    borderRadius: "8px",
+                                },
+                            },
+                            cells: {
+                                style: {
+                                    padding: "10px 8px",
+                                    color: "#d1d5db",
+                                },
+                            },
+                            pagination: {
+                                style: {
+                                    backgroundColor: "#363634ff",
+                                    color: "#fff",
+                                },
+                            },
+                        }}
                     />
                 </CardContent>
             </Card>

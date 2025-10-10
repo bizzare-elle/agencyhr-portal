@@ -82,20 +82,22 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
     };
 
     return (
-        <Card className="mt-6 p-6 shadow-sm">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Overtime Requests</h2>
-                <div className="flex items-center gap-2">
+        <Card className="mt-6 p-4 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <h2 className="text-lg font-semibold sm:text-xl">
+                    Overtime Requests
+                </h2>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <label className="text-muted-foreground text-sm">
-                        Select Date Range:
+                        Select Date-range:
                     </label>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
                                 className={cn(
-                                    "w-[260px] justify-start text-left font-normal",
+                                    "w-full justify-start text-left font-normal sm:w-[260px]",
                                     !dateRange?.from && "text-muted-foreground",
                                 )}
                             >
@@ -139,7 +141,7 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                               },
                                     )
                                 }
-                                numberOfMonths={2}
+                                numberOfMonths={1}
                             />
                         </PopoverContent>
                     </Popover>
@@ -148,8 +150,8 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
 
             {/* Selected range info */}
             {dateRange?.from && (
-                <div className="mt-2 flex justify-between">
-                    <p className="text-muted-foreground text-sm">
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-muted-foreground text-center text-sm sm:text-left">
                         Showing overtime requests for{" "}
                         <span className="font-medium">
                             {format(dateRange.from, "MMM d, yyyy")}
@@ -157,7 +159,7 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                 ` – ${format(dateRange.to, "MMM d, yyyy")}`}
                         </span>
                     </p>
-                    <Button asChild>
+                    <Button asChild className="w-full sm:w-auto">
                         <Link to={`/overtime/form/${employeeId}`}>
                             File Overtime
                         </Link>
@@ -168,197 +170,190 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
             {/* Table */}
             {filteredData.length > 0 ? (
                 <>
-                    <Table className="border-border mt-4 overflow-hidden rounded-md border">
-                        <TableHeader className="bg-muted/50">
-                            <TableRow>
-                                <TableHead className="px-4 py-5 text-left">
-                                    Date
-                                </TableHead>
-                                <TableHead className="px-4 py-5 text-left">
-                                    Hours
-                                </TableHead>
-                                <TableHead className="px-4 py-5 text-left">
-                                    Reason
-                                </TableHead>
-                                <TableHead className="px-4 py-5 text-center">
-                                    Status
-                                </TableHead>
-                                <TableHead className="px-4 py-5 text-center">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {paginatedData.map((ot, idx) => (
-                                <TableRow
-                                    key={idx}
-                                    className="hover:bg-primary/10 cursor-pointer transition-colors"
-                                >
-                                    <TableCell className="px-4 py-5 font-medium">
-                                        {format(
-                                            new Date(ot.date),
-                                            "MMM d, yyyy",
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-5">
-                                        {ot.no_of_hours}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-5 capitalize">
-                                        {ot.remarks}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-5 text-center">
-                                        <Badge
-                                            className={cn(
-                                                ot.status === "Approved"
-                                                    ? "bg-green-600 text-white"
-                                                    : ot.status ===
-                                                        "Pending for Approval"
-                                                      ? "bg-yellow-600 text-white"
-                                                      : "bg-red-600 text-white",
-                                            )}
-                                        >
-                                            {ot.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="px-4 py-5 text-center">
-                                        {/* Dialog content for details */}
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                >
-                                                    View
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-md">
-                                                <Card className="border-none bg-transparent">
-                                                    <CardHeader className="mb-4 text-lg font-semibold">
-                                                        <CardTitle>
-                                                            Overtime Details
-                                                        </CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <div className="space-y-4 text-sm">
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Date:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    {format(
-                                                                        new Date(
-                                                                            ot.date,
-                                                                        ),
-                                                                        "MMM d, yyyy",
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Hours:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    {
-                                                                        ot.no_of_hours
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Remarks:
-                                                                </Badge>
-                                                                <div className="font-medium capitalize">
-                                                                    {ot.remarks ??
-                                                                        "—"}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Status:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    <span
-                                                                        className={cn(
-                                                                            ot.status ===
-                                                                                "Approved"
-                                                                                ? "text-green-600"
-                                                                                : ot.status ===
-                                                                                    "Disapproved"
-                                                                                  ? "text-red-600"
-                                                                                  : "text-yellow-600",
-                                                                        )}
-                                                                    >
-                                                                        {
-                                                                            ot.status
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Date
-                                                                    Created:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    {format(
-                                                                        new Date(
-                                                                            ot.created_at,
-                                                                        ),
-                                                                        "MMM d, yyyy hh:mm a",
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            {ot.image ? (
-                                                                <img
-                                                                    src={
-                                                                        ot.image
-                                                                    }
-                                                                    alt="Overtime Reference"
-                                                                    className="my-4 max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
-                                                                    onClick={() =>
-                                                                        window.open(
-                                                                            ot.image,
-                                                                            "_blank",
-                                                                        )
-                                                                    }
-                                                                />
-                                                            ) : (
-                                                                <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
-                                                                    No image
-                                                                    attached
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </CardContent>
-                                                    <CardFooter className="flex justify-end pt-2">
-                                                        <DialogClose asChild>
-                                                            <Button variant="secondary">
-                                                                Close
-                                                            </Button>
-                                                        </DialogClose>
-                                                    </CardFooter>
-                                                </Card>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </TableCell>
+                    <div className="mt-4 overflow-x-auto rounded-md border">
+                        <Table className="min-w-[600px]">
+                            <TableHeader className="bg-muted/50">
+                                <TableRow>
+                                    <TableHead className="px-4 py-3 text-left">
+                                        Date
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-left">
+                                        Hours
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-left">
+                                        Reason
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-center">
+                                        Status
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-center">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedData.map((ot, idx) => (
+                                    <TableRow
+                                        key={idx}
+                                        className="hover:bg-primary/5 cursor-pointer transition-colors"
+                                    >
+                                        <TableCell className="px-4 py-3 font-medium">
+                                            {format(
+                                                new Date(ot.date),
+                                                "MMM d, yyyy",
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            {ot.no_of_hours}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 capitalize">
+                                            {ot.remarks}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            <Badge
+                                                className={cn(
+                                                    ot.status === "Approved"
+                                                        ? "bg-green-600 text-white"
+                                                        : ot.status ===
+                                                            "Pending for Approval"
+                                                          ? "bg-yellow-600 text-white"
+                                                          : "bg-red-600 text-white",
+                                                )}
+                                            >
+                                                {ot.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                    >
+                                                        View
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="w-[90vw] max-w-md sm:w-auto">
+                                                    <Card className="border-none bg-transparent">
+                                                        <CardHeader className="mb-4 text-lg font-semibold">
+                                                            <CardTitle>
+                                                                Overtime Details
+                                                            </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <div className="space-y-3 text-sm">
+                                                                {[
+                                                                    [
+                                                                        "Date",
+                                                                        format(
+                                                                            new Date(
+                                                                                ot.date,
+                                                                            ),
+                                                                            "MMM d, yyyy",
+                                                                        ),
+                                                                    ],
+                                                                    [
+                                                                        "Hours",
+                                                                        ot.no_of_hours,
+                                                                    ],
+                                                                    [
+                                                                        "Remarks",
+                                                                        ot.remarks ??
+                                                                            "—",
+                                                                    ],
+                                                                    [
+                                                                        "Status",
+                                                                        ot.status,
+                                                                    ],
+                                                                    [
+                                                                        "Date Created",
+                                                                        format(
+                                                                            new Date(
+                                                                                ot.created_at,
+                                                                            ),
+                                                                            "MMM d, yyyy hh:mm a",
+                                                                        ),
+                                                                    ],
+                                                                ].map(
+                                                                    ([
+                                                                        label,
+                                                                        value,
+                                                                    ]) => (
+                                                                        <div
+                                                                            key={
+                                                                                label
+                                                                            }
+                                                                            className="flex justify-between gap-2"
+                                                                        >
+                                                                            <Badge>
+                                                                                {
+                                                                                    label
+                                                                                }
+
+                                                                                :
+                                                                            </Badge>
+                                                                            <div className="text-right font-medium break-all">
+                                                                                {
+                                                                                    value
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                                {ot.image ? (
+                                                                    <div className="my-4">
+                                                                        <img
+                                                                            src={
+                                                                                ot.image
+                                                                            }
+                                                                            alt="Overtime Reference"
+                                                                            className="max-h-64 w-full cursor-pointer rounded-lg border object-contain"
+                                                                            onClick={() =>
+                                                                                window.open(
+                                                                                    ot.image,
+                                                                                    "_blank",
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
+                                                                        No image
+                                                                        attached
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </CardContent>
+                                                        <CardFooter className="flex justify-end pt-2">
+                                                            <DialogClose
+                                                                asChild
+                                                            >
+                                                                <Button variant="secondary">
+                                                                    Close
+                                                                </Button>
+                                                            </DialogClose>
+                                                        </CardFooter>
+                                                    </Card>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
 
                     {/* Pagination */}
-                    <div className="mt-4 flex items-center justify-between">
-                        <div>
-                            <label className="mr-2 text-sm">
-                                Rows per page:
-                            </label>
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center justify-center gap-2 sm:justify-start">
+                            <label className="text-sm">Rows per page:</label>
                             <select
                                 value={pageSize}
                                 onChange={(e) => {
                                     setPageSize(Number(e.target.value));
                                     setCurrentPage(1);
                                 }}
-                                className="rounded border p-1"
+                                className="rounded border p-1 text-sm"
                             >
                                 {[5, 10, 20, 50].map((size) => (
                                     <option key={size} value={size}>
@@ -367,7 +362,8 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                 ))}
                             </select>
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        <div className="flex items-center justify-center gap-2 sm:justify-end">
                             <Button
                                 size="sm"
                                 variant="outline"

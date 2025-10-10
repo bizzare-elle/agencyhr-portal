@@ -9,6 +9,7 @@ interface User {
     role: string;
     department_id?: number;
     status?: string;
+    agency_id?: number;
 }
 
 interface AuthState {

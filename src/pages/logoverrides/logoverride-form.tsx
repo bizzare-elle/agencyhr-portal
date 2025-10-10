@@ -37,6 +37,7 @@ import {
 
 import api from "@/lib/axios";
 import { useAuthStore } from "@/hooks/use-auth";
+import { ParentComponent } from "@/components/parent-container";
 
 const schema = z.object({
     clockType: z.enum(["Clock-In", "Clock-Out", "Break-In", "Break-Out"], {
@@ -80,7 +81,7 @@ export default function LogoverrideForm() {
         },
     });
 
-    const employeeId = me?.id;
+    const employeeId = me?.hr_id;
 
     const logoverrideMutation = useMutation({
         mutationFn: async (formValues: FormValues) => {
@@ -116,6 +117,16 @@ export default function LogoverrideForm() {
             );
         },
     });
+
+    if (!employeeId) {
+        return (
+            <ParentComponent>
+                <Card className="text-center font-bold text-red-500">
+                    You don't have permission to access this page.
+                </Card>
+            </ParentComponent>
+        );
+    }
 
     const onSubmit = (data: FormValues) => {
         logoverrideMutation.mutate(data);

@@ -22,7 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { ApiResponse } from "..";
 
-const navMainItems = (userId?: string, role?: string) => {
+const navMainItems = (userId?: string, role?: string, agency_id?: string) => {
     const items = [];
 
     if (role === "hr_employee") {
@@ -47,13 +47,25 @@ const navMainItems = (userId?: string, role?: string) => {
                 url: `/overtime/${userId ?? ""}`,
                 icon: Timer,
             },
+            {
+                title: "Schedule",
+                url: `/schedules/${userId ?? ""}`,
+                icon: Timer,
+            },
         );
     } else if (role === "agency_coordinator") {
-        items.push({
-            title: "Employees",
-            url: "/employees",
-            icon: IconUsers,
-        });
+        items.push(
+            {
+                title: "Employee List",
+                url: "/employees",
+                icon: IconUsers,
+            },
+            {
+                title: "Dashboard",
+                url: `/dashboard/${agency_id ?? ""}`,
+                icon: IconDashboard,
+            },
+        );
     }
 
     return items;
@@ -72,6 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     email: string;
                     role: string;
                     avatar?: string;
+                    agency_id: string;
                 }>
             >(`/api/v2/auth/me`);
             return response.data.data;
@@ -101,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent className="mt-10">
                 {!isLoading &&
                     me &&
-                    navMainItems(me.id, me.role).map((item) => (
+                    navMainItems(me.id, me.role, me.agency_id).map((item) => (
                         <SidebarMenu key={item.title}>
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>

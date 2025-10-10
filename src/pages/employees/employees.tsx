@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import EmployeesFilter from "@/components/employees/employees-filter";
 import FullPageLoader from "@/components/page-loader";
 
 export type Employee = {
@@ -86,6 +85,8 @@ const columns: TableColumn<Employee>[] = [
                     <Badge className="bg-gray-600 text-white">Terminated</Badge>
                 );
             }
+
+            return <Badge>{row.employment_status}</Badge>;
         },
     },
     {
@@ -120,7 +121,7 @@ export default function Employees() {
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ["employees", page, rowsPerPage, search],
-        queryFn: async function () {
+        queryFn: async () => {
             const response = await api.get<
                 ApiResponse<{ total: number; records: Employee[] }>
             >(
@@ -131,38 +132,49 @@ export default function Employees() {
         placeholderData: (previousData) => previousData,
     });
 
-    function handleSort(rows: any, selector: any, direction: any) {}
-
     if (isLoading) {
-        <FullPageLoader />;
+        return <FullPageLoader />;
     }
 
     if (isError) {
+        return (
+            <div className="flex h-64 flex-col items-center justify-center text-red-500">
+                <p>Failed to load employees.</p>
+                <Button
+                    onClick={() => window.location.reload()}
+                    variant="outline"
+                    className="mt-3"
+                >
+                    Retry
+                </Button>
+            </div>
+        );
     }
+
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
             <div className="flex flex-col gap-8">
                 <div>
-                    <h3>Employees</h3>
-                    <span className="text-small text-white/50">
+                    <h3 className="text-lg font-semibold">Employees</h3>
+                    <span className="text-sm text-white/50">
                         List of employees
                     </span>
                 </div>
-                <div className="align-items-center flex gap-4">
-                    <EmployeesFilter />
+                <div className="flex items-center gap-4">
                     <Input
                         type="text"
-                        placeholder="Search record... "
-                        className="max-w-[250px]"
+                        placeholder="Search Employee... "
+                        className="max-w-[250px] p-2"
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
             </div>
+
             <Card>
                 <CardContent>
                     <DataTable
                         columns={columns}
-                        data={data?.data.records as Employee[]}
+                        data={data?.data.records ?? []}
                         pagination
                         paginationServer
                         theme="dark"
@@ -170,7 +182,6 @@ export default function Employees() {
                         progressPending={isLoading}
                         paginationPerPage={rowsPerPage}
                         sortServer
-                        onSort={handleSort}
                         onChangePage={(page) => setPage(page)}
                         onChangeRowsPerPage={(value) => setRowsPerPage(value)}
                         paginationTotalRows={data?.data.total || 0}

@@ -19,8 +19,6 @@ import { useAuthStore } from "@/hooks/use-auth";
 import { Badge } from "./ui/badge";
 import {
     Pagination,
-    PaginationItem,
-    PaginationLink,
     PaginationNext,
     PaginationPrevious,
 } from "./ui/pagination";
@@ -48,12 +46,14 @@ export default function TimeRecords() {
         queryKey: ["me"],
         queryFn: async () => {
             const response =
-                await api.get<ApiResponse<{ id: string }>>(`/api/v2/auth/me`);
+                await api.get<ApiResponse<{ hr_id: string }>>(
+                    `/api/v2/auth/me`,
+                );
             return response.data.data;
         },
     });
 
-    const employeeId = meQuery.data?.id;
+    const employeeId = meQuery.data?.hr_id;
 
     const queryFrom = datesToRender[0]
         ? moment(datesToRender[0]).format("YYYY-MM-DD")

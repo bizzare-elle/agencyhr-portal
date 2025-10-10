@@ -92,20 +92,22 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
     };
 
     return (
-        <Card className="mt-6 p-6 shadow-sm">
-            {/* Header and Date Picker */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Log Override Requests</h2>
-                <div className="flex items-center gap-2">
+        <Card className="mt-6 p-4 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <h2 className="text-lg font-semibold sm:text-xl">
+                    Logoverride Requests
+                </h2>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <label className="text-muted-foreground text-sm">
-                        Select Date Range:
+                        Select Date-range:
                     </label>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
                                 className={cn(
-                                    "w-[260px] justify-start text-left font-normal",
+                                    "w-full justify-start text-left font-normal sm:w-[260px]",
                                     !dateRange?.from && "text-muted-foreground",
                                 )}
                             >
@@ -149,16 +151,17 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                               },
                                     )
                                 }
-                                numberOfMonths={2}
+                                numberOfMonths={1}
                             />
                         </PopoverContent>
                     </Popover>
                 </div>
             </div>
 
+            {/* Date Info & Button */}
             {dateRange?.from && (
-                <div className="mt-2 flex justify-between">
-                    <p className="text-muted-foreground text-sm">
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-muted-foreground text-center text-sm sm:text-left">
                         Showing log overrides for{" "}
                         <span className="font-medium">
                             {format(dateRange.from, "MMM d, yyyy")}
@@ -166,7 +169,7 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                 ` – ${format(dateRange.to, "MMM d, yyyy")}`}
                         </span>
                     </p>
-                    <Button size="sm">
+                    <Button size="sm" className="w-full sm:w-auto">
                         <Link to={`/logoverrides/form/${employeeId}`}>
                             File Logoverride
                         </Link>
@@ -177,197 +180,190 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
             {/* Table */}
             {allLogOverrides.length > 0 ? (
                 <>
-                    <Table className="border-border mt-4 overflow-hidden rounded-md border">
-                        <TableHeader className="bg-muted/50">
-                            <TableRow>
-                                <TableHead className="px-4 py-5 text-left">
-                                    Date
-                                </TableHead>
-                                <TableHead className="px-4 py-5 text-center">
-                                    Clock Type
-                                </TableHead>
-                                <TableHead className="px-4 py-5 text-center">
-                                    Status
-                                </TableHead>
-                                <TableHead className="px-4 py-5 text-center">
-                                    Actions
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {paginatedOverrides.map((log, idx) => (
-                                <TableRow
-                                    key={`${idx}-${log.date_time}`}
-                                    className="hover:bg-primary/5 cursor-pointer transition-colors"
-                                >
-                                    <TableCell className="px-4 py-5 font-medium">
-                                        {format(
-                                            new Date(log.date_time),
-                                            "MMM d, yyyy",
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-5 text-center">
-                                        {log.clock_type}
-                                    </TableCell>
-                                    <TableCell className="px-4 py-5 text-center">
-                                        <Badge
-                                            className={cn(
-                                                log.status === "Approved"
-                                                    ? "bg-green-600 text-white"
-                                                    : log.status ===
-                                                        "For Approval"
-                                                      ? "bg-yellow-600 text-white"
-                                                      : "bg-red-600 text-white",
-                                            )}
-                                        >
-                                            {log.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="px-4 py-5 text-center">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                >
-                                                    View
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-md">
-                                                <Card className="border-none bg-transparent">
-                                                    <CardHeader className="mb-4 text-lg font-semibold">
-                                                        <CardTitle>
-                                                            Logoverride Details
-                                                        </CardTitle>
-                                                        <CardDescription>
-                                                            Details of the
-                                                            logoverride you’ve
-                                                            filed.
-                                                        </CardDescription>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <div className="space-y-4 text-sm">
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Date:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    {format(
-                                                                        new Date(
-                                                                            log.date_time,
-                                                                        ),
-                                                                        "MMM d, yyyy",
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Clock Type:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    {
-                                                                        log.clock_type
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Status:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    <span
-                                                                        className={cn(
-                                                                            log.status ===
-                                                                                "Approved"
-                                                                                ? "text-green-600"
-                                                                                : log.status ===
-                                                                                    "Disapproved"
-                                                                                  ? "text-red-600"
-                                                                                  : "text-yellow-600",
-                                                                        )}
-                                                                    >
-                                                                        {
-                                                                            log.status
-                                                                        }
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Remarks:
-                                                                </Badge>
-                                                                <div className="font-medium capitalize">
-                                                                    {log.remarks ??
-                                                                        "—"}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <Badge>
-                                                                    Date
-                                                                    Created:
-                                                                </Badge>
-                                                                <div className="font-medium">
-                                                                    {format(
-                                                                        new Date(
-                                                                            log.created_at,
-                                                                        ),
-                                                                        "MMM d, yyyy hh:mm a",
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            {log.image ? (
-                                                                <div className="my-4">
-                                                                    <img
-                                                                        src={
-                                                                            log.image
-                                                                        }
-                                                                        alt="Logoverride Reference"
-                                                                        className="max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
-                                                                        onClick={() =>
-                                                                            window.open(
-                                                                                log.image,
-                                                                                "_blank",
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                </div>
-                                                            ) : (
-                                                                <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
-                                                                    No image
-                                                                    attached
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </CardContent>
-                                                    <CardFooter className="flex justify-end pt-2">
-                                                        <DialogClose asChild>
-                                                            <Button variant="secondary">
-                                                                Close
-                                                            </Button>
-                                                        </DialogClose>
-                                                    </CardFooter>
-                                                </Card>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </TableCell>
+                    <div className="mt-4 overflow-x-auto rounded-md border">
+                        <Table className="min-w-[600px]">
+                            <TableHeader className="bg-muted/50">
+                                <TableRow>
+                                    <TableHead className="px-4 py-3 text-left">
+                                        Date
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-center">
+                                        Clock Type
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-center">
+                                        Status
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-center">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedOverrides.map((log, idx) => (
+                                    <TableRow
+                                        key={`${idx}-${log.date_time}`}
+                                        className="hover:bg-primary/5 cursor-pointer transition-colors"
+                                    >
+                                        <TableCell className="px-4 py-3 font-medium">
+                                            {format(
+                                                new Date(log.date_time),
+                                                "MMM d, yyyy",
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            {log.clock_type}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            <Badge
+                                                className={cn(
+                                                    log.status === "Approved"
+                                                        ? "bg-green-600 text-white"
+                                                        : log.status ===
+                                                            "For Approval"
+                                                          ? "bg-yellow-600 text-white"
+                                                          : "bg-red-600 text-white",
+                                                )}
+                                            >
+                                                {log.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                    >
+                                                        View
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="w-[90vw] max-w-md sm:w-auto">
+                                                    <Card className="border-none bg-transparent">
+                                                        <CardHeader className="mb-4 text-lg font-semibold">
+                                                            <CardTitle>
+                                                                Logoverride
+                                                                Details
+                                                            </CardTitle>
+                                                            <CardDescription>
+                                                                Details of the
+                                                                logoverride
+                                                                you’ve filed.
+                                                            </CardDescription>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <div className="space-y-3 text-sm">
+                                                                {[
+                                                                    [
+                                                                        "Date",
+                                                                        format(
+                                                                            new Date(
+                                                                                log.date_time,
+                                                                            ),
+                                                                            "MMM d, yyyy",
+                                                                        ),
+                                                                    ],
+                                                                    [
+                                                                        "Clock Type",
+                                                                        log.clock_type,
+                                                                    ],
+                                                                    [
+                                                                        "Status",
+                                                                        log.status,
+                                                                    ],
+                                                                    [
+                                                                        "Remarks",
+                                                                        log.remarks ??
+                                                                            "—",
+                                                                    ],
+                                                                    [
+                                                                        "Date Created",
+                                                                        format(
+                                                                            new Date(
+                                                                                log.created_at,
+                                                                            ),
+                                                                            "MMM d, yyyy hh:mm a",
+                                                                        ),
+                                                                    ],
+                                                                ].map(
+                                                                    ([
+                                                                        label,
+                                                                        value,
+                                                                    ]) => (
+                                                                        <div
+                                                                            key={
+                                                                                label
+                                                                            }
+                                                                            className="flex justify-between gap-2"
+                                                                        >
+                                                                            <Badge>
+                                                                                {
+                                                                                    label
+                                                                                }
 
-                    {/* ShadCN Pagination */}
-                    <div className="mt-4 flex items-center justify-between">
-                        <div>
-                            <label className="mr-2 text-sm">
-                                Rows per page:
-                            </label>
+                                                                                :
+                                                                            </Badge>
+                                                                            <div className="text-right font-medium break-all">
+                                                                                {
+                                                                                    value
+                                                                                }
+                                                                            </div>
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                                {log.image ? (
+                                                                    <div className="my-4">
+                                                                        <img
+                                                                            src={
+                                                                                log.image
+                                                                            }
+                                                                            alt="Reference"
+                                                                            className="max-h-64 w-full cursor-pointer rounded-lg border object-contain"
+                                                                            onClick={() =>
+                                                                                window.open(
+                                                                                    log.image,
+                                                                                    "_blank",
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
+                                                                        No image
+                                                                        attached
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </CardContent>
+                                                        <CardFooter className="flex justify-end pt-2">
+                                                            <DialogClose
+                                                                asChild
+                                                            >
+                                                                <Button variant="secondary">
+                                                                    Close
+                                                                </Button>
+                                                            </DialogClose>
+                                                        </CardFooter>
+                                                    </Card>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Pagination */}
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center justify-center gap-2 sm:justify-start">
+                            <label className="text-sm">Rows per page:</label>
                             <select
                                 value={pageSize}
                                 onChange={(e) => {
                                     setPageSize(Number(e.target.value));
                                     setCurrentPage(1);
                                 }}
-                                className="rounded border p-1"
+                                className="rounded border p-1 text-sm"
                             >
                                 {[5, 10, 20, 50].map((size) => (
                                     <option key={size} value={size}>
@@ -377,7 +373,7 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                             </select>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-center gap-2 sm:justify-end">
                             <Button
                                 size="sm"
                                 variant="outline"
@@ -406,7 +402,10 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                 <Card className="text-muted-foreground mt-4 p-6 text-center">
                     No log overrides found for the selected date
                     {dateRange.to &&
-                        ` range (${format(dateRange.from, "MMM d, yyyy")} – ${format(dateRange.to, "MMM d, yyyy")})`}
+                        ` range (${format(dateRange.from, "MMM d, yyyy")} – ${format(
+                            dateRange.to,
+                            "MMM d, yyyy",
+                        )})`}
                     {!dateRange.to &&
                         ` (${format(dateRange.from, "MMM d, yyyy")})`}
                 </Card>

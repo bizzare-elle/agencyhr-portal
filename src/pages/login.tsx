@@ -64,12 +64,10 @@ export default function LoginPage() {
 
                     console.log(user);
                     if (user.role == "agency_coordinator") {
-                        navigate(`/employees`);
+                        navigate(`/dashboard/${user.agency_id}`);
                     } else {
                         navigate(`/employees/${user.id}`);
                     }
-                    // navigate(`/overtime/${user.id}`);
-                    // // navigate(`/logoverrides/form/${user.id}`);
                 } else {
                     toast.error("Failed to load user info.");
                 }
@@ -89,15 +87,15 @@ export default function LoginPage() {
 
     return (
         <div
-            className="flex min-h-screen items-center justify-center p-4"
+            className="flex min-h-screen items-center justify-center p-4 sm:p-6 md:p-8"
             style={back}
         >
-            <Card className="bg-background/40 w-full max-w-md shadow-xl">
+            <Card className="bg-background/40 w-full max-w-sm rounded-2xl px-6 py-8 shadow-xl backdrop-blur-md sm:max-w-md sm:px-8 sm:py-10">
                 <CardHeader className="space-y-2 text-center">
-                    <CardTitle className="text-3xl font-bold">
+                    <CardTitle className="text-2xl font-bold sm:text-3xl">
                         Welcome Back
                     </CardTitle>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-muted-foreground text-xs sm:text-sm">
                         Sign in to manage your operations team and agency tasks.
                     </p>
                 </CardHeader>
@@ -106,14 +104,16 @@ export default function LoginPage() {
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(onSubmit)}
-                            className="space-y-6"
+                            className="space-y-5 sm:space-y-6"
                         >
                             <FormField
                                 control={form.control}
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel className="text-sm sm:text-base">
+                                            Email
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 placeholder="you@example.com"
@@ -122,6 +122,7 @@ export default function LoginPage() {
                                                 disabled={
                                                     loginMutation.isPending
                                                 }
+                                                className="text-sm sm:text-base"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -134,7 +135,9 @@ export default function LoginPage() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel className="text-sm sm:text-base">
+                                            Password
+                                        </FormLabel>
                                         <FormControl>
                                             <Input
                                                 placeholder="********"
@@ -143,6 +146,7 @@ export default function LoginPage() {
                                                 disabled={
                                                     loginMutation.isPending
                                                 }
+                                                className="text-sm sm:text-base"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -150,10 +154,10 @@ export default function LoginPage() {
                                 )}
                             />
 
-                            <div className="flex items-center justify-between text-sm">
+                            <div className="flex flex-col items-center justify-between gap-2 text-xs sm:flex-row sm:text-sm">
                                 <a
                                     href="/forgot-password"
-                                    className="hover:underline"
+                                    className="text-center hover:underline sm:text-left"
                                 >
                                     Forgot password?
                                 </a>
@@ -161,7 +165,7 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="w-full"
+                                className="w-full text-sm sm:text-base"
                                 disabled={loginMutation.isPending}
                             >
                                 {loginMutation.isPending

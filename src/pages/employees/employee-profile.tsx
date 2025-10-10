@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import OvertimeRequestsCard from "@/components/employee-overtime";
 import LogoverrideRequests from "@/components/employee-logoverride";
+import EmployeeScheduleCard from "@/components/employee-schedule";
 
 export interface Employee {
     id: number;
@@ -185,19 +186,17 @@ export default function EmployeeProfile() {
         queryKey: ["me"],
         queryFn: async () => {
             const response =
-                await api.get<ApiResponse<{ id: string; role: string }>>(
+                await api.get<ApiResponse<{ hr_id: string; role: string }>>(
                     `/api/v2/auth/me`,
                 );
             return response.data.data;
         },
     });
 
-    // const employeeId = me?.id;
-
     const { id: paramId } = useParams<{ id: string }>();
 
     const employeeId =
-        me?.role === "agency_coordinator" && paramId ? paramId : me?.id;
+        me?.role === "agency_coordinator" && paramId ? paramId : me?.hr_id;
 
     const { data, isLoading, isError } = useQuery<EmployeeResponse>({
         queryKey: ["employeeProfile", employeeId],
@@ -292,18 +291,19 @@ export default function EmployeeProfile() {
     if (!data || !data.info) return <FullPageLoader />;
 
     return (
-        <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
-            <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white shadow-md">
-                <div className="flex items-center gap-4">
+        <div className="mx-auto w-full max-w-[1600px] space-y-8 p-4 sm:p-6">
+            {/* Header Section */}
+            <div className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white shadow-md sm:flex-row sm:justify-between">
+                <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
                         {data!.info.firstname.charAt(0) +
                             data!.info.lastname.charAt(0)}
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-wide">
+                        <h1 className="text-2xl font-bold tracking-wide sm:text-3xl">
                             {data?.info.name}
                         </h1>
-                        <p className="text-sm opacity-90">
+                        <p className="text-xs opacity-90 sm:text-sm">
                             ID: {data?.info.id_number} •{" "}
                             {data?.info.branch_name} • {data?.info.agency_name}
                         </p>
@@ -311,22 +311,39 @@ export default function EmployeeProfile() {
                 </div>
             </div>
 
+            {/* Tabs Section */}
             <Tabs defaultValue="data" className="w-full">
-                <TabsList className="border-muted-foreground/20 mb-4 justify-start space-x-2 border-b">
-                    <TabsTrigger value="data">Profile</TabsTrigger>
-                    <TabsTrigger value="logs">Time Logs</TabsTrigger>
-                    <TabsTrigger value="schedule">Schedule</TabsTrigger>
-                    <TabsTrigger value="logOverride">Log Override</TabsTrigger>
-                    <TabsTrigger value="overtime">Overtime</TabsTrigger>
+                <TabsList className="border-muted-foreground/20 mb-4 flex flex-nowrap justify-start gap-2 overflow-x-auto border-b">
+                    <TabsTrigger value="data" className="whitespace-nowrap">
+                        Profile
+                    </TabsTrigger>
+                    <TabsTrigger value="logs" className="whitespace-nowrap">
+                        Time Logs
+                    </TabsTrigger>
+                    <TabsTrigger value="schedule" className="whitespace-nowrap">
+                        Schedule
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="logOverride"
+                        className="whitespace-nowrap"
+                    >
+                        Log Override
+                    </TabsTrigger>
+                    <TabsTrigger value="overtime" className="whitespace-nowrap">
+                        Overtime
+                    </TabsTrigger>
                 </TabsList>
+
+                {/* Profile Tab */}
                 <TabsContent value="data" className="space-y-10">
                     <section>
-                        <h2 className="mb-4 text-xl font-semibold">
+                        <h2 className="mb-4 text-lg font-semibold sm:text-xl">
                             Personal & Company
                         </h2>
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {/* Personal */}
-                            <Card className="p-6 shadow-sm">
+
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                            {/* Personal Info */}
+                            <Card className="p-4 shadow-sm sm:p-6">
                                 <Badge className="mb-3">Personal</Badge>
                                 <InfoRow
                                     label="Birth Date"
@@ -363,10 +380,11 @@ export default function EmployeeProfile() {
                                 />
                             </Card>
 
-                            <Card className="p-6 shadow-sm">
+                            {/* Company Info */}
+                            <Card className="p-4 shadow-sm sm:p-6">
                                 <Badge className="mb-3">Company</Badge>
                                 <InfoRow
-                                    label="Agency Name"
+                                    label="Agency"
                                     value={data?.info.agency_name}
                                 />
                                 <InfoRow
@@ -423,46 +441,16 @@ export default function EmployeeProfile() {
                                     }
                                 />
                             </Card>
-
-                            <Card className="p-6 shadow-sm">
-                                <Badge className="mb-3">Salary</Badge>
-                                <InfoRow
-                                    label="Pay Divisor"
-                                    value={data?.info.pay_divisor}
-                                />
-                                <InfoRow
-                                    label="Basic Salary"
-                                    value={formatToPeso(data!.info.salary_rate)}
-                                />
-                                <InfoRow
-                                    label="Daily Rate"
-                                    value={formatToPeso(data!.info.daily_rate)}
-                                />
-                                <InfoRow
-                                    label="Hourly Rate"
-                                    value={formatToPeso(data!.info.hourly_rate)}
-                                />
-                                <InfoRow
-                                    label="Billing Rate"
-                                    value={
-                                        data!.info.billing_rate
-                                            ? formatToPeso(
-                                                  data!.info.billing_rate,
-                                              )
-                                            : "N/A"
-                                    }
-                                />
-                            </Card>
                         </div>
                     </section>
 
                     {/* Contacts & IDs */}
                     <section>
-                        <h2 className="mb-4 text-xl font-semibold">
+                        <h2 className="mb-4 text-lg font-semibold sm:text-xl">
                             Contacts & IDs
                         </h2>
-                        <div className="grid gap-6 md:grid-cols-2">
-                            <Card className="p-6 shadow-sm">
+                        <div className="grid gap-6 sm:grid-cols-2">
+                            <Card className="p-4 shadow-sm sm:p-6">
                                 <Badge className="mb-3">Emergency</Badge>
                                 <InfoRow
                                     label="Contact Name"
@@ -482,7 +470,7 @@ export default function EmployeeProfile() {
                                 />
                             </Card>
 
-                            <Card className="p-6 shadow-sm">
+                            <Card className="p-4 shadow-sm sm:p-6">
                                 <Badge className="mb-3">Government IDs</Badge>
                                 <InfoRow
                                     label="TIN"
@@ -510,52 +498,11 @@ export default function EmployeeProfile() {
                             </Card>
                         </div>
                     </section>
-
-                    {/* Transfer Logs */}
-                    <section>
-                        <h2 className="mb-4 text-xl font-semibold">
-                            Transfer Logs
-                        </h2>
-                        <Card className="relative p-6 shadow-sm">
-                            <CardHeader className="flex flex-row items-center justify-between p-0 pb-4">
-                                <CardTitle className="text-lg font-medium">
-                                    History
-                                </CardTitle>
-                                <button className="rounded bg-purple-600 px-3 py-1 text-sm text-white hover:bg-purple-700">
-                                    Transfer Timeline
-                                </button>
-                            </CardHeader>
-                            <CardContent>
-                                {transferLogs.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center rounded border border-purple-300 bg-purple-50 py-6 text-purple-700">
-                                        <ClipboardList className="mb-2 h-6 w-6 text-purple-500" />
-                                        <p className="text-sm">
-                                            No transfer logs available.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <ul className="divide-y divide-gray-200">
-                                        {transferLogs.map((log) => (
-                                            <li key={log.id} className="py-3">
-                                                <p className="font-medium">
-                                                    {log.description}
-                                                </p>
-                                                <p className="text-sm text-gray-500">
-                                                    {log.date}
-                                                </p>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </section>
                 </TabsContent>
 
-                {/* Time Logs */}
                 <TabsContent value="logs">
-                    <Card className="mt-6 p-6 shadow-sm">
-                        <h2 className="mb-4 text-xl font-semibold">
+                    <Card className="mt-6 p-4 shadow-sm sm:p-6">
+                        <h2 className="mb-4 text-lg font-semibold sm:text-xl">
                             Recent Time Logs
                         </h2>
                         <TimeLogsTable employeeId={data!.info.id} />
@@ -563,162 +510,13 @@ export default function EmployeeProfile() {
                 </TabsContent>
 
                 <TabsContent value="schedule">
-                    <Card className="mt-6 space-y-4 p-6 shadow-sm">
-                        {/* Header + Date Picker */}
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <h2 className="text-xl font-semibold">
-                                Employee Schedule
-                            </h2>
-
-                            {/* Date Range Picker */}
-                            <div className="flex items-center gap-2">
-                                <label className="text-muted-foreground text-sm">
-                                    Select Cut-off
-                                </label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={cn(
-                                                "w-[260px] justify-start text-left font-normal",
-                                                "rounded-md border px-3 py-2",
-                                                "hover:bg-muted/50",
-                                                !dateRange &&
-                                                    "text-muted-foreground",
-                                            )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {dateRange?.from ? (
-                                                dateRange.to ? (
-                                                    <>
-                                                        {format(
-                                                            dateRange.from,
-                                                            "MMM d, yyyy",
-                                                        )}{" "}
-                                                        –{" "}
-                                                        {format(
-                                                            dateRange.to,
-                                                            "MMM d, yyyy",
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    format(
-                                                        dateRange.from,
-                                                        "MMM d, yyyy",
-                                                    )
-                                                )
-                                            ) : (
-                                                <span>Pick a date range</span>
-                                            )}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent
-                                        className="w-auto p-0"
-                                        align="start"
-                                    >
-                                        <Calendar
-                                            initialFocus
-                                            mode="range"
-                                            selected={dateRange}
-                                            onSelect={(range) => {
-                                                if (range?.from) {
-                                                    setDateRange({
-                                                        from: range.from,
-                                                        to:
-                                                            range.to ??
-                                                            range.from,
-                                                    });
-                                                } else {
-                                                    setDateRange({
-                                                        from: undefined,
-                                                        to: undefined,
-                                                    });
-                                                }
-                                            }}
-                                            numberOfMonths={2}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                        </div>
-
-                        {dateRange?.from && (
-                            <p className="text-muted-foreground text-sm">
-                                Showing schedule for{" "}
-                                <span className="font-medium">
-                                    {format(dateRange.from, "MMM d, yyyy")}
-                                    {dateRange.to &&
-                                        ` – ${format(dateRange.to, "MMM d, yyyy")}`}
-                                </span>
-                            </p>
-                        )}
-
-                        <div className="grid grid-cols-7 gap-2 text-left text-xs">
-                            {days.map((day, i) => {
-                                const daySchedules = filteredSchedules?.filter(
-                                    (s) =>
-                                        format(
-                                            new Date(s.date),
-                                            "yyyy-MM-dd",
-                                        ) === format(day, "yyyy-MM-dd"),
-                                );
-
-                                const isToday =
-                                    format(day, "yyyy-MM-dd") ===
-                                    format(new Date(), "yyyy-MM-dd");
-
-                                return (
-                                    <div
-                                        key={i}
-                                        className={`min-h-[100px] rounded-md border p-2 transition ${
-                                            isToday
-                                                ? "bg-primary/10 border-primary"
-                                                : "bg-background hover:bg-muted/50"
-                                        }`}
-                                    >
-                                        <div className="mb-1 text-[11px] font-semibold">
-                                            {format(day, "d")} -{" "}
-                                            {format(day, "EEE")}
-                                        </div>
-
-                                        {daySchedules &&
-                                        daySchedules.length > 0 ? (
-                                            <ul className="space-y-1">
-                                                {daySchedules.map((s, idx) => (
-                                                    <li
-                                                        key={idx}
-                                                        className="truncate rounded px-1 py-1 text-[11px] leading-tight"
-                                                    >
-                                                        {s.schedule_name ===
-                                                        "NO SCHEDULE" ? (
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="bg-blue-500 text-white"
-                                                            >
-                                                                {
-                                                                    s.schedule_name
-                                                                }
-                                                            </Badge>
-                                                        ) : (
-                                                            <Badge>
-                                                                {
-                                                                    s.schedule_name
-                                                                }
-                                                            </Badge>
-                                                        )}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <div className="text-muted-foreground text-[10px]">
-                                                —
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </Card>
+                    <EmployeeScheduleCard
+                        days={days}
+                        filteredSchedules={filteredSchedules}
+                        dateRange={dateRange}
+                        employeeId={employeeId}
+                        setDateRange={setDateRange}
+                    />
                 </TabsContent>
 
                 <TabsContent value="logOverride">

@@ -78,12 +78,14 @@ export default function OvertimeDashboard() {
         queryKey: ["me"],
         queryFn: async () => {
             const response =
-                await api.get<ApiResponse<{ id: string }>>(`/api/v2/auth/me`);
+                await api.get<ApiResponse<{ hr_id: string }>>(
+                    `/api/v2/auth/me`,
+                );
             return response.data.data;
         },
     });
 
-    const employeeId = meQuery.data?.id;
+    const employeeId = meQuery.data?.hr_id;
 
     const overtimeQuery = useQuery<OvertimeResponse>({
         queryKey: ["overtimeDashboard", employeeId],
@@ -113,6 +115,16 @@ export default function OvertimeDashboard() {
             </ParentComponent>
         );
 
+    if (!employeeId) {
+        return (
+            <ParentComponent>
+                <Card className="text-center font-bold text-red-500">
+                    You don't have permission to access this page.
+                </Card>
+            </ParentComponent>
+        );
+    }
+
     const data = overtimeQuery.data;
 
     return (
@@ -127,37 +139,40 @@ export default function OvertimeDashboard() {
                 </div>
             ) : (
                 <>
-                    {/* Employee Info Card */}
                     <div className="mb-4 w-full">
-                        <Card className="flex flex-col items-center justify-between gap-4 px-5 py-6 md:flex-row md:gap-0">
-                            <div className="flex items-center gap-4">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
+                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white shadow-md sm:flex-row sm:justify-between">
+                            <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
+                                {/* Avatar */}
+                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
                                     {data?.info[0].employee_name.charAt(0)}
                                 </div>
-                                <div>
-                                    <div className="flex flex-col md:flex-row md:items-center md:gap-3">
-                                        <h1 className="text-xl font-bold tracking-wide md:text-2xl">
+
+                                <div className="mt-2 sm:mt-0">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                        <h1 className="text-lg font-bold tracking-wide sm:text-xl md:text-2xl">
                                             {data?.info[0].employee_name}
                                         </h1>
-                                        <Badge className="mt-1 md:mt-0">
+                                        <Badge className="mt-1 sm:mt-0 sm:text-sm md:text-base">
                                             {data?.employees[0]?.agency_id}
                                         </Badge>
                                     </div>
-                                    <p className="text-sm opacity-90">
+                                    <p className="mt-1 text-sm opacity-90">
                                         ID: {data?.info[0].employee_id} •{" "}
                                         {data?.employees[0]?.branch_id}
                                     </p>
                                 </div>
                             </div>
-                            <div>
+
+                            <div className="w-full sm:w-auto">
                                 <Link to={`/overtime/form/${employeeId}`}>
-                                    <Button>File Overtime</Button>
+                                    <Button className="w-full sm:w-auto">
+                                        File Overtime
+                                    </Button>
                                 </Link>
                             </div>
                         </Card>
                     </div>
 
-                    {/* Summary Cards */}
                     <div className="mb-4 flex flex-col gap-4 md:flex-row">
                         <Card className="w-full md:w-1/3">
                             <CardHeader>
@@ -184,7 +199,7 @@ export default function OvertimeDashboard() {
                                 <div className="text-2xl font-bold">
                                     {
                                         data?.info.filter(
-                                            (item) => item.status === "2",
+                                            (item) => item.status == "1",
                                         ).length
                                     }
                                 </div>
@@ -202,7 +217,7 @@ export default function OvertimeDashboard() {
                                 <div className="text-2xl font-bold">
                                     {
                                         data?.info.filter(
-                                            (item) => item.status !== "2",
+                                            (item) => item.status !== "1",
                                         ).length
                                     }
                                 </div>

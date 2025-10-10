@@ -1,0 +1,6 @@
+- Remove Salary from Employee Profile -- done
+- Use Consolidated time records for the time records 
+- Add schedule request
+- Add "Consolidate" Button to time records (connected to the atlas consolidate function)
+- Create a print time records for each employee for the agency coordinator
+

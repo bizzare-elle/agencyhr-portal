@@ -16,9 +16,29 @@ import OvertimeForm from "./pages/overtimes/overtime-form";
 import api from "./lib/axios";
 import FullPageLoader from "./components/page-loader";
 import { useAuthStore } from "./hooks/use-auth";
+import AgencyDashboard from "./pages/agency_dashboard";
+import ScheduleForm from "./pages/schedules/schedule-form";
+import ScheduleDashboard from "./pages/schedules/schedule-dashboard";
+import { ParentComponent } from "./components/parent-container";
+import { Card } from "./components/ui/card";
 
 export default function App() {
     const router = createBrowserRouter([
+        {
+            path: "*",
+            element: (
+                <ParentComponent>
+                    <div className="flex h-full w-full flex-col text-center">
+                        <span className="text-[100px] font-bold text-red-400">
+                            404
+                        </span>
+                        <span className="text-white-400 text-[20px] font-medium">
+                            Oh no! This page doesn't exist :((
+                        </span>
+                    </div>
+                </ParentComponent>
+            ),
+        },
         {
             path: "/login",
             element: <Login />,
@@ -44,7 +64,12 @@ export default function App() {
                 {
                     path: "/:id",
                     element: <Dashboard />,
-                    handle: { title: "Dashboard" },
+                    handle: { title: "Employee List" },
+                },
+                {
+                    path: "/dashboard/:agency_id",
+                    element: <AgencyDashboard />,
+                    handle: { title: "Agency Dashboard" },
                 },
                 {
                     path: "/employees",
@@ -93,6 +118,21 @@ export default function App() {
                             path: "form/:id",
                             element: <OvertimeForm />,
                             handle: { title: "Overtime Form" },
+                        },
+                    ],
+                },
+                {
+                    path: "/schedules",
+                    children: [
+                        {
+                            path: ":id",
+                            element: <ScheduleDashboard />,
+                            handle: { title: "Schedule Dashboard" },
+                        },
+                        {
+                            path: "form/:id",
+                            element: <ScheduleForm />,
+                            handle: { title: "Schedule Form" },
                         },
                     ],
                 },

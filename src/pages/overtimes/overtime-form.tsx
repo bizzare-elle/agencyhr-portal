@@ -30,6 +30,7 @@ import {
     CardFooter,
 } from "@/components/ui/card";
 import { useAuthStore } from "@/hooks/use-auth";
+import { ParentComponent } from "@/components/parent-container";
 
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -70,6 +71,7 @@ function calculateOtHours(start: string, end: string): string {
 
 export default function OvertimeForm() {
     const navigate = useNavigate();
+    const { setToken } = useAuthStore.getState();
     const [open, setOpen] = React.useState(false);
 
     const form = useForm<FormValues>({
@@ -96,7 +98,7 @@ export default function OvertimeForm() {
         form.setValue("totalOt", totalOt);
     }, [totalOt, form]);
 
-    const employeeId = me?.id;
+    const employeeId = me?.hr_id;
 
     const overtimeMutation = useMutation({
         mutationFn: async (formValues: FormValues) => {
@@ -145,6 +147,16 @@ export default function OvertimeForm() {
                 );
             },
         });
+    }
+
+    if (!employeeId) {
+        return (
+            <ParentComponent>
+                <Card className="text-center font-bold text-red-500">
+                    You don't have permission to access this page.
+                </Card>
+            </ParentComponent>
+        );
     }
 
     return (

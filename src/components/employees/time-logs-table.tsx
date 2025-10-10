@@ -20,7 +20,6 @@ import {
     DialogClose,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
-import { Image } from "lucide-react";
 
 export interface TimeLog {
     id: string;

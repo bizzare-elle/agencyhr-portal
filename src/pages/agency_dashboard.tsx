@@ -27,6 +27,7 @@ export interface DashboardResponse {
     total_employees: number;
     pending_logoverrides: number;
     pending_overtime: number;
+    pending_schedules: number;
     employee_chart: {
         month: string;
         regular: number;
@@ -43,7 +44,7 @@ export interface DashboardResponse {
 }
 
 export default function AgencyDashboard() {
-    const { token } = useAuthStore(); // Removed unused setToken
+    const { token } = useAuthStore();
 
     const meQuery = useQuery({
         queryKey: ["me"],
@@ -83,7 +84,6 @@ export default function AgencyDashboard() {
 
     const data = dashboardQuery.data;
 
-    // Tooltip formatter with capitalized first letter
     const tooltipFormatter = (value: any, name: any) => [
         value,
         String(name).charAt(0).toUpperCase() +
@@ -105,7 +105,7 @@ export default function AgencyDashboard() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
                     <Card className="bg-[#1f1f1f] text-white">
                         <CardHeader>
                             <CardTitle>Total Employees</CardTitle>
@@ -144,6 +144,20 @@ export default function AgencyDashboard() {
                         <CardContent>
                             <div className="text-4xl font-bold text-blue-400">
                                 {data?.pending_overtime ?? 0}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-[#1f1f1f] text-white">
+                        <CardHeader>
+                            <CardTitle>Pending Schedule Request</CardTitle>
+                            <CardDescription className="text-gray-400">
+                                Awaiting approval
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-4xl font-bold text-yellow-400">
+                                {data?.pending_schedules ?? 0}
                             </div>
                         </CardContent>
                     </Card>

@@ -28,7 +28,7 @@ export function DatePickerField<T extends FieldValues>({
 
     return (
         <Controller
-            name={name}
+            name={name as string}
             control={control}
             render={({ field }) => (
                 <div className="flex flex-col gap-3">

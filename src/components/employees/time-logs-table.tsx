@@ -20,6 +20,7 @@ import {
     DialogClose,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
+import FullPageLoader from "../page-loader";
 
 export interface TimeLog {
     id: string;
@@ -81,22 +82,43 @@ const columns: TableColumn<TimeLog>[] = [
         name: "Image",
         cell: (row) => {
             let imageSrc = "";
+            const cutoffDate = new Date("2025-06-01T00:00:00");
+            const recordDate = new Date(row.date_time);
 
+            const appName =
+                recordDate >= cutoffDate
+                    ? "WFPhonetrics-373955958"
+                    : "AtlasAgencyTimeTrackerv2-373955958";
+            const tableName =
+                recordDate >= cutoffDate ? "Sheet1" : "hr_time_tracker";
             if (row.image && row.image.startsWith("http")) {
                 imageSrc = row.image;
+            } else if (row.image && row.image.includes("Sheet1_Images")) {
+                const encodedImage = encodeURIComponent(row.image).replace(
+                    /%2F/g,
+                    "/",
+                );
+                imageSrc = `http://localhost/backoffice/${encodedImage}`;
             } else if (row.image) {
-                const cutoffDate = new Date("2025-06-01T00:00:00");
-                const recordDate = new Date(row.date_time);
+                const cleanFileName = row.image.replace(/^.*[\\/]/, "");
 
-                if (recordDate >= cutoffDate) {
-                    imageSrc =
-                        "https://www.appsheet.com/template/getappfileurl?appName=WFPhonetrics-373955958&tableName=Sheet1&fileName=" +
-                        row.image;
+                const primaryAppSheet = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${row.image}`;
+
+                const secondaryAppSheet = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${row.image}`;
+
+                if (
+                    row.image.includes("AppBackup") ||
+                    row.image.includes("ImagesBackup")
+                ) {
+                    imageSrc = secondaryAppSheet;
                 } else {
-                    imageSrc =
-                        "https://www.appsheet.com/template/getappfileurl?appName=AtlasAgencyTimeTrackerv2-373955958&tableName=hr_time_tracker&fileName=" +
-                        row.image;
+                    imageSrc = primaryAppSheet;
                 }
+            }
+
+            // Warn if no image could be resolved
+            if (!imageSrc) {
+                console.warn("Missing image for record:", row);
             }
 
             return (
@@ -106,6 +128,15 @@ const columns: TableColumn<TimeLog>[] = [
                             className="max-h-[50px]"
                             src={imageSrc}
                             alt="N/A"
+                            onError={(e) => {
+                                const target =
+                                    e.currentTarget as HTMLImageElement;
+                                const cleanFileName = row.image?.replace(
+                                    /^.*[\\/]/,
+                                    "",
+                                );
+                                target.src = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
+                            }}
                         />
                     </DialogTrigger>
                     <DialogContent>
@@ -120,6 +151,15 @@ const columns: TableColumn<TimeLog>[] = [
                                 className="max-h-[400px]"
                                 src={imageSrc}
                                 alt="Time Log"
+                                onError={(e) => {
+                                    const target =
+                                        e.currentTarget as HTMLImageElement;
+                                    const cleanFileName = row.image?.replace(
+                                        /^.*[\\/]/,
+                                        "",
+                                    );
+                                    target.src = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
+                                }}
                             />
                         </div>
                         <DialogFooter className="mt-4">
@@ -132,7 +172,6 @@ const columns: TableColumn<TimeLog>[] = [
             );
         },
     },
-
     {
         name: "Status",
         cell: () => <Badge className="bg-green-600 text-white">Approved</Badge>,
@@ -141,7 +180,7 @@ const columns: TableColumn<TimeLog>[] = [
 
 export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
     const [page, setPage] = useState<number>(1);
-    const [rowsPerPage, setRowsPerPage] = useState<number>(25);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(15);
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ["employee-time-logs", employeeId, page, rowsPerPage],
@@ -156,6 +195,10 @@ export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
         },
         placeholderData: (previousData) => previousData,
     });
+
+    if (isLoading) {
+        return <FullPageLoader />;
+    }
 
     return (
         <DataTable

@@ -8,6 +8,7 @@ import {
     CardTitle,
     CardContent,
     CardFooter,
+    CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
+import { DateRange } from "react-day-picker";
 
 interface OvertimeRequestsCardProps {
     employeeId: number | string;
@@ -84,90 +86,104 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
     return (
         <Card className="mt-6 p-4 shadow-sm sm:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-lg font-semibold sm:text-xl">
-                    Overtime Requests
-                </h2>
+                <CardHeader className="w-full p-0">
+                    <CardTitle>Employee Overtime</CardTitle>
+                    <CardDescription>
+                        {" "}
+                        List of overtime you applied and registered to the
+                        system.
+                    </CardDescription>
+                </CardHeader>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label className="text-muted-foreground text-sm">
-                        Select Date-range:
-                    </label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                    "w-full justify-start text-left font-normal sm:w-[260px]",
-                                    !dateRange?.from && "text-muted-foreground",
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (
-                                    dateRange.to ? (
-                                        <>
-                                            {format(
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                        <span className="text-muted-foreground mb-1 text-sm sm:mb-0">
+                            Select Date Range:
+                        </span>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal sm:w-[260px]",
+                                        !dateRange?.from &&
+                                            "text-muted-foreground",
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(
+                                                    dateRange.from,
+                                                    "MMM d, yyyy",
+                                                )}{" "}
+                                                –{" "}
+                                                {format(
+                                                    dateRange.to,
+                                                    "MMM d, yyyy",
+                                                )}
+                                            </>
+                                        ) : (
+                                            format(
                                                 dateRange.from,
                                                 "MMM d, yyyy",
-                                            )}{" "}
-                                            –{" "}
-                                            {format(
-                                                dateRange.to,
-                                                "MMM d, yyyy",
-                                            )}
-                                        </>
+                                            )
+                                        )
                                     ) : (
-                                        format(dateRange.from, "MMM d, yyyy")
-                                    )
-                                ) : (
-                                    <span>Pick a date range</span>
-                                )}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                initialFocus
-                                mode="range"
-                                selected={dateRange}
-                                onSelect={(range) =>
-                                    setDateRange(
-                                        range?.from
-                                            ? {
-                                                  from: range.from,
-                                                  to: range.to ?? range.from,
-                                              }
-                                            : {
-                                                  from: undefined,
-                                                  to: undefined,
-                                              },
-                                    )
-                                }
-                                numberOfMonths={1}
-                            />
-                        </PopoverContent>
-                    </Popover>
+                                        <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
+                                <Calendar
+                                    mode="range"
+                                    selected={dateRange as DateRange}
+                                    onSelect={(range) =>
+                                        setDateRange(
+                                            range?.from
+                                                ? {
+                                                      from: range.from,
+                                                      to:
+                                                          range.to ??
+                                                          range.from,
+                                                  }
+                                                : {
+                                                      from: undefined,
+                                                      to: undefined,
+                                                  },
+                                        )
+                                    }
+                                    numberOfMonths={1}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </div>
             </div>
 
-            {/* Selected range info */}
-            {dateRange?.from && (
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-muted-foreground text-center text-sm sm:text-left">
-                        Showing overtime requests for{" "}
-                        <span className="font-medium">
-                            {format(dateRange.from, "MMM d, yyyy")}
-                            {dateRange.to &&
-                                ` – ${format(dateRange.to, "MMM d, yyyy")}`}
-                        </span>
-                    </p>
-                    <Button asChild className="w-full sm:w-auto">
-                        <Link to={`/overtime/form/${employeeId}`}>
-                            File Overtime
-                        </Link>
-                    </Button>
-                </div>
-            )}
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-muted-foreground text-center text-sm sm:text-left">
+                    Showing overtime requests for{" "}
+                    <span className="font-bold text-white">
+                        {dateRange.from
+                            ? format(dateRange.from, "MMMM d, yyyy - ")
+                            : "This cut-off"}
+                        {dateRange.to
+                            ? format(dateRange.to, "MMMM d, yyyy")
+                            : "."}
+                    </span>
+                </p>
+                <Button asChild className="w-full sm:w-auto">
+                    <Link to={`/overtime/form/${employeeId}`}>
+                        File Overtime
+                    </Link>
+                </Button>
+            </div>
 
-            {/* Table */}
             {filteredData.length > 0 ? (
                 <>
                     <div className="mt-4 overflow-x-auto rounded-md border">
@@ -404,9 +420,11 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
             ) : (
                 <Card className="text-muted-foreground mt-4 p-6 text-center">
                     No overtime requests found for the selected date
-                    {dateRange.to &&
+                    {dateRange.from &&
+                        dateRange.to &&
                         ` range (${format(dateRange.from, "MMM d, yyyy")} – ${format(dateRange.to, "MMM d, yyyy")})`}
-                    {!dateRange.to &&
+                    {dateRange.from &&
+                        dateRange.to &&
                         ` (${format(dateRange.from, "MMM d, yyyy")})`}
                 </Card>
             )}

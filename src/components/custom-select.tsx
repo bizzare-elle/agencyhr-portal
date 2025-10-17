@@ -34,16 +34,17 @@ export default function CustomSelect({
 }: CustomSelectProps) {
     const [search, setSearch] = useState("");
 
-    const { data, isLoading, isError, error } = useQuery({
+    const { data, isLoading, isError, error } = useQuery<Option[]>({
         queryKey: ["custom-select", apiUrl],
         queryFn: async () => {
             const res = await api.get(apiUrl);
             return res.data?.data || res.data;
         },
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
-    const options: Option[] = data ?? [];
-
+    const options = data ?? [];
     const filteredOptions = useMemo(() => {
         if (!search) return options;
         return options.filter((item) =>

@@ -11,7 +11,7 @@ import {
     CardDescription,
     CardFooter,
 } from "@/components/ui/card";
-import { ApiResponse } from "@/index";
+import { ApiResponse, Logoverride, Employee } from "@/index";
 import { formatToDateTime } from "@/helpers/formatDates";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/hooks/use-auth";
@@ -32,26 +32,6 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-
-export interface Logoverride {
-    id: string;
-    employee_id: string;
-    employee_name: string;
-    clock_type: string;
-    date_time: string;
-    remarks: string;
-    status: string;
-    image: string;
-    created_at: string;
-}
-
-export interface Employee {
-    id: string;
-    firstname: string;
-    lastname: string;
-    agency_id: string | null;
-    branch_id: string | null;
-}
 
 export interface LogoverrideResponse {
     info: Logoverride[];
@@ -120,15 +100,25 @@ export default function LogoverrideDashboard() {
     return (
         <ParentComponent>
             {data?.info.length === 0 ? (
-                <Card>
-                    <span className="block py-8 text-center text-2xl font-bold">
-                        No log overrides found.
-                    </span>
-                </Card>
+                <div className="w-full">
+                    <Card className="py-10">
+                        <div className="flex flex-col space-y-4 text-center">
+                            <span className="text-2xl font-bold">
+                                No filed logoverride found.
+                            </span>
+                            <Link to={`/logoverrides/form/${employeeId}`}>
+                                <Button className="w-full sm:w-auto">
+                                    File Logoverride
+                                </Button>
+                            </Link>
+                        </div>
+                    </Card>
+                </div>
             ) : (
                 <>
+                    {" "}
                     <div className="mb-4 w-full">
-                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white shadow-md sm:flex-row sm:justify-between">
+                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-6 text-white shadow-md sm:flex-row sm:justify-between">
                             {/* Left side: profile info */}
                             <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
                                 {/* Avatar */}
@@ -163,7 +153,6 @@ export default function LogoverrideDashboard() {
                             </div>
                         </Card>
                     </div>
-
                     <div className="mb-4 flex flex-col gap-4 sm:flex-row">
                         <Card className="flex-1">
                             <CardHeader>
@@ -215,8 +204,6 @@ export default function LogoverrideDashboard() {
                             </CardContent>
                         </Card>
                     </div>
-
-                    {/* Recent Activities */}
                     <div className="w-full">
                         {data?.recent_file.length === 0 ? (
                             <Card>
@@ -375,30 +362,118 @@ export default function LogoverrideDashboard() {
                                                                                 )}
                                                                             </span>
                                                                         </div>
+                                                                        {(() => {
+                                                                            if (
+                                                                                !r.image
+                                                                            ) {
+                                                                                return (
+                                                                                    <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
+                                                                                        No
+                                                                                        image
+                                                                                        attached
+                                                                                    </div>
+                                                                                );
+                                                                            }
 
-                                                                        {r.image ? (
-                                                                            <div className="my-4">
-                                                                                <img
-                                                                                    src={
-                                                                                        r.image
-                                                                                    }
-                                                                                    alt="Logoverride Reference"
-                                                                                    className="max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
-                                                                                    onClick={() =>
-                                                                                        window.open(
-                                                                                            r.image,
-                                                                                            "_blank",
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
-                                                                                No
-                                                                                image
-                                                                                attached
-                                                                            </div>
-                                                                        )}
+                                                                            // --- Determine which AppSheet app/table to use based on date (optional)
+                                                                            const cutoffDate =
+                                                                                new Date(
+                                                                                    "2025-06-01T00:00:00",
+                                                                                );
+                                                                            const recordDate =
+                                                                                r.date_time
+                                                                                    ? new Date(
+                                                                                          r.date_time,
+                                                                                      )
+                                                                                    : cutoffDate;
+                                                                            const appName =
+                                                                                recordDate >=
+                                                                                cutoffDate
+                                                                                    ? "WFPhonetrics-373955958"
+                                                                                    : "AtlasAgencyTimeTrackerv2-373955958";
+                                                                            const tableName =
+                                                                                recordDate >=
+                                                                                cutoffDate
+                                                                                    ? "Sheet1"
+                                                                                    : "hr_time_tracker";
+
+                                                                            // --- Build the base image URL
+                                                                            let imageSrc =
+                                                                                "";
+                                                                            if (
+                                                                                r.image &&
+                                                                                r.image.startsWith(
+                                                                                    "http",
+                                                                                )
+                                                                            ) {
+                                                                                // Direct URL (could be AppSheet or your backend)
+                                                                                imageSrc =
+                                                                                    r.image;
+                                                                            } else if (
+                                                                                r.image &&
+                                                                                r.image.includes(
+                                                                                    "Sheet1_Images",
+                                                                                )
+                                                                            ) {
+                                                                                // Local CodeIgniter-hosted file
+                                                                                const encodedImage =
+                                                                                    encodeURIComponent(
+                                                                                        r.image,
+                                                                                    ).replace(
+                                                                                        /%2F/g,
+                                                                                        "/",
+                                                                                    );
+                                                                                imageSrc = `http://localhost/backoffice/${encodedImage}`;
+                                                                            } else if (
+                                                                                r.image
+                                                                            ) {
+                                                                                // AppSheet-hosted file
+                                                                                const cleanFileName =
+                                                                                    r.image.replace(
+                                                                                        /^.*[\\/]/,
+                                                                                        "",
+                                                                                    );
+                                                                                imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${cleanFileName}`;
+                                                                            }
+
+                                                                            // --- Fallback URLs (if local/AppSheet image fails)
+                                                                            const cleanFileName =
+                                                                                r.image.replace(
+                                                                                    /^.*[\\/]/,
+                                                                                    "",
+                                                                                );
+                                                                            const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
+
+                                                                            return (
+                                                                                <div className="my-4">
+                                                                                    <img
+                                                                                        src={
+                                                                                            imageSrc
+                                                                                        }
+                                                                                        alt="Logoverride Reference"
+                                                                                        className="max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
+                                                                                        onClick={() =>
+                                                                                            window.open(
+                                                                                                imageSrc,
+                                                                                                "_blank",
+                                                                                            )
+                                                                                        }
+                                                                                        onError={(
+                                                                                            e,
+                                                                                        ) => {
+                                                                                            const target =
+                                                                                                e.currentTarget as HTMLImageElement;
+                                                                                            console.warn(
+                                                                                                "Primary image failed, using backup:",
+                                                                                                backupUrl,
+                                                                                            );
+                                                                                            target.src =
+                                                                                                backupUrl;
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
+                                                                            );
+                                                                        })()}
                                                                     </CardContent>
 
                                                                     <CardFooter className="flex justify-end pt-2">

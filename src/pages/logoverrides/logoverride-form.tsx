@@ -40,9 +40,7 @@ import { useAuthStore } from "@/hooks/use-auth";
 import { ParentComponent } from "@/components/parent-container";
 
 const schema = z.object({
-    clockType: z.enum(["Clock-In", "Clock-Out", "Break-In", "Break-Out"], {
-        required_error: "Please select a clock type",
-    }),
+    clockType: z.string().min(1, "Enter clock type"),
     dateTime: z.string().min(1, "Enter date and time"),
     remarks: z.string().min(1, "Enter remarks"),
     imageReference: z
@@ -217,9 +215,6 @@ export default function LogoverrideForm() {
                                                 <ImageUploader
                                                     name={field.name}
                                                     control={form.control}
-                                                    onChange={(image: any) =>
-                                                        field.onChange(image)
-                                                    }
                                                     label="Upload an Image"
                                                 />
                                             </FormControl>

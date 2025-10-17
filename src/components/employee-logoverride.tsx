@@ -33,10 +33,13 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 interface LogoverrideRequestsProps {
     dateRange: { from?: Date; to?: Date };
-    setDateRange: (range: { from?: Date; to?: Date }) => void;
+    setDateRange: React.Dispatch<
+        React.SetStateAction<{ from?: Date; to?: Date }>
+    >;
     days: Date[];
     filteredLogoverrides: any[];
     filteredSchedules?: any[];
@@ -94,90 +97,107 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
     return (
         <Card className="mt-6 p-4 shadow-sm sm:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-lg font-semibold sm:text-xl">
-                    Logoverride Requests
-                </h2>
+                <CardHeader className="w-full p-0">
+                    <CardTitle>Employee Logoverrides</CardTitle>
+                    <CardDescription>
+                        {" "}
+                        List of logoverrides you applied and registered to the
+                        system.
+                    </CardDescription>
+                </CardHeader>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label className="text-muted-foreground text-sm">
-                        Select Date-range:
-                    </label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                    "w-full justify-start text-left font-normal sm:w-[260px]",
-                                    !dateRange?.from && "text-muted-foreground",
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (
-                                    dateRange.to ? (
-                                        <>
-                                            {format(
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                        <span className="text-muted-foreground mb-1 text-sm sm:mb-0">
+                            Select Date Range:
+                        </span>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal sm:w-[240px]",
+                                        "rounded-md border px-3 py-2",
+                                        "hover:bg-muted/50",
+                                        !dateRange && "text-muted-foreground",
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(
+                                                    dateRange.from,
+                                                    "MMM d, yyyy",
+                                                )}{" "}
+                                                –{" "}
+                                                {format(
+                                                    dateRange.to,
+                                                    "MMM d, yyyy",
+                                                )}
+                                            </>
+                                        ) : (
+                                            format(
                                                 dateRange.from,
                                                 "MMM d, yyyy",
-                                            )}{" "}
-                                            –{" "}
-                                            {format(
-                                                dateRange.to,
-                                                "MMM d, yyyy",
-                                            )}
-                                        </>
+                                            )
+                                        )
                                     ) : (
-                                        format(dateRange.from, "MMM d, yyyy")
-                                    )
-                                ) : (
-                                    <span>Pick a date range</span>
-                                )}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                initialFocus
-                                mode="range"
-                                selected={dateRange}
-                                onSelect={(range) =>
-                                    setDateRange(
-                                        range?.from
-                                            ? {
-                                                  from: range.from,
-                                                  to: range.to ?? range.from,
-                                              }
-                                            : {
-                                                  from: undefined,
-                                                  to: undefined,
-                                              },
-                                    )
-                                }
-                                numberOfMonths={1}
-                            />
-                        </PopoverContent>
-                    </Popover>
+                                        <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
+                                <Calendar
+                                    mode="range"
+                                    selected={dateRange as DateRange}
+                                    onSelect={(range) => {
+                                        if (range?.from) {
+                                            setDateRange({
+                                                from: range.from,
+                                                to: range.to ?? range.from,
+                                            });
+                                        } else {
+                                            setDateRange({
+                                                from: undefined,
+                                                to: undefined,
+                                            });
+                                        }
+                                    }}
+                                    numberOfMonths={1}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </div>
             </div>
 
-            {/* Date Info & Button */}
-            {dateRange?.from && (
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-muted-foreground text-center text-sm sm:text-left">
-                        Showing log overrides for{" "}
-                        <span className="font-medium">
-                            {format(dateRange.from, "MMM d, yyyy")}
-                            {dateRange.to &&
-                                ` – ${format(dateRange.to, "MMM d, yyyy")}`}
-                        </span>
-                    </p>
-                    <Button size="sm" className="w-full sm:w-auto">
-                        <Link to={`/logoverrides/form/${employeeId}`}>
-                            File Logoverride
-                        </Link>
-                    </Button>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-muted-foreground text-center text-sm sm:text-left">
+                    <span>Showing log overrides for </span>
+                    <span className="text-foreground font-medium">
+                        {dateRange.from
+                            ? format(dateRange.from, "MMMM d, yyyy - ")
+                            : "This cut-off"}
+                        {dateRange.to
+                            ? format(dateRange.to, "MMMM d, yyyy")
+                            : "."}
+                    </span>
                 </div>
-            )}
 
-            {/* Table */}
+                <Link
+                    to={`/logoverrides/form/${employeeId}`}
+                    className="w-full sm:w-auto"
+                >
+                    <Button size="sm" className="w-full sm:w-auto">
+                        File Log Override
+                    </Button>
+                </Link>
+            </div>
+
             {allLogOverrides.length > 0 ? (
                 <>
                     <div className="mt-4 overflow-x-auto rounded-md border">
@@ -237,7 +257,7 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                                         View
                                                     </Button>
                                                 </DialogTrigger>
-                                                <DialogContent className="w-[90vw] max-w-md sm:w-auto">
+                                                <DialogContent className="max-w-md">
                                                     <Card className="border-none bg-transparent">
                                                         <CardHeader className="mb-4 text-lg font-semibold">
                                                             <CardTitle>
@@ -310,28 +330,118 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                                                         </div>
                                                                     ),
                                                                 )}
-                                                                {log.image ? (
-                                                                    <div className="my-4">
-                                                                        <img
-                                                                            src={
-                                                                                log.image
-                                                                            }
-                                                                            alt="Reference"
-                                                                            className="max-h-64 w-full cursor-pointer rounded-lg border object-contain"
-                                                                            onClick={() =>
-                                                                                window.open(
-                                                                                    log.image,
-                                                                                    "_blank",
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
-                                                                        No image
-                                                                        attached
-                                                                    </div>
-                                                                )}
+                                                                {(() => {
+                                                                    if (
+                                                                        !log.image
+                                                                    ) {
+                                                                        return (
+                                                                            <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
+                                                                                No
+                                                                                image
+                                                                                attached
+                                                                            </div>
+                                                                        );
+                                                                    }
+
+                                                                    // --- Determine which AppSheet app/table to use based on date (optional)
+                                                                    const cutoffDate =
+                                                                        new Date(
+                                                                            "2025-06-01T00:00:00",
+                                                                        );
+                                                                    const recordDate =
+                                                                        log.date_time
+                                                                            ? new Date(
+                                                                                  log.date_time,
+                                                                              )
+                                                                            : cutoffDate;
+                                                                    const appName =
+                                                                        recordDate >=
+                                                                        cutoffDate
+                                                                            ? "WFPhonetrics-373955958"
+                                                                            : "AtlasAgencyTimeTrackerv2-373955958";
+                                                                    const tableName =
+                                                                        recordDate >=
+                                                                        cutoffDate
+                                                                            ? "Sheet1"
+                                                                            : "hr_time_tracker";
+
+                                                                    // --- Build the base image URL
+                                                                    let imageSrc =
+                                                                        "";
+                                                                    if (
+                                                                        log.image &&
+                                                                        log.image.startsWith(
+                                                                            "http",
+                                                                        )
+                                                                    ) {
+                                                                        // Direct URL (could be AppSheet or your backend)
+                                                                        imageSrc =
+                                                                            log.image;
+                                                                    } else if (
+                                                                        log.image &&
+                                                                        log.image.includes(
+                                                                            "Sheet1_Images",
+                                                                        )
+                                                                    ) {
+                                                                        // Local CodeIgniter-hosted file
+                                                                        const encodedImage =
+                                                                            encodeURIComponent(
+                                                                                log.image,
+                                                                            ).replace(
+                                                                                /%2F/g,
+                                                                                "/",
+                                                                            );
+                                                                        imageSrc = `http://localhost/backoffice/${encodedImage}`;
+                                                                    } else if (
+                                                                        log.image
+                                                                    ) {
+                                                                        // AppSheet-hosted file
+                                                                        const cleanFileName =
+                                                                            log.image.replace(
+                                                                                /^.*[\\/]/,
+                                                                                "",
+                                                                            );
+                                                                        imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${cleanFileName}`;
+                                                                    }
+
+                                                                    // --- Fallback URLs (if local/AppSheet image fails)
+                                                                    const cleanFileName =
+                                                                        log.image.replace(
+                                                                            /^.*[\\/]/,
+                                                                            "",
+                                                                        );
+                                                                    const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
+
+                                                                    return (
+                                                                        <div className="my-4">
+                                                                            <img
+                                                                                src={
+                                                                                    imageSrc
+                                                                                }
+                                                                                alt="Logoverride Reference"
+                                                                                className="max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
+                                                                                onClick={() =>
+                                                                                    window.open(
+                                                                                        imageSrc,
+                                                                                        "_blank",
+                                                                                    )
+                                                                                }
+                                                                                onError={(
+                                                                                    e,
+                                                                                ) => {
+                                                                                    const target =
+                                                                                        e.currentTarget as HTMLImageElement;
+                                                                                    console.warn(
+                                                                                        "Primary image failed, using backup:",
+                                                                                        backupUrl,
+                                                                                    );
+                                                                                    target.src =
+                                                                                        backupUrl;
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                         </CardContent>
                                                         <CardFooter className="flex justify-end pt-2">
@@ -401,12 +511,14 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
             ) : (
                 <Card className="text-muted-foreground mt-4 p-6 text-center">
                     No log overrides found for the selected date
-                    {dateRange.to &&
+                    {dateRange.from &&
+                        dateRange.to &&
                         ` range (${format(dateRange.from, "MMM d, yyyy")} – ${format(
                             dateRange.to,
                             "MMM d, yyyy",
                         )})`}
-                    {!dateRange.to &&
+                    {dateRange.from &&
+                        dateRange.to &&
                         ` (${format(dateRange.from, "MMM d, yyyy")})`}
                 </Card>
             )}

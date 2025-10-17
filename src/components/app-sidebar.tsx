@@ -5,6 +5,7 @@ import {
     IconFileTime,
     IconInnerShadowTop,
     IconUsers,
+    IconCalendarCheck,
 } from "@tabler/icons-react";
 import { Timer } from "lucide-react";
 import { NavUser } from "@/components/nav-user";
@@ -50,20 +51,20 @@ const navMainItems = (userId?: string, role?: string, agency_id?: string) => {
             {
                 title: "Schedule",
                 url: `/schedules/${userId ?? ""}`,
-                icon: Timer,
+                icon: IconCalendarCheck,
             },
         );
     } else if (role === "agency_coordinator") {
         items.push(
             {
-                title: "Employee List",
-                url: "/employees",
-                icon: IconUsers,
-            },
-            {
                 title: "Dashboard",
                 url: `/dashboard/${agency_id ?? ""}`,
                 icon: IconDashboard,
+            },
+            {
+                title: "Employee List",
+                url: "/employees",
+                icon: IconUsers,
             },
         );
     }

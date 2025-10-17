@@ -3,11 +3,12 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Card } from "./ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Calendar } from "./ui/calendar";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { DateRange } from "react-day-picker";
 
 interface Schedule {
     date: string;
@@ -19,7 +20,9 @@ interface EmployeeScheduleCardProps {
     days: Date[];
     filteredSchedules: Schedule[];
     dateRange: { from?: Date; to?: Date } | null;
-    setDateRange: (range: { from?: Date; to?: Date }) => void;
+    setDateRange: React.Dispatch<
+        React.SetStateAction<{ from?: Date; to?: Date }>
+    >;
 }
 
 const EmployeeScheduleCard: FC<EmployeeScheduleCardProps> = ({
@@ -32,96 +35,106 @@ const EmployeeScheduleCard: FC<EmployeeScheduleCardProps> = ({
     return (
         <Card className="mt-6 space-y-4 p-4 shadow-sm sm:p-6">
             {/* Header */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <h2 className="text-lg font-semibold sm:text-xl">
-                    Employee Schedule
-                </h2>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                {/* Header */}
+                <CardHeader className="w-full p-0">
+                    <CardTitle>Employee Schedule</CardTitle>
+                    <CardDescription className="text-sm sm:text-base">
+                        List of schedules you applied and registered to the
+                        system.
+                    </CardDescription>
+                </CardHeader>
 
-                {/* Date Picker */}
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label className="text-muted-foreground text-sm">
-                        Select Date-range:
-                    </label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                    "w-full justify-start text-left font-normal sm:w-[260px]",
-                                    "rounded-md border px-3 py-2",
-                                    "hover:bg-muted/50",
-                                    !dateRange && "text-muted-foreground",
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (
-                                    dateRange.to ? (
-                                        <>
-                                            {format(
+                {/* Date Picker Section */}
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                        <span className="text-muted-foreground mb-1 text-sm sm:mb-0">
+                            Select Date Range:
+                        </span>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal sm:w-[240px]",
+                                        "rounded-md border px-3 py-2",
+                                        "hover:bg-muted/50",
+                                        !dateRange && "text-muted-foreground",
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(
+                                                    dateRange.from,
+                                                    "MMM d, yyyy",
+                                                )}{" "}
+                                                –{" "}
+                                                {format(
+                                                    dateRange.to,
+                                                    "MMM d, yyyy",
+                                                )}
+                                            </>
+                                        ) : (
+                                            format(
                                                 dateRange.from,
                                                 "MMM d, yyyy",
-                                            )}{" "}
-                                            –{" "}
-                                            {format(
-                                                dateRange.to,
-                                                "MMM d, yyyy",
-                                            )}
-                                        </>
+                                            )
+                                        )
                                     ) : (
-                                        format(dateRange.from, "MMM d, yyyy")
-                                    )
-                                ) : (
-                                    <span>Pick a date range</span>
-                                )}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                initialFocus
-                                mode="range"
-                                selected={dateRange}
-                                onSelect={(range) => {
-                                    if (range?.from) {
-                                        setDateRange({
-                                            from: range.from,
-                                            to: range.to ?? range.from,
-                                        });
-                                    } else {
-                                        setDateRange({
-                                            from: undefined,
-                                            to: undefined,
-                                        });
-                                    }
-                                }}
-                                numberOfMonths={1}
-                            />
-                        </PopoverContent>
-                    </Popover>
+                                        <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    selected={dateRange as DateRange}
+                                    onSelect={(range) => {
+                                        if (range?.from) {
+                                            setDateRange({
+                                                from: range.from,
+                                                to: range.to ?? range.from,
+                                            });
+                                        } else {
+                                            setDateRange({
+                                                from: undefined,
+                                                to: undefined,
+                                            });
+                                        }
+                                    }}
+                                    numberOfMonths={1}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    {dateRange?.from && (
-                        <p className="text-muted-foreground text-center text-xs sm:text-left sm:text-sm">
-                            Showing schedule for{" "}
-                            <span className="font-medium">
-                                {format(dateRange.from, "MMM d, yyyy")}
-                                {dateRange.to &&
-                                    ` – ${format(dateRange.to, "MMM d, yyyy")}`}
-                            </span>
-                        </p>
-                    )}
-                </div>
+                {dateRange?.from && (
+                    <p className="text-muted-foreground text-center text-xs sm:text-left sm:text-sm">
+                        Showing schedule for -{" "}
+                        <span className="font-bold text-white">
+                            {dateRange.from
+                                ? format(dateRange.from, "MMM d, yyyy")
+                                : "This cut-off"}
+                            {dateRange.to &&
+                                ` to ${format(dateRange.to, "MMM d, yyyy")}`}
+                        </span>
+                    </p>
+                )}
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <Button asChild className="w-full sm:w-auto">
                         <Link to={`/schedule/form/${employeeId}`}>
                             Request Schedule
                         </Link>
-                    </Button>
-                    <Button className="w-full bg-yellow-500 sm:w-auto">
-                        Consolidate
                     </Button>
                 </div>
             </div>
@@ -144,7 +157,7 @@ const EmployeeScheduleCard: FC<EmployeeScheduleCardProps> = ({
                             key={i}
                             className={`min-h-[90px] rounded-md border p-2 transition ${
                                 isToday
-                                    ? "bg-primary/10 border-primary"
+                                    ? "bg-primary/10 border-yellow-600"
                                     : "bg-background hover:bg-muted/50"
                             }`}
                         >

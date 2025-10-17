@@ -99,7 +99,6 @@ export default function ScheduleForm() {
             setSelectedSchedules({});
             setDate(undefined);
             setSelectedBranch("");
-            const queryClient = useQueryClient();
             navigate(`/schedules/${employeeId}`);
         },
         onError: (error: any) => {

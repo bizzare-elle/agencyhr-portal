@@ -22,8 +22,8 @@ import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { useAuthStore } from "@/hooks/use-auth";
-import bgImg from "../assets/images/5590457.jpg";
-import { useQuery } from "@tanstack/react-query";
+import bgImg from "../assets/images/bg-3.avif";
+import { Spinner } from "@/components/ui/spinner";
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -80,7 +80,7 @@ export default function LoginPage() {
 
     const back = {
         backgroundImage: `url(${bgImg})`,
-        backgroundSize: "fit",
+        backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
     };
@@ -90,7 +90,7 @@ export default function LoginPage() {
             className="flex min-h-screen items-center justify-center p-4 sm:p-6 md:p-8"
             style={back}
         >
-            <Card className="bg-background/40 w-full max-w-sm rounded-2xl px-6 py-8 shadow-xl backdrop-blur-md sm:max-w-md sm:px-8 sm:py-10">
+            <Card className="bg-background/40 w-full max-w-sm rounded-2xl shadow-xl backdrop-blur-md sm:max-w-md sm:px-8 sm:py-10">
                 <CardHeader className="space-y-2 text-center">
                     <CardTitle className="text-2xl font-bold sm:text-3xl">
                         Welcome Back
@@ -168,9 +168,14 @@ export default function LoginPage() {
                                 className="w-full text-sm sm:text-base"
                                 disabled={loginMutation.isPending}
                             >
-                                {loginMutation.isPending
-                                    ? "Logging in..."
-                                    : "Login"}
+                                {loginMutation.isPending ? (
+                                    <>
+                                        <Spinner className="h-4 w-4" />
+                                        <span>Logging in</span>
+                                    </>
+                                ) : (
+                                    "Login"
+                                )}
                             </Button>
                         </form>
                     </Form>

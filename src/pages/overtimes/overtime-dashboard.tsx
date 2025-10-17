@@ -30,39 +30,9 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import FullPageLoader from "@/components/page-loader";
-import { format } from "date-fns";
-
-export interface Overtime {
-    id: string;
-    employee_id: string;
-    employee_name: string;
-    date: string;
-    no_of_hours: string;
-    image: string;
-    remarks: string;
-    status: string;
-    created_by: string;
-    created_at: string;
-    updated_by: string | null;
-    updated_at: string | null;
-    deleted_by: string | null;
-    deleted_at: string | null;
-}
-
-export interface Employee {
-    id: string;
-    user_id: string | null;
-    firstname: string;
-    lastname: string;
-    name: string | null;
-    agency_id: string | null;
-    branch_id: string | null;
-    status: string;
-    access: string;
-    created_at: string | null;
-    updated_at: string | null;
-    deleted_at: string | null;
-}
+import { format, formatDate } from "date-fns";
+import { DialogTitle } from "@radix-ui/react-dialog";
+import { Overtime, Employee } from "@/index";
 
 export interface OvertimeResponse {
     info: Overtime[];
@@ -131,16 +101,23 @@ export default function OvertimeDashboard() {
         <ParentComponent>
             {data?.info.length === 0 ? (
                 <div className="w-full">
-                    <Card>
-                        <span className="text-center text-2xl font-bold">
-                            No filed overtime found.
-                        </span>
+                    <Card className="py-10">
+                        <div className="flex flex-col space-y-4 text-center">
+                            <span className="text-2xl font-bold">
+                                No filed overtime found.
+                            </span>
+                            <Link to={`/overtime/form/${employeeId}`}>
+                                <Button className="w-full sm:w-auto">
+                                    File Overtime
+                                </Button>
+                            </Link>
+                        </div>
                     </Card>
                 </div>
             ) : (
                 <>
                     <div className="mb-4 w-full">
-                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white shadow-md sm:flex-row sm:justify-between">
+                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-6 text-white shadow-md sm:flex-row sm:justify-between">
                             <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
                                 {/* Avatar */}
                                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
@@ -273,9 +250,14 @@ export default function OvertimeDashboard() {
                                                         className="hover:bg-muted/10 cursor-pointer transition-colors"
                                                     >
                                                         <TableCell className="px-4 py-5 text-center">
-                                                            {formatToDateTime(
-                                                                r.date,
-                                                            )}
+                                                            {r.date
+                                                                ? format(
+                                                                      new Date(
+                                                                          r.date,
+                                                                      ),
+                                                                      "MMM d, yyyy",
+                                                                  )
+                                                                : "N/A"}
                                                         </TableCell>
                                                         <TableCell className="px-4 py-5 text-center capitalize">
                                                             {r?.no_of_hours ||
@@ -314,12 +296,14 @@ export default function OvertimeDashboard() {
 
                                                                 <DialogContent className="max-w-md">
                                                                     <Card className="border-none bg-transparent">
-                                                                        <CardHeader className="mb-4 text-lg font-semibold">
-                                                                            <CardTitle>
-                                                                                Overtime
-                                                                                Details
-                                                                            </CardTitle>
-                                                                        </CardHeader>
+                                                                        <DialogTitle>
+                                                                            <CardHeader className="mb-4 text-lg font-semibold">
+                                                                                <CardTitle>
+                                                                                    Overtime
+                                                                                    Details
+                                                                                </CardTitle>
+                                                                            </CardHeader>
+                                                                        </DialogTitle>
                                                                         <CardContent>
                                                                             <div className="space-y-4 text-sm">
                                                                                 <div className="flex justify-between">

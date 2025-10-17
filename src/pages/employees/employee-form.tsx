@@ -64,7 +64,6 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-/* ---------- Helpers ---------- */
 function TextField({
     name,
     label,
@@ -88,7 +87,21 @@ function TextField({
                 <FormItem className="space-y-1">
                     <FormLabel>{label}</FormLabel>
                     <FormControl>
-                        <Input type={type} placeholder={label} {...field} />
+                        <Input
+                            type="date"
+                            placeholder={label as string}
+                            value={
+                                field.value
+                                    ? format(
+                                          new Date(field.value),
+                                          "yyyy-MM-dd",
+                                      )
+                                    : ""
+                            }
+                            onChange={(e) =>
+                                field.onChange(new Date(e.target.value))
+                            }
+                        />
                     </FormControl>
                     <FormMessage />
                 </FormItem>

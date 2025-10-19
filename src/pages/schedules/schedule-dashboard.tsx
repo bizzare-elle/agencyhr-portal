@@ -91,6 +91,16 @@ export default function ScheduleDashboard() {
         );
     }
 
+    if (!employeeId) {
+        return (
+            <ParentComponent>
+                <Card className="text-center font-bold text-red-500">
+                    You don't have permission to access this page.
+                </Card>
+            </ParentComponent>
+        );
+    }
+
     const data = scheduleQuery.data;
     const employee = data?.info?.[0];
     const schedules = data?.schedules ?? [];
@@ -100,11 +110,20 @@ export default function ScheduleDashboard() {
     return (
         <ParentComponent>
             {!employee ? (
-                <Card>
-                    <span className="block py-8 text-center text-2xl font-bold">
-                        No schedule data found.
-                    </span>
-                </Card>
+                <div className="w-full">
+                    <Card className="py-10">
+                        <div className="flex flex-col space-y-4 text-center">
+                            <span className="text-2xl font-bold">
+                                No filed schedule found.
+                            </span>
+                            <Link to={`/schedules/form/${employeeId}`}>
+                                <Button className="w-full sm:w-auto">
+                                    File Schedule
+                                </Button>
+                            </Link>
+                        </div>
+                    </Card>
+                </div>
             ) : (
                 <>
                     {/* --- Header Section --- */}

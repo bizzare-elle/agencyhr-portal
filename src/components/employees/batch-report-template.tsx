@@ -1,8 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { format } from "date-fns";
-import { TimeRecord } from "@/index";
 import moment from "moment";
-import { text } from "stream/consumers";
+import { TimeRecord } from "@/index";
 
 interface EmployeeData {
     id: string;
@@ -75,6 +74,7 @@ export const ConsolidatedTimeRecordsPDF = ({
     <Document>
         {recordsByEmployee.map((emp, idx) => (
             <Page key={emp.id} size="A4" style={styles.page}>
+                {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.title}>Employee Time Records</Text>
                     <Text style={styles.subtitle}>
@@ -82,6 +82,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                     </Text>
                 </View>
 
+                {/* Employee Info */}
                 <View style={styles.section}>
                     <Text>Name: {emp.employee_name}</Text>
                     <Text>ID Number: {emp.id_number}</Text>
@@ -100,6 +101,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                     </Text>
                 </View>
 
+                {/* Table Header */}
                 <View style={styles.tableHeader}>
                     <Text style={[styles.cell, { flex: 1.2 }]}>Date</Text>
                     <Text style={[styles.cell, { flex: 1 }]}>Day</Text>
@@ -107,110 +109,105 @@ export const ConsolidatedTimeRecordsPDF = ({
                         Schedule Type
                     </Text>
                     <Text style={[styles.cell, { flex: 1 }]}>Time In</Text>
-                    <Text style={[styles.cell, { flex: 1 }]}>Time Out</Text>
                     <Text style={[styles.cell, { flex: 1 }]}>Break In</Text>
                     <Text style={[styles.cell, { flex: 1 }]}>Break Out</Text>
-                    <Text style={[styles.cell, { flex: 1 }]}>Late</Text>
-                    <Text style={[styles.cell, { flex: 1 }]}>
-                        Total Overtime
-                    </Text>
-                    <Text style={[styles.cell, { flex: 0.8 }]}>
-                        Total Hours
-                    </Text>
+                    <Text style={[styles.cell, { flex: 1 }]}>Time Out</Text>
+                    <Text style={[styles.cell, { flex: 0.8 }]}>Late</Text>
+                    <Text style={[styles.cell, { flex: 0.8 }]}>Undertime</Text>
+                    <Text style={[styles.cell, { flex: 0.8 }]}>Overtime</Text>
+                    <Text style={[styles.cell, { flex: 0.8 }]}>Total Hrs</Text>
+                    <Text style={[styles.cell, { flex: 1 }]}>Billable Hrs</Text>
                 </View>
 
-                {emp.time_records.map((rec, i) => (
-                    <View style={styles.tableRow} key={i}>
-                        <Text style={[styles.cell, { flex: 1.2 }]}>
-                            {rec.date
-                                ? format(new Date(rec.date), "MMM dd, yyyy")
-                                : "-"}
-                        </Text>
-                        <Text style={[styles.cell, { flex: 1 }]}>
-                            {rec.date
-                                ? format(new Date(rec.date), "EEEE")
-                                : "-"}
-                        </Text>
-                        <Text style={[styles.cell, { flex: 1.2 }]}>
-                            {rec.schedule_name}
-                        </Text>
-                        <Text
-                            style={[
-                                styles.cell,
-                                { flex: 1 },
-                                !rec.time_in ? { color: "red" } : {},
-                            ]}
-                        >
-                            {rec.time_in
-                                ? moment(rec.time_in, "HH:mm:ss").format(
-                                      "hh:mm A",
-                                  )
-                                : "No Data"}
-                        </Text>
+                {/* Table Rows */}
+                {emp.time_records.map((rec, i) => {
+                    const undertime = parseFloat(rec.undertime || "0");
+                    const totalHrs = parseFloat(rec.hours || "0");
+                    const billable =
+                        totalHrs > 0
+                            ? (totalHrs - undertime).toFixed(2)
+                            : "0.00";
 
-                        <Text
-                            style={[
-                                styles.cell,
-                                { flex: 1 },
-                                !rec.time_out ? { color: "red" } : {},
-                            ]}
-                        >
-                            {rec.time_out
-                                ? moment(rec.time_out, "HH:mm:ss").format(
-                                      "hh:mm A",
-                                  )
-                                : "No Data"}
-                        </Text>
+                    return (
+                        <View style={styles.tableRow} key={i}>
+                            <Text style={[styles.cell, { flex: 1.2 }]}>
+                                {rec.date
+                                    ? format(new Date(rec.date), "MMM dd, yyyy")
+                                    : "-"}
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                {rec.date
+                                    ? format(new Date(rec.date), "EEEE")
+                                    : "-"}
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1.2 }]}>
+                                {rec.schedule_name}
+                            </Text>
 
-                        <Text
-                            style={[
-                                styles.cell,
-                                { flex: 1 },
-                                !rec.break_in ? { color: "red" } : {},
-                            ]}
-                        >
-                            {rec.break_in
-                                ? moment(rec.break_in, "HH:mm:ss").format(
-                                      "hh:mm A",
-                                  )
-                                : "No Data"}
-                        </Text>
+                            <Text
+                                style={[
+                                    styles.cell,
+                                    { flex: 1 },
+                                    !rec.time_in ? { color: "red" } : {},
+                                ]}
+                            >
+                                {rec.time_in
+                                    ? moment(rec.time_in, "HH:mm:ss").format(
+                                          "hh:mm A",
+                                      )
+                                    : "No Data"}
+                            </Text>
 
-                        <Text
-                            style={[
-                                styles.cell,
-                                { flex: 1 },
-                                !rec.break_out ? { color: "red" } : {},
-                            ]}
-                        >
-                            {rec.break_out
-                                ? moment(rec.break_out, "HH:mm:ss").format(
-                                      "hh:mm A",
-                                  )
-                                : "No Data"}
-                        </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                {rec.break_in
+                                    ? moment(rec.break_in, "HH:mm:ss").format(
+                                          "hh:mm A",
+                                      )
+                                    : "No Data"}
+                            </Text>
 
-                        <Text
-                            style={[
-                                styles.cell,
-                                { flex: 1 },
-                                rec.late !== null && rec.late !== "0"
-                                    ? { color: "red" }
-                                    : {},
-                            ]}
-                        >
-                            {rec.late}
-                        </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                {rec.break_out
+                                    ? moment(rec.break_out, "HH:mm:ss").format(
+                                          "hh:mm A",
+                                      )
+                                    : "No Data"}
+                            </Text>
 
-                        <Text style={[styles.cell, { flex: 1 }]}>
-                            {rec.overtime}
-                        </Text>
-                        <Text style={[styles.cell, { flex: 0.8 }]}>
-                            {rec.hours}
-                        </Text>
-                    </View>
-                ))}
+                            <Text
+                                style={[
+                                    styles.cell,
+                                    { flex: 1 },
+                                    !rec.time_out ? { color: "red" } : {},
+                                ]}
+                            >
+                                {rec.time_out
+                                    ? moment(rec.time_out, "HH:mm:ss").format(
+                                          "hh:mm A",
+                                      )
+                                    : "No Data"}
+                            </Text>
 
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                {rec.late}
+                            </Text>
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                {rec.undertime || "0"}
+                            </Text>
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                {rec.overtime}
+                            </Text>
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                {rec.hours}
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                {billable}
+                            </Text>
+                        </View>
+                    );
+                })}
+
+                {/* Totals */}
                 <View style={{ marginTop: 6 }}>
                     <Text>
                         Total Hours Worked:{" "}
@@ -241,8 +238,31 @@ export const ConsolidatedTimeRecordsPDF = ({
                             )
                             .toFixed(2)}
                     </Text>
+                    <Text>
+                        Total Undertime:{" "}
+                        {emp.time_records
+                            .reduce(
+                                (sum, rec) =>
+                                    sum + parseFloat(rec.undertime || "0"),
+                                0,
+                            )
+                            .toFixed(2)}
+                    </Text>
+                    <Text>
+                        Total Billable Hours:{" "}
+                        {emp.time_records
+                            .reduce(
+                                (sum, rec) =>
+                                    sum +
+                                    (parseFloat(rec.hours || "0") -
+                                        parseFloat(rec.undertime || "0")),
+                                0,
+                            )
+                            .toFixed(2)}
+                    </Text>
                 </View>
 
+                {/* Footer */}
                 <Text style={styles.footer}>
                     Page {idx + 1} of {recordsByEmployee.length}
                 </Text>

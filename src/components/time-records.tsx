@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { TimeRecord } from "..";
+import { computeUndertime, computeBillableHours } from "@/helpers/computeHours";
 
 export default function TimeRecords() {
     const [datesToRender, setDatesToRender] = useState<Date[]>([]);
@@ -158,26 +159,42 @@ export default function TimeRecords() {
     }, [records]);
 
     const tableData = useMemo(() => {
-        return records.map((record) => ({
-            branch: record.branch_name || "No data",
-            scheduleName: record.schedule_name,
-            date: moment(record.cut_off).format("YYYY-MM-DD"),
-            dayName: moment(record.cut_off).format("dddd"),
-            agencyName: record.agency_name,
-            timeIn: record.clock_in,
-            timeOut: record.clock_out,
-            breakIn: record.break_in,
-            breakOut: record.break_out,
-            totalHrs: record.total_hrs,
-            totalLate: record.total_hrs_late,
-            totalOvertime: record.total_overtime,
-        }));
+        return records.map((record) => {
+            const undertime = computeUndertime(
+                record.schedule_name,
+                record.clock_out as string,
+            );
+            const billableHours = computeBillableHours(
+                parseFloat(record.total_hrs || "0"),
+                parseFloat(record.total_overtime || "0"),
+                parseFloat(record.total_hrs_late || "0"),
+                undertime,
+            );
+
+            return {
+                branch: record.branch_name || "No data",
+                scheduleName: record.schedule_name,
+                date: moment(record.cut_off).format("YYYY-MM-DD"),
+                dayName: moment(record.cut_off).format("dddd"),
+                agencyName: record.agency_name,
+                timeIn: record.clock_in,
+                timeOut: record.clock_out,
+                breakIn: record.break_in,
+                breakOut: record.break_out,
+                totalHrs: parseFloat(record.total_hrs || "0"),
+                totalLate: parseFloat(record.total_hrs_late || "0"),
+                totalOvertime: parseFloat(record.total_overtime || "0"),
+                undertime,
+                billableHours,
+            };
+        });
     }, [records]);
 
     const handlePrint = () => {
         const table = document.getElementById("time-records-table");
         if (!table) return;
 
+        // Helper function to sum a column by its index
         const sumColumnByIndex = (index: number) => {
             const rows = Array.from(table.querySelectorAll("tbody tr"));
             return rows.reduce((sum, row) => {
@@ -189,9 +206,26 @@ export default function TimeRecords() {
             }, 0);
         };
 
-        const hours = sumColumnByIndex(8);
-        const overtime = sumColumnByIndex(10);
-        const late = sumColumnByIndex(9);
+        // Match your current table order:
+        // 0 Branch
+        // 1 Schedule
+        // 2 Date
+        // 3 Day
+        // 4 Time In
+        // 5 Break In
+        // 6 Break Out
+        // 7 Time Out
+        // 8 Total Hours
+        // 9 Late
+        // 10 Undertime
+        // 11 Overtime
+        // 12 Billable Hours
+
+        const totalHours = sumColumnByIndex(8);
+        const totalLate = sumColumnByIndex(9);
+        const totalUndertime = sumColumnByIndex(10);
+        const totalOvertime = sumColumnByIndex(11);
+        const totalBillable = sumColumnByIndex(12);
 
         const printContent = table.outerHTML;
         const printWindow = window.open("", "_blank");
@@ -270,9 +304,11 @@ export default function TimeRecords() {
                 ${printContent}
 
                 <div class="totals">
-                    <div>Total Late: ${late.toFixed(2)}</div>
-                    <div>Total Overtime: ${overtime.toFixed(2)}</div>
-                    <div>Total Hours Worked: ${hours.toFixed(2)}</div>
+                    <div>Total Late: ${totalLate.toFixed(2)}</div>
+                    <div>Total Undertime: ${totalUndertime.toFixed(2)}</div>
+                    <div>Total Overtime: ${totalOvertime.toFixed(2)}</div>
+                    <div>Total Hours Worked: ${totalHours.toFixed(2)}</div>
+                    <div>Total Billable Hours: ${totalBillable.toFixed(2)}</div>
                 </div>
             </body>
         </html>
@@ -309,7 +345,7 @@ export default function TimeRecords() {
 
         const headers = [
             "Branch",
-            "Schedule Name",
+            "Schedule",
             "Date",
             "Day",
             "Time In",
@@ -318,7 +354,9 @@ export default function TimeRecords() {
             "Break Out",
             "Total Hours",
             "Late (hrs)",
+            "Undertime (hrs)",
             "Overtime (hrs)",
+            "Billable Hours",
         ];
         const headerRow = worksheet.addRow(headers);
 
@@ -338,43 +376,57 @@ export default function TimeRecords() {
             };
         });
 
-        const rows = records.map((r) => [
-            r.branch_name ?? "",
-            r.schedule_name ?? "",
-            r.cut_off ? moment(r.cut_off).format("MMM DD, YYYY") : "",
-            r.cut_off ? moment(r.cut_off).format("dddd") : "",
-            r.clock_in
-                ? moment(r.clock_in, "HH:mm:ss").format("hh:mm A")
-                : "No Data",
-            r.clock_out
-                ? moment(r.clock_out, "HH:mm:ss").format("hh:mm A")
-                : "No Data",
-            r.break_in
-                ? moment(r.break_in, "HH:mm:ss").format("hh:mm A")
-                : "No Data",
-            r.break_out
-                ? moment(r.break_out, "HH:mm:ss").format("hh:mm A")
-                : "No Data",
-            parseFloat(r.total_hrs || "0"),
-            parseFloat(r.total_hrs_late || "0"),
-            parseFloat(r.total_overtime || "0"),
-        ]);
+        // Compute and add rows
+        let totalHours = 0;
+        let totalLate = 0;
+        let totalUndertime = 0;
+        let totalOvertime = 0;
+        let totalBillable = 0;
 
-        rows.forEach((r) => worksheet.addRow(r));
+        records.forEach((r) => {
+            const undertime = computeUndertime(
+                r.schedule_name,
+                r.clock_out as string,
+            );
+            const billableHours = computeBillableHours(
+                parseFloat(r.total_hrs || "0"),
+                parseFloat(r.total_overtime || "0"),
+                parseFloat(r.total_hrs_late || "0"),
+                undertime,
+            );
 
-        const totalHours = rows.reduce(
-            (sum, r) => sum + ((r[8] as number) || 0),
-            0,
-        );
-        const totalLate = rows.reduce(
-            (sum, r) => sum + ((r[9] as number) || 0),
-            0,
-        );
-        const totalOvertime = rows.reduce(
-            (sum, r) => sum + ((r[10] as number) || 0),
-            0,
-        );
+            totalHours += parseFloat(r.total_hrs || "0");
+            totalLate += parseFloat(r.total_hrs_late || "0");
+            totalUndertime += undertime;
+            totalOvertime += parseFloat(r.total_overtime || "0");
+            totalBillable += billableHours;
 
+            worksheet.addRow([
+                r.branch_name ?? "",
+                r.schedule_name ?? "",
+                r.cut_off ? moment(r.cut_off).format("MMM DD, YYYY") : "",
+                r.cut_off ? moment(r.cut_off).format("dddd") : "",
+                r.clock_in
+                    ? moment(r.clock_in, "HH:mm:ss").format("hh:mm A")
+                    : "No Data",
+                r.clock_out
+                    ? moment(r.clock_out, "HH:mm:ss").format("hh:mm A")
+                    : "No Data",
+                r.break_in
+                    ? moment(r.break_in, "HH:mm:ss").format("hh:mm A")
+                    : "No Data",
+                r.break_out
+                    ? moment(r.break_out, "HH:mm:ss").format("hh:mm A")
+                    : "No Data",
+                parseFloat(r.total_hrs || "0").toFixed(2),
+                parseFloat(r.total_hrs_late || "0").toFixed(2),
+                undertime.toFixed(2),
+                parseFloat(r.total_overtime || "0").toFixed(2),
+                billableHours.toFixed(2),
+            ]);
+        });
+
+        // Totals Row
         const totalsRow = worksheet.addRow([
             "",
             "",
@@ -386,7 +438,9 @@ export default function TimeRecords() {
             "TOTALS:",
             totalHours.toFixed(2),
             totalLate.toFixed(2),
+            totalUndertime.toFixed(2),
             totalOvertime.toFixed(2),
+            totalBillable.toFixed(2),
         ]);
 
         totalsRow.eachCell((cell, colNumber) => {
@@ -408,9 +462,9 @@ export default function TimeRecords() {
         });
 
         worksheet.columns = [
-            { width: 30 },
             { width: 25 },
-            { width: 20 },
+            { width: 25 },
+            { width: 18 },
             { width: 15 },
             { width: 15 },
             { width: 15 },
@@ -419,6 +473,8 @@ export default function TimeRecords() {
             { width: 15 },
             { width: 15 },
             { width: 15 },
+            { width: 15 },
+            { width: 18 },
         ];
 
         const buffer = await workbook.xlsx.writeBuffer();
@@ -554,7 +610,13 @@ export default function TimeRecords() {
                                 Late (hrs)
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
+                                Undertime (hrs)
+                            </TableHead>
+                            <TableHead className="px-2 py-4 text-center">
                                 Overtime (hrs)
+                            </TableHead>
+                            <TableHead className="px-2 py-4 text-center">
+                                Billable Hours
                             </TableHead>
                         </TableRow>
                     </TableHeader>
@@ -603,7 +665,7 @@ export default function TimeRecords() {
                                             : "No Data"}
                                     </TableCell>
                                     <TableCell className="px-2 py-4 text-center">
-                                        {formatNumber(row.totalHrs)}
+                                        {formatNumber(String(row.totalHrs))}
                                     </TableCell>
                                     <TableCell
                                         className={cn(
@@ -612,18 +674,28 @@ export default function TimeRecords() {
                                                 "font-semibold text-red-500",
                                         )}
                                     >
-                                        {formatNumber(row.totalLate)}
+                                        {formatNumber(String(row.totalLate))}
                                     </TableCell>
 
                                     <TableCell className="px-2 py-4 text-center">
-                                        {formatNumber(row.totalOvertime)}
+                                        {formatNumber(String(row.undertime))}
+                                    </TableCell>
+                                    <TableCell className="px-2 py-4 text-center">
+                                        {formatNumber(
+                                            String(row.totalOvertime),
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="px-2 py-4 text-center">
+                                        {formatNumber(
+                                            String(row.billableHours),
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
                                 <TableCell
-                                    colSpan={11}
+                                    colSpan={13}
                                     className="text-muted-foreground py-6 text-center"
                                 >
                                     No time records found for this range.

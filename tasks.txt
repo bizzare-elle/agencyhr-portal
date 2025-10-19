@@ -1,4 +1,9 @@
 
-- Add "Consolidate" Button to time records (connected to the atlas consolidate function)
-- Add approver in backoffice (logoverride, overtime, and schedule)
-
+- Update departments
+- Atlas viewing of employees per branch/area manager
+- Use Hr_employees for login 
+- Access backup appsheet storage 
+- Undertime
+- Billable
+- Branch clock-in and clock-out
+- excel report

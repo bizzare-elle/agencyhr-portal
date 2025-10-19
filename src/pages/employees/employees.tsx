@@ -25,6 +25,8 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import { Spinner } from "@/components/ui/spinner";
 import { TimeRecord } from "@/index";
 import { Link } from "react-router-dom";
+import { differenceInMinutes, parse, isValid } from "date-fns";
+import { exportConsolidatedToExcel } from "@/components/employees/excel-report-template";
 
 const columns: TableColumn<Employee>[] = [
     { name: "ID", selector: (row) => row.id, sortable: true },
@@ -66,6 +68,7 @@ export default function Employees() {
     const [isConsolidating, setIsConsolidating] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<string>("");
     const [consolidatedData, setConsolidatedData] = useState<any[]>([]);
+    const [hasConsolidated, setHasConsolidated] = useState(false); // ✅ NEW STATE
 
     const meQuery = useQuery({
         queryKey: ["me"],
@@ -103,6 +106,7 @@ export default function Employees() {
 
         try {
             setIsConsolidating(true);
+            setHasConsolidated(false);
             const agency_id = meQuery.data?.agency_id;
             const branch_id = selectedBranch;
 
@@ -115,11 +119,11 @@ export default function Employees() {
                 },
             );
 
-            toast.success("Consolidation successfully completed!");
-
             const employee_ids = consolidateResponse.data.employee_ids || [];
             if (employee_ids.length === 0) {
+                toast.info("No employees found for this cutoff");
                 setConsolidatedData([]);
+                setHasConsolidated(true);
                 return;
             }
 
@@ -134,6 +138,7 @@ export default function Employees() {
                 day > 15
                     ? `${year}-${month}-${lastDay}`
                     : `${year}-${month}-15`;
+
             const allRecords: TimeRecord[] = [];
 
             for (const emp_id of employee_ids) {
@@ -148,10 +153,19 @@ export default function Employees() {
                 }
             }
 
+            if (allRecords.length === 0) {
+                toast.info(
+                    "No time records found for the selected cutoff period.",
+                );
+                setConsolidatedData([]);
+                setHasConsolidated(true);
+                return;
+            }
+
             const groupedByEmployee = employee_ids
-                .map((emp_id: any) => {
+                .map((emp_id: number) => {
                     const empRecords = allRecords.filter(
-                        (r) => r.employee_id === emp_id,
+                        (r) => (r.employee_id as number) === emp_id,
                     );
                     if (!empRecords.length) return null;
 
@@ -163,30 +177,73 @@ export default function Employees() {
                         department: empRecords[0].department_name,
                         employment_status: empRecords[0].employment_status,
                         agency_name: empRecords[0].agency_name,
-                        time_records: empRecords.map((rec) => ({
-                            date: rec.cut_off,
-                            schedule_name: rec.schedule_name,
-                            time_in: rec.clock_in,
-                            time_out: rec.clock_out,
-                            break_in: rec.break_in,
-                            break_out: rec.break_out,
-                            hours: rec.total_hrs,
-                            late: rec.total_hrs_late,
-                            overtime: rec.total_overtime,
-                        })),
+                        time_records: empRecords.map((rec) => {
+                            const totalHrs = parseFloat(rec.total_hrs || "0");
+                            const late = parseFloat(rec.total_hrs_late || "0");
+                            const overtime = parseFloat(
+                                rec.total_overtime || "0",
+                            );
+
+                            let undertime = 0;
+                            const scheduleParts =
+                                rec.schedule_name?.split("-") || [];
+
+                            if (scheduleParts.length === 2 && rec.clock_out) {
+                                const scheduleOutStr = scheduleParts[1].trim();
+                                const scheduledOut = parse(
+                                    scheduleOutStr,
+                                    "HH:mm",
+                                    new Date(),
+                                );
+                                const actualOut = parse(
+                                    rec.clock_out,
+                                    "HH:mm:ss",
+                                    new Date(),
+                                );
+
+                                if (
+                                    isValid(scheduledOut) &&
+                                    isValid(actualOut)
+                                ) {
+                                    const diff = differenceInMinutes(
+                                        scheduledOut,
+                                        actualOut,
+                                    );
+                                    undertime = diff > 0 ? diff / 60 : 0;
+                                }
+                            }
+
+                            const billableHours = Math.max(
+                                totalHrs - undertime,
+                                0,
+                            );
+
+                            return {
+                                date: rec.cut_off,
+                                schedule_name: rec.schedule_name,
+                                time_in: rec.clock_in,
+                                time_out: rec.clock_out,
+                                break_in: rec.break_in,
+                                break_out: rec.break_out,
+                                hours: totalHrs.toFixed(2),
+                                late: late.toFixed(2),
+                                overtime: overtime.toFixed(2),
+                                undertime: undertime.toFixed(2),
+                                billable_hours: billableHours.toFixed(2),
+                            };
+                        }),
                     };
                 })
                 .filter(Boolean);
 
-            console.log("Grouped by employee:", groupedByEmployee);
-
             setConsolidatedData(groupedByEmployee);
+            toast.success("Consolidation successfully completed!");
         } catch (error: any) {
             console.error(error);
             toast.error("Consolidation Failed!");
         } finally {
-            toast.success("Consolidation successfully completed!");
             setIsConsolidating(false);
+            setHasConsolidated(true);
         }
     };
 
@@ -219,7 +276,8 @@ export default function Employees() {
                 </span>
             </div>
 
-            <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                {/* Left: Search */}
                 <Input
                     type="text"
                     placeholder="Search Employee..."
@@ -227,40 +285,42 @@ export default function Employees() {
                     onChange={(e) => setSearch(e.target.value)}
                 />
 
-                <div className="flex items-center gap-3">
-                    {/* 🔹 Date Picker */}
-                    <div className="space-y-1">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className="w-[180px] justify-start text-left font-normal"
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {cutOffDate ? (
-                                        format(cutOffDate, "MMM d, yyyy")
-                                    ) : (
-                                        <span>Pick date</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={cutOffDate}
-                                    onSelect={setCutOffDate}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                    {/* 🔹 Branch Select */}
+                {/* Right: Filters + Buttons */}
+                <div className="flex flex-wrap items-end gap-3">
+                    {/* Date Picker */}
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-[180px] justify-start text-left font-normal"
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {cutOffDate ? (
+                                    format(cutOffDate, "MMM d, yyyy")
+                                ) : (
+                                    <span>Pick date</span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={cutOffDate}
+                                onSelect={setCutOffDate}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                    {/* Branch Selector */}
                     <CustomSelect
                         apiUrl="api/v2/get_branch"
                         value={selectedBranch}
                         onChange={(value) => setSelectedBranch(value)}
                         placeholder="Select branch..."
                     />
+
+                    {/* Consolidate Button */}
                     <Button
                         onClick={handleConsolidate}
                         disabled={isConsolidating}
@@ -276,37 +336,57 @@ export default function Employees() {
                         )}
                     </Button>
 
-                    {consolidatedData.length > 0 && (
-                        <PDFDownloadLink
-                            document={
-                                <ConsolidatedTimeRecordsPDF
-                                    recordsByEmployee={consolidatedData}
-                                />
-                            }
-                            fileName={`Consolidated_Time_Records_${format(
-                                cutOffDate!,
-                                "yyyyMMdd",
-                            )}.pdf`}
-                        >
-                            {({ loading }) => (
+                    {/* Conditional: Download & Export */}
+                    {hasConsolidated &&
+                        (consolidatedData.length > 0 ? (
+                            <>
+                                <PDFDownloadLink
+                                    document={
+                                        <ConsolidatedTimeRecordsPDF
+                                            recordsByEmployee={consolidatedData}
+                                        />
+                                    }
+                                    fileName={`Consolidated_Time_Records_${format(
+                                        cutOffDate!,
+                                        "yyyyMMdd",
+                                    )}.pdf`}
+                                >
+                                    {({ loading }) => (
+                                        <Button
+                                            variant={
+                                                loading
+                                                    ? "secondary"
+                                                    : "default"
+                                            }
+                                            className="flex items-center gap-2"
+                                        >
+                                            <FileDown className="h-4 w-4" />
+                                            {loading
+                                                ? "Preparing PDF..."
+                                                : "Download PDF"}
+                                        </Button>
+                                    )}
+                                </PDFDownloadLink>
+
                                 <Button
-                                    variant={loading ? "secondary" : "default"}
+                                    variant="outline"
                                     className="flex items-center gap-2"
+                                    onClick={() =>
+                                        exportConsolidatedToExcel(
+                                            consolidatedData,
+                                            cutOffDate!,
+                                        )
+                                    }
                                 >
                                     <FileDown className="h-4 w-4" />
-                                    {loading
-                                        ? "Preparing PDF..."
-                                        : "Download PDF"}
+                                    Export Excel
                                 </Button>
-                            )}
-                        </PDFDownloadLink>
-                    )}
-
-                    {/* {consolidatedData.length === 0 && (
-                        <span className="text-sm text-gray-400">
-                            No consolidated time records to generate PDF
-                        </span>
-                    )} */}
+                            </>
+                        ) : (
+                            <p className="text-muted-foreground text-sm italic">
+                                No records found for this cutoff period.
+                            </p>
+                        ))}
                 </div>
             </div>
 

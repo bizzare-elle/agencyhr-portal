@@ -179,7 +179,7 @@ export default function LogoverrideDashboard() {
                                 <div className="text-2xl font-bold">
                                     {
                                         data?.info.filter(
-                                            (item) => item.status === "2",
+                                            (item) => item.status === "1",
                                         ).length
                                     }
                                 </div>
@@ -197,7 +197,7 @@ export default function LogoverrideDashboard() {
                                 <div className="text-2xl font-bold">
                                     {
                                         data?.info.filter(
-                                            (item) => item.status !== "2",
+                                            (item) => item.status === "0",
                                         ).length
                                     }
                                 </div>

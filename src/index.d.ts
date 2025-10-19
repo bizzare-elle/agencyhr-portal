@@ -7,7 +7,7 @@ export interface ApiResponse<T> {
 export interface Logoverride {
     id: string;
     app_key: string;
-    employee_id: string;
+    employee_id: number;
     employee_name: string;
     agency_name: string;
     useremail: string;
@@ -45,18 +45,18 @@ export interface Overtime {
     deleted_at: string | null;
 }
 
-export interface TimeRecord {
-    employee_id: string;
-    employee_name: string;
-    branch_name: string;
-    schedule_name: string;
-    cut_off: string;
-    clock_in: string | null;
-    clock_out: string | null;
-    total_hrs: string | null;
-    total_hrs_late: string | null;
-    total_overtime: string | null;
-}
+// export interface TimeRecord {
+//     employee_id: number;
+//     employee_name: string;
+//     branch_name: string;
+//     schedule_name: string;
+//     cut_off: string;
+//     clock_in: string | null;
+//     clock_out: string | null;
+//     total_hrs: string | null;
+//     total_hrs_late: string | null;
+//     total_overtime: string | null;
+// }
 
 export interface Employee {
     id: number;
@@ -131,7 +131,7 @@ export interface Schedule {
     date: string;
     status: string;
     status_label: string;
-    employee_id: string;
+    employee_id: number;
     employee_name: string;
     schedule_name: string;
     schedule_type: string;
@@ -144,7 +144,7 @@ export interface Schedule {
 }
 
 export interface TimeRecord {
-    employee_id: string;
+    employee_id: number;
     agency_name: string;
     employee_name: string;
     branch_name: string;
@@ -164,6 +164,9 @@ export interface TimeRecord {
     hours: string | null;
     clock_out: string | null;
     total_hrs: string | null;
+    hourly_rate: string | null;
     total_hrs_late: string | null;
+    undertime: string | null;
+    total_hours_worked: string | null;
     total_overtime: string | null;
 }

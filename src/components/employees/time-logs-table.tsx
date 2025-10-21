@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { useState } from "react";
 import {
-    formateToMonthDayYear,
+    formatToMonthDayYear,
     formatToDateTime,
     formatToTime,
 } from "@/helpers/formatDates";
@@ -57,7 +57,7 @@ const columns: TableColumn<TimeLog>[] = [
     {
         name: "Date",
         selector: (row) => row.date_time,
-        format: (row) => formateToMonthDayYear(row.date_time),
+        format: (row) => formatToMonthDayYear(row.date_time),
         maxWidth: "200px",
     },
     {

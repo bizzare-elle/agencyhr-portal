@@ -1,5 +1,8 @@
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { formatNumber, formatTime } from "@/helpers/formatDates";
+import moment from "moment";
+import { minutesToHours } from "@/helpers/computeHours";
 
 export function exportConsolidatedToExcel(
     recordsByEmployee: any[],
@@ -9,60 +12,64 @@ export function exportConsolidatedToExcel(
     const wsData: any[] = [];
 
     recordsByEmployee.forEach((emp, index) => {
-        wsData.push(["Employee Name:", emp.employee_name]);
-        wsData.push(["Employee ID:", emp.id_number]);
-        wsData.push(["Branch:", emp.branch]);
-        wsData.push(["Department:", emp.department]);
-        wsData.push(["Employment Status:", emp.employment_status]);
-        wsData.push(["Agency:", emp.agency_name]);
+        wsData.push(["Employee Name:", emp.employee_name || ""]);
+        wsData.push(["Employee ID:", emp.id_number || ""]);
+        wsData.push(["Branch:", emp.branch || ""]);
+        wsData.push(["Department:", emp.department || ""]);
+        wsData.push(["Agency:", emp.agency_name || ""]);
         wsData.push([]);
 
         wsData.push([
             "Date",
             "Schedule",
             "Time In",
-            "Time Out",
             "Break In",
             "Break Out",
-            "Hours",
-            "Late (mins)",
+            "Time Out",
+            "Late (hrs)",
             "Overtime (hrs)",
             "Undertime (hrs)",
+            "Total Hours Worked",
             "Billable Hours",
         ]);
 
         if (emp.time_records?.length > 0) {
             emp.time_records.forEach((rec: any) => {
+                const late = minutesToHours(rec.late);
+                const undertime = minutesToHours(rec.undertime);
+                const overtime = Number(rec.overtime) || 0;
+                const hours = Number(rec.hours) || 0;
+                const billable = Number(rec.totWorkedBill) || 0;
+
                 wsData.push([
-                    rec.date,
+                    moment(rec.date).format("MMM DD, YYYY"),
                     rec.schedule_name || "",
-                    rec.time_in || "",
-                    rec.time_out || "",
-                    rec.break_in || "",
-                    rec.break_out || "",
-                    Number(rec.hours || 0),
-                    Number(rec.late || 0),
-                    Number(rec.overtime || 0),
-                    Number(rec.undertime || 0),
-                    Number(rec.billable_hours || 0),
+                    formatTime(rec.time_in) || "",
+                    formatTime(rec.break_in) || "",
+                    formatTime(rec.break_out) || "",
+                    formatTime(rec.time_out) || "",
+                    formatNumber(late),
+                    formatNumber(overtime),
+                    formatNumber(undertime),
+                    formatNumber(hours),
+                    formatNumber(billable),
                 ]);
             });
 
-            // Compute totals
             const totals = emp.time_records.reduce(
                 (acc: any, rec: any) => {
-                    acc.hours += Number(rec.hours) || 0;
-                    acc.late += Number(rec.late) || 0;
+                    acc.late += minutesToHours(rec.late);
                     acc.overtime += Number(rec.overtime) || 0;
-                    acc.undertime += Number(rec.undertime) || 0;
-                    acc.billable_hours += Number(rec.billable_hours) || 0;
+                    acc.undertime += minutesToHours(rec.undertime);
+                    acc.hours += Number(rec.hours) || 0;
+                    acc.billable_hours += Number(rec.totWorkedBill) || 0;
                     return acc;
                 },
                 {
-                    hours: 0,
                     late: 0,
                     overtime: 0,
                     undertime: 0,
+                    hours: 0,
                     billable_hours: 0,
                 },
             );
@@ -75,10 +82,10 @@ export function exportConsolidatedToExcel(
                 "",
                 "",
                 "",
-                totals.hours.toFixed(2),
-                totals.late.toFixed(0),
+                totals.late.toFixed(2),
                 totals.overtime.toFixed(2),
                 totals.undertime.toFixed(2),
+                totals.hours.toFixed(2),
                 totals.billable_hours.toFixed(2),
             ]);
         } else {
@@ -94,9 +101,9 @@ export function exportConsolidatedToExcel(
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, "Consolidated Records");
 
-    const fileName = `Consolidated_Time_Records_${cutOffDate
-        .toISOString()
-        .slice(0, 10)}.xlsx`;
+    const fileName = `Consolidated_Time_Records_${moment(cutOffDate).format(
+        "YYYY-MM-DD",
+    )}.xlsx`;
 
     const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     saveAs(new Blob([wbout], { type: "application/octet-stream" }), fileName);

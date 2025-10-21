@@ -19,10 +19,11 @@ import { Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import { handleExportExcel } from "./employees/excel-template";
 import { TimeRecord } from "..";
-import { computeUndertime, computeBillableHours } from "@/helpers/computeHours";
+import { computeWorkedBill, minutesToHours } from "@/helpers/computeHours";
+import { formatTime, formatNumber } from "@/helpers/formatDates";
+import { PrintTimeRecords } from "./employees/print-schedule";
 
 export default function TimeRecords() {
     const [datesToRender, setDatesToRender] = useState<Date[]>([]);
@@ -118,8 +119,6 @@ export default function TimeRecords() {
             cut_off_date: queryTo,
         };
 
-        console.log("Payload being sent to backend:", payload);
-
         setIsConsolidating(true);
         const toastId = toast.loading("Consolidating records...");
 
@@ -136,8 +135,6 @@ export default function TimeRecords() {
                     id: toastId,
                 },
             );
-
-            console.log("Response from backend:", response.data);
 
             await refetch();
         } catch (error: any) {
@@ -160,354 +157,31 @@ export default function TimeRecords() {
 
     const tableData = useMemo(() => {
         return records.map((record) => {
-            const undertime = computeUndertime(
-                record.schedule_name,
-                record.clock_out as string,
-            );
-            const billableHours = computeBillableHours(
-                parseFloat(record.total_hrs || "0"),
-                parseFloat(record.total_overtime || "0"),
-                parseFloat(record.total_hrs_late || "0"),
-                undertime,
-            );
+            const totalHoursWorkedBilled =
+                Number(record.total_schedule_hours) === 4 ? 4 : 8;
 
+            const totWorkedBill = computeWorkedBill(
+                record,
+                totalHoursWorkedBilled,
+            );
             return {
                 branch: record.branch_name || "No data",
-                scheduleName: record.schedule_name,
-                date: moment(record.cut_off).format("YYYY-MM-DD"),
-                dayName: moment(record.cut_off).format("dddd"),
+                scheduleName: record.schedule_type,
+                date: moment(record.work_date).format("YYYY-MM-DD"),
+                dayName: moment(record.work_date).format("dddd"),
                 agencyName: record.agency_name,
-                timeIn: record.clock_in,
-                timeOut: record.clock_out,
-                breakIn: record.break_in,
-                breakOut: record.break_out,
-                totalHrs: parseFloat(record.total_hrs || "0"),
-                totalLate: parseFloat(record.total_hrs_late || "0"),
-                totalOvertime: parseFloat(record.total_overtime || "0"),
-                undertime,
-                billableHours,
+                timeIn: record.Clock_In,
+                timeOut: record.Clock_Out,
+                breakIn: record.Break_In,
+                breakOut: record.Break_Out,
+                totalHrs: parseFloat(record.total_hours_worked || "0"),
+                totalLate: record.late_minutes || "0",
+                totalOvertime: parseFloat(record.ot_no_of_hours || "0"),
+                undertimeMinutes: record.undertime_minutes,
+                totWorkedBill,
             };
         });
     }, [records]);
-
-    const handlePrint = () => {
-        const table = document.getElementById("time-records-table");
-        if (!table) return;
-
-        // Helper function to sum a column by its index
-        const sumColumnByIndex = (index: number) => {
-            const rows = Array.from(table.querySelectorAll("tbody tr"));
-            return rows.reduce((sum, row) => {
-                const cells = row.querySelectorAll("td");
-                const val = parseFloat(
-                    cells[index]?.textContent?.trim() || "0",
-                );
-                return sum + (isNaN(val) ? 0 : val);
-            }, 0);
-        };
-
-        // Match your current table order:
-        // 0 Branch
-        // 1 Schedule
-        // 2 Date
-        // 3 Day
-        // 4 Time In
-        // 5 Break In
-        // 6 Break Out
-        // 7 Time Out
-        // 8 Total Hours
-        // 9 Late
-        // 10 Undertime
-        // 11 Overtime
-        // 12 Billable Hours
-
-        const totalHours = sumColumnByIndex(8);
-        const totalLate = sumColumnByIndex(9);
-        const totalUndertime = sumColumnByIndex(10);
-        const totalOvertime = sumColumnByIndex(11);
-        const totalBillable = sumColumnByIndex(12);
-
-        const printContent = table.outerHTML;
-        const printWindow = window.open("", "_blank");
-
-        if (printWindow) {
-            printWindow.document.write(`
-        <html>
-            <head>
-                <title>Time Records - ${employeeName}</title>
-                <style>
-                    body {
-                        font-family: Helvetica, Arial, sans-serif;
-                        padding: 30px;
-                        font-size: 10px;
-                        color: #000;
-                    }
-                    h2, h3, h4 {
-                        text-align: left;
-                        margin: 0;
-                    }
-                    h2 {
-                        font-size: 14px;
-                        font-weight: bold;
-                        margin-bottom: 4px;
-                    }
-                    h3 {
-                        font-size: 12px;
-                        font-weight: normal;
-                        color: #333;
-                        margin: 2px 0 6px 0;
-                    }
-                    h4 {
-                        font-size: 10px;
-                        color: gray;
-                        margin-bottom: 10px;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 10px;
-                    }
-                    th, td {
-                        border: 1px solid #ccc;
-                        padding: 4px 6px;
-                        text-align: center;
-                        font-size: 10px;
-                    }
-                    th {
-                        background-color: #f0f0f0;
-                        font-weight: bold;
-                    }
-                    td.late {
-                        color: red;
-                    }
-                    .totals {
-                        margin-top: 10px;
-                        text-align: left;
-                        font-size: 11px;
-                        font-weight: bold;
-                    }
-                    .totals div {
-                        margin-bottom: 2px;
-                    }
-                    @media print {
-                        button { display: none; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div style="text-align: left; margin-bottom: 10px;">
-                    <h2>${employeeName}</h2>
-                    <h3>${agencyName || "No Agency"}</h3>
-                    <h4>Cut-off Period: ${moment(queryFrom).format("MMM D, YYYY")} - ${moment(queryTo).format("MMM D, YYYY")}</h4>
-                </div>
-
-                ${printContent}
-
-                <div class="totals">
-                    <div>Total Late: ${totalLate.toFixed(2)}</div>
-                    <div>Total Undertime: ${totalUndertime.toFixed(2)}</div>
-                    <div>Total Overtime: ${totalOvertime.toFixed(2)}</div>
-                    <div>Total Hours Worked: ${totalHours.toFixed(2)}</div>
-                    <div>Total Billable Hours: ${totalBillable.toFixed(2)}</div>
-                </div>
-            </body>
-        </html>
-        `);
-
-            printWindow.document.close();
-
-            printWindow.onload = () => {
-                printWindow.print();
-            };
-        }
-    };
-
-    const handleExportExcel = async () => {
-        if (!records || records.length === 0) {
-            toast.error("No records to export");
-            return;
-        }
-
-        const employee = employeeName || "Employee";
-        const dateRange =
-            queryFrom && queryTo
-                ? `Date Range: ${moment(queryFrom).format("MMM DD, YYYY")} to ${moment(
-                      queryTo,
-                  ).format("MMM DD, YYYY")}`
-                : "";
-
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Time Records");
-
-        worksheet.addRow([`Employee Name: ${employee}`]);
-        worksheet.addRow([dateRange]);
-        worksheet.addRow([]);
-
-        const headers = [
-            "Branch",
-            "Schedule",
-            "Date",
-            "Day",
-            "Time In",
-            "Time Out",
-            "Break In",
-            "Break Out",
-            "Total Hours",
-            "Late (hrs)",
-            "Undertime (hrs)",
-            "Overtime (hrs)",
-            "Billable Hours",
-        ];
-        const headerRow = worksheet.addRow(headers);
-
-        headerRow.eachCell((cell) => {
-            cell.fill = {
-                type: "pattern",
-                pattern: "solid",
-                fgColor: { argb: "353935" },
-            };
-            cell.font = { bold: true, color: { argb: "FFFFFF" } };
-            cell.alignment = { horizontal: "center", vertical: "middle" };
-            cell.border = {
-                top: { style: "thin" },
-                bottom: { style: "thin" },
-                left: { style: "thin" },
-                right: { style: "thin" },
-            };
-        });
-
-        // Compute and add rows
-        let totalHours = 0;
-        let totalLate = 0;
-        let totalUndertime = 0;
-        let totalOvertime = 0;
-        let totalBillable = 0;
-
-        records.forEach((r) => {
-            const undertime = computeUndertime(
-                r.schedule_name,
-                r.clock_out as string,
-            );
-            const billableHours = computeBillableHours(
-                parseFloat(r.total_hrs || "0"),
-                parseFloat(r.total_overtime || "0"),
-                parseFloat(r.total_hrs_late || "0"),
-                undertime,
-            );
-
-            totalHours += parseFloat(r.total_hrs || "0");
-            totalLate += parseFloat(r.total_hrs_late || "0");
-            totalUndertime += undertime;
-            totalOvertime += parseFloat(r.total_overtime || "0");
-            totalBillable += billableHours;
-
-            worksheet.addRow([
-                r.branch_name ?? "",
-                r.schedule_name ?? "",
-                r.cut_off ? moment(r.cut_off).format("MMM DD, YYYY") : "",
-                r.cut_off ? moment(r.cut_off).format("dddd") : "",
-                r.clock_in
-                    ? moment(r.clock_in, "HH:mm:ss").format("hh:mm A")
-                    : "No Data",
-                r.clock_out
-                    ? moment(r.clock_out, "HH:mm:ss").format("hh:mm A")
-                    : "No Data",
-                r.break_in
-                    ? moment(r.break_in, "HH:mm:ss").format("hh:mm A")
-                    : "No Data",
-                r.break_out
-                    ? moment(r.break_out, "HH:mm:ss").format("hh:mm A")
-                    : "No Data",
-                parseFloat(r.total_hrs || "0").toFixed(2),
-                parseFloat(r.total_hrs_late || "0").toFixed(2),
-                undertime.toFixed(2),
-                parseFloat(r.total_overtime || "0").toFixed(2),
-                billableHours.toFixed(2),
-            ]);
-        });
-
-        // Totals Row
-        const totalsRow = worksheet.addRow([
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "TOTALS:",
-            totalHours.toFixed(2),
-            totalLate.toFixed(2),
-            totalUndertime.toFixed(2),
-            totalOvertime.toFixed(2),
-            totalBillable.toFixed(2),
-        ]);
-
-        totalsRow.eachCell((cell, colNumber) => {
-            if (colNumber >= 8) {
-                cell.fill = {
-                    type: "pattern",
-                    pattern: "solid",
-                    fgColor: { argb: "353935" },
-                };
-                cell.font = { bold: true, color: { argb: "FFFFFF" } };
-                cell.alignment = { horizontal: "center", vertical: "middle" };
-                cell.border = {
-                    top: { style: "thin" },
-                    bottom: { style: "thin" },
-                    left: { style: "thin" },
-                    right: { style: "thin" },
-                };
-            }
-        });
-
-        worksheet.columns = [
-            { width: 25 },
-            { width: 25 },
-            { width: 18 },
-            { width: 15 },
-            { width: 15 },
-            { width: 15 },
-            { width: 15 },
-            { width: 15 },
-            { width: 15 },
-            { width: 15 },
-            { width: 15 },
-            { width: 15 },
-            { width: 18 },
-        ];
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: "application/octet-stream" });
-        saveAs(
-            blob,
-            `Time_Records_${(employee as string).replace(/\s/g, "_")}.xlsx`,
-        );
-
-        toast.success("Exported successfully to Excel");
-    };
-
-    const formatTime = (time: string | null, workDate?: string | null) => {
-        if (!time) return <span className="text-red-500">No data</span>;
-
-        const parsed = moment(
-            time.length <= 8 && workDate ? `${workDate} ${time}` : time,
-            ["YYYY-MM-DD HH:mm:ss", "HH:mm:ss"],
-        );
-
-        return parsed.isValid() ? (
-            parsed.format("hh:mm A")
-        ) : (
-            <span className="text-red-500">Invalid</span>
-        );
-    };
-
-    const formatNumber = (value: string | null) => {
-        if (value === null || value === "" || isNaN(Number(value))) {
-            return <span className="text-red-500">No data</span>;
-        }
-        return Number(value).toFixed(2);
-    };
 
     if (isError) {
         return (
@@ -544,7 +218,14 @@ export default function TimeRecords() {
 
                     <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                         <Button
-                            onClick={handleExportExcel}
+                            onClick={() =>
+                                handleExportExcel(
+                                    records,
+                                    employeeName as string,
+                                    queryFrom,
+                                    queryTo,
+                                )
+                            }
                             variant="outline"
                             size="sm"
                             className="w-full sm:w-auto"
@@ -552,14 +233,13 @@ export default function TimeRecords() {
                             <Download className="mr-2 h-4 w-4" /> Export
                         </Button>
 
-                        <Button
-                            onClick={handlePrint}
-                            variant="outline"
-                            size="sm"
-                            className="w-full sm:w-auto"
-                        >
-                            <Printer className="mr-2 h-4 w-4" /> Print
-                        </Button>
+                        <PrintTimeRecords
+                            tableId="time-records-table"
+                            employeeName={employeeName as string}
+                            agencyName={agencyName || "No Agency"}
+                            queryFrom={queryFrom}
+                            queryTo={queryTo}
+                        />
 
                         <Button
                             size="sm"
@@ -604,7 +284,7 @@ export default function TimeRecords() {
                                 Time Out
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
-                                Total Hours
+                                Overtime (hrs)
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
                                 Late (hrs)
@@ -612,8 +292,9 @@ export default function TimeRecords() {
                             <TableHead className="px-2 py-4 text-center">
                                 Undertime (hrs)
                             </TableHead>
+
                             <TableHead className="px-2 py-4 text-center">
-                                Overtime (hrs)
+                                Total Hours
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
                                 Billable Hours
@@ -643,29 +324,58 @@ export default function TimeRecords() {
                                     <TableCell className="px-2 py-4 capitalize">
                                         {row.dayName}
                                     </TableCell>
-                                    <TableCell className="px-2 py-4 text-center">
+                                    <TableCell
+                                        className={cn(
+                                            "px-2 py-4 text-center",
+                                            !row.timeIn &&
+                                                "font-semibold text-red-500",
+                                        )}
+                                    >
                                         {row.timeIn
                                             ? formatTime(row.timeIn)
                                             : "No Data"}
                                     </TableCell>
 
-                                    <TableCell className="px-2 py-4 text-center">
+                                    <TableCell
+                                        className={cn(
+                                            "px-2 py-4 text-center",
+                                            !row.breakIn &&
+                                                "font-semibold text-red-500",
+                                        )}
+                                    >
                                         {row.breakIn
                                             ? formatTime(row.breakIn)
                                             : "No Data"}
                                     </TableCell>
-                                    <TableCell className="px-2 py-4 text-center">
+
+                                    <TableCell
+                                        className={cn(
+                                            "px-2 py-4 text-center",
+                                            !row.breakOut &&
+                                                "font-semibold text-red-500",
+                                        )}
+                                    >
                                         {row.breakOut
                                             ? formatTime(row.breakOut)
                                             : "No Data"}
                                     </TableCell>
-                                    <TableCell className="px-2 py-4 text-center">
+
+                                    <TableCell
+                                        className={cn(
+                                            "px-2 py-4 text-center",
+                                            !row.timeOut &&
+                                                "font-semibold text-red-500",
+                                        )}
+                                    >
                                         {row.timeOut
                                             ? formatTime(row.timeOut)
                                             : "No Data"}
                                     </TableCell>
+
                                     <TableCell className="px-2 py-4 text-center">
-                                        {formatNumber(String(row.totalHrs))}
+                                        {row.totalOvertime
+                                            ? row.totalOvertime
+                                            : "No Filed"}
                                     </TableCell>
                                     <TableCell
                                         className={cn(
@@ -674,20 +384,21 @@ export default function TimeRecords() {
                                                 "font-semibold text-red-500",
                                         )}
                                     >
-                                        {formatNumber(String(row.totalLate))}
+                                        {minutesToHours(String(row.totalLate))}
                                     </TableCell>
 
                                     <TableCell className="px-2 py-4 text-center">
-                                        {formatNumber(String(row.undertime))}
-                                    </TableCell>
-                                    <TableCell className="px-2 py-4 text-center">
-                                        {formatNumber(
-                                            String(row.totalOvertime),
+                                        {minutesToHours(
+                                            String(row.undertimeMinutes),
                                         )}
                                     </TableCell>
+
+                                    <TableCell className="px-2 py-4 text-center">
+                                        {formatNumber(String(row.totalHrs))}
+                                    </TableCell>
                                     <TableCell className="px-2 py-4 text-center">
                                         {formatNumber(
-                                            String(row.billableHours),
+                                            String(row.totWorkedBill),
                                         )}
                                     </TableCell>
                                 </TableRow>

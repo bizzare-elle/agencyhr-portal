@@ -1,36 +1,37 @@
 import { parse, isValid, differenceInMinutes } from "date-fns";
 
-export function computeUndertime(
-    scheduleName: string | null,
-    clockOut: string | null,
+export function minutesToHours(
+    minutes: number | string | null | undefined,
 ): number {
-    if (!scheduleName || !clockOut) return 0;
-
-    const scheduleParts = scheduleName.split("-");
-    if (scheduleParts.length !== 2) return 0;
-
-    const scheduleOutStr = scheduleParts[1].trim();
-    const scheduledOut = parse(scheduleOutStr, "HH:mm", new Date());
-    const actualOut = parse(clockOut, "HH:mm:ss", new Date());
-
-    if (!isValid(scheduledOut) || !isValid(actualOut)) return 0;
-
-    const diff = differenceInMinutes(actualOut, scheduledOut);
-    const undertime = diff < 0 ? Math.abs(diff) / 60 : 0;
-
-    return undertime;
+    const min = parseFloat(minutes as string);
+    if (isNaN(min) || min <= 0) return 0;
+    return parseFloat((min / 60).toFixed(2));
 }
 
-export function computeBillableHours(
-    totalHours: string | number,
-    overtime: string | number,
-    late: string | number,
-    undertime: string | number,
+export function computeWorkedBill(
+    log: {
+        Clock_In?: string | null;
+        Clock_Out?: string | null;
+        is_bill_off?: string | number | null;
+        total_hours_worked?: string | number | null;
+        ot_no_of_hours?: string | number | null;
+        total_late_minutes?: string | number | null;
+    },
+    total_hours_worked_billed: number,
 ): number {
-    const total =
-        (Number(totalHours) || 0) +
-        (Number(overtime) || 0) -
-        ((Number(late) || 0) + (Number(undertime) || 0));
+    if (!log?.Clock_In || !log?.Clock_Out) return 0;
 
-    return total > 0 ? parseFloat(total.toFixed(2)) : 0;
+    const isBillOff = Number(log.is_bill_off ?? 0);
+    const totalHoursWorked = Number(log.total_hours_worked ?? 0);
+
+    if (isBillOff === 1 || totalHoursWorked < 0) {
+        return 0;
+    }
+
+    const ot = Number(log.ot_no_of_hours ?? 0);
+    const late = Number(log.total_late_minutes ?? 0);
+
+    const workedBill = total_hours_worked_billed + ot - late / 60;
+
+    return workedBill;
 }

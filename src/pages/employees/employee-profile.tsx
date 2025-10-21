@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { ApiResponse } from "@/index";
 import { cn } from "@/lib/utils";
-import { formateToMonthDayYear } from "@/helpers/formatDates";
+import { formatToMonthDayYear } from "@/helpers/formatDates";
 import TimeLogsTable from "@/components/employees/time-logs-table";
 import FullPageLoader from "@/components/page-loader";
 import { useAuthStore } from "@/hooks/use-auth";
@@ -220,7 +220,7 @@ export default function EmployeeProfile() {
                                 <Badge className="mb-3">Personal</Badge>
                                 <InfoRow
                                     label="Birth Date"
-                                    value={formateToMonthDayYear(
+                                    value={formatToMonthDayYear(
                                         data!.info.birth_date,
                                     )}
                                 />
@@ -277,19 +277,19 @@ export default function EmployeeProfile() {
                                 </p>
                                 <InfoRow
                                     label="Trial Date"
-                                    value={formateToMonthDayYear(
+                                    value={formatToMonthDayYear(
                                         data!.info.trial_date,
                                     )}
                                 />
                                 <InfoRow
                                     label="Date Hired"
-                                    value={formateToMonthDayYear(
+                                    value={formatToMonthDayYear(
                                         data!.info.date_hired,
                                     )}
                                 />
                                 <InfoRow
                                     label="Regularization"
-                                    value={formateToMonthDayYear(
+                                    value={formatToMonthDayYear(
                                         data!.info.date_regularization,
                                     )}
                                 />

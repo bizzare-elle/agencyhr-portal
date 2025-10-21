@@ -3,7 +3,7 @@ import DataTable, { TableColumn } from "react-data-table-component";
 import api from "@/lib/axios";
 import { ApiResponse } from "@/index";
 import { Badge } from "@/components/ui/badge";
-import { formateToMonthDayYear } from "@/helpers/formatDates";
+import { formatToMonthDayYear } from "@/helpers/formatDates";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import { Spinner } from "@/components/ui/spinner";
 import { TimeRecord } from "@/index";
 import { Link } from "react-router-dom";
-import { differenceInMinutes, parse, isValid } from "date-fns";
+import { computeWorkedBill } from "@/helpers/computeHours";
 import { exportConsolidatedToExcel } from "@/components/employees/excel-report-template";
 
 const columns: TableColumn<Employee>[] = [
@@ -48,7 +48,7 @@ const columns: TableColumn<Employee>[] = [
     {
         name: "Created At",
         selector: (row) => row.created_at,
-        format: (row) => formateToMonthDayYear(row.created_at),
+        format: (row) => formatToMonthDayYear(row.created_at),
     },
     {
         name: "Action",
@@ -178,58 +178,34 @@ export default function Employees() {
                         employment_status: empRecords[0].employment_status,
                         agency_name: empRecords[0].agency_name,
                         time_records: empRecords.map((rec) => {
-                            const totalHrs = parseFloat(rec.total_hrs || "0");
-                            const late = parseFloat(rec.total_hrs_late || "0");
+                            const totalHrs = parseFloat(
+                                rec.total_hours_worked || "0",
+                            );
+                            const late = parseFloat(rec.late_minutes || "0");
                             const overtime = parseFloat(
-                                rec.total_overtime || "0",
+                                rec.ot_no_of_hours || "0",
                             );
 
-                            let undertime = 0;
-                            const scheduleParts =
-                                rec.schedule_name?.split("-") || [];
+                            const totalHoursWorkedBilled =
+                                Number(rec.total_schedule_hours) === 4 ? 4 : 8;
 
-                            if (scheduleParts.length === 2 && rec.clock_out) {
-                                const scheduleOutStr = scheduleParts[1].trim();
-                                const scheduledOut = parse(
-                                    scheduleOutStr,
-                                    "HH:mm",
-                                    new Date(),
-                                );
-                                const actualOut = parse(
-                                    rec.clock_out,
-                                    "HH:mm:ss",
-                                    new Date(),
-                                );
-
-                                if (
-                                    isValid(scheduledOut) &&
-                                    isValid(actualOut)
-                                ) {
-                                    const diff = differenceInMinutes(
-                                        scheduledOut,
-                                        actualOut,
-                                    );
-                                    undertime = diff > 0 ? diff / 60 : 0;
-                                }
-                            }
-
-                            const billableHours = Math.max(
-                                totalHrs - undertime,
-                                0,
+                            const totWorkedBill = computeWorkedBill(
+                                rec,
+                                totalHoursWorkedBilled,
                             );
 
                             return {
-                                date: rec.cut_off,
-                                schedule_name: rec.schedule_name,
-                                time_in: rec.clock_in,
-                                time_out: rec.clock_out,
-                                break_in: rec.break_in,
-                                break_out: rec.break_out,
-                                hours: totalHrs.toFixed(2),
-                                late: late.toFixed(2),
-                                overtime: overtime.toFixed(2),
-                                undertime: undertime.toFixed(2),
-                                billable_hours: billableHours.toFixed(2),
+                                date: rec.work_date,
+                                schedule_name: rec.schedule_type,
+                                time_in: rec.Clock_In,
+                                time_out: rec.Clock_Out,
+                                break_in: rec.Break_In,
+                                break_out: rec.Break_Out,
+                                hours: rec.total_hours_worked,
+                                late: rec.late_minutes,
+                                overtime: rec.ot_no_of_hours,
+                                undertime: rec.undertime_minutes,
+                                totWorkedBill,
                             };
                         }),
                     };

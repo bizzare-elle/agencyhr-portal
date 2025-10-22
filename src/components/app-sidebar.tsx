@@ -146,6 +146,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             name: me.name,
                             email: me.email,
                             avatar: me.avatar ?? "/avatars/shadcn.jpg",
+                            id: me.id,
                         }}
                     />
                 ) : (

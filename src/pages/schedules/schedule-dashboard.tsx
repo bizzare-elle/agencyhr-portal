@@ -84,16 +84,6 @@ export default function ScheduleDashboard() {
     if (!employeeId) {
         return (
             <ParentComponent>
-                <Card className="p-6 text-center font-bold text-red-500">
-                    You don't have permission to access this page.
-                </Card>
-            </ParentComponent>
-        );
-    }
-
-    if (!employeeId) {
-        return (
-            <ParentComponent>
                 <Card className="text-center font-bold text-red-500">
                     You don't have permission to access this page.
                 </Card>
@@ -128,33 +118,37 @@ export default function ScheduleDashboard() {
                 <>
                     {/* --- Header Section --- */}
                     <div className="mb-4 w-full">
-                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-6 text-white shadow-md sm:flex-row sm:justify-between">
+                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-4 text-white shadow-md sm:flex-row sm:justify-between sm:p-6">
+                            {/* Left side: profile info */}
                             <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
+                                {/* Avatar */}
+                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20 text-xl font-bold sm:h-16 sm:w-16 sm:text-2xl">
                                     {initialLetter}
                                 </div>
 
-                                <div className="mt-2 sm:mt-0">
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                                        <h1 className="text-lg font-bold tracking-wide sm:text-xl md:text-2xl">
+                                {/* Employee info */}
+                                <div className="mt-2 flex flex-col items-center sm:mt-0 sm:items-start">
+                                    <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-2">
+                                        <h1 className="text-base font-bold tracking-wide sm:text-lg md:text-2xl">
                                             {employee.employee_name}
                                         </h1>
                                         {employee.agency_name && (
-                                            <Badge className="mt-1 sm:mt-0 sm:text-sm md:text-base">
+                                            <Badge className="text-xs sm:text-sm md:text-base">
                                                 {employee.agency_name}
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="mt-1 text-sm opacity-90">
+                                    <p className="mt-1 text-xs opacity-90 sm:text-sm">
                                         ID: {employee.id_number} •{" "}
                                         {employee.branch_name}
                                     </p>
                                 </div>
                             </div>
 
+                            {/* Right side: action button */}
                             <div className="w-full sm:w-auto">
                                 <Link to={`/schedules/form/${employeeId}`}>
-                                    <Button className="w-full sm:w-auto">
+                                    <Button className="w-full text-sm sm:w-auto sm:text-base">
                                         Request Schedule
                                     </Button>
                                 </Link>

@@ -154,18 +154,9 @@ export default function LoginPage() {
                                 )}
                             />
 
-                            <div className="flex flex-col items-center justify-between gap-2 text-xs sm:flex-row sm:text-sm">
-                                <a
-                                    href="/forgot-password"
-                                    className="text-center hover:underline sm:text-left"
-                                >
-                                    Forgot password?
-                                </a>
-                            </div>
-
                             <Button
                                 type="submit"
-                                className="w-full text-sm sm:text-base"
+                                className="mt-4 w-full text-sm sm:text-base"
                                 disabled={loginMutation.isPending}
                             >
                                 {loginMutation.isPending ? (

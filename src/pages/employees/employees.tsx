@@ -253,22 +253,21 @@ export default function Employees() {
             </div>
 
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                {/* Left: Search */}
-                <Input
-                    type="text"
-                    placeholder="Search Employee..."
-                    className="max-w-[250px]"
-                    onChange={(e) => setSearch(e.target.value)}
-                />
+                <div className="w-full md:w-auto">
+                    <Input
+                        type="text"
+                        placeholder="Search Employee..."
+                        className="w-full md:max-w-[250px]"
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
 
-                {/* Right: Filters + Buttons */}
-                <div className="flex flex-wrap items-end gap-3">
-                    {/* Date Picker */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end md:justify-end md:gap-3">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
-                                className="w-[180px] justify-start text-left font-normal"
+                                className="w-full justify-start text-left font-normal sm:w-[180px]"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {cutOffDate ? (
@@ -288,19 +287,21 @@ export default function Employees() {
                         </PopoverContent>
                     </Popover>
 
-                    {/* Branch Selector */}
-                    <CustomSelect
-                        apiUrl="api/v2/get_branch"
-                        value={selectedBranch}
-                        onChange={(value) => setSelectedBranch(value)}
-                        placeholder="Select branch..."
-                    />
+                    <div className="w-full sm:w-[180px]">
+                        <CustomSelect
+                            apiUrl="api/v2/get_branch"
+                            value={selectedBranch}
+                            onChange={(value) => setSelectedBranch(value)}
+                            placeholder="Select branch..."
+                        />
+                    </div>
 
-                    {/* Consolidate Button */}
                     <Button
                         onClick={handleConsolidate}
                         disabled={isConsolidating}
-                        className={isConsolidating ? "" : "bg-yellow-500"}
+                        className={`w-full sm:w-auto ${
+                            isConsolidating ? "" : "bg-yellow-500"
+                        }`}
                     >
                         {isConsolidating ? (
                             <>
@@ -315,7 +316,7 @@ export default function Employees() {
                     {/* Conditional: Download & Export */}
                     {hasConsolidated &&
                         (consolidatedData.length > 0 ? (
-                            <>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                                 <PDFDownloadLink
                                     document={
                                         <ConsolidatedTimeRecordsPDF
@@ -334,7 +335,7 @@ export default function Employees() {
                                                     ? "secondary"
                                                     : "default"
                                             }
-                                            className="flex items-center gap-2"
+                                            className="flex w-full items-center justify-center gap-2 sm:w-auto"
                                         >
                                             <FileDown className="h-4 w-4" />
                                             {loading
@@ -346,7 +347,7 @@ export default function Employees() {
 
                                 <Button
                                     variant="outline"
-                                    className="flex items-center gap-2"
+                                    className="flex w-full items-center justify-center gap-2 sm:w-auto"
                                     onClick={() =>
                                         exportConsolidatedToExcel(
                                             consolidatedData,
@@ -357,7 +358,7 @@ export default function Employees() {
                                     <FileDown className="h-4 w-4" />
                                     Export Excel
                                 </Button>
-                            </>
+                            </div>
                         ) : (
                             <p className="text-muted-foreground text-sm italic">
                                 No records found for this cutoff period.

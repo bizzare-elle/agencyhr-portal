@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { formatToMonthDayYear } from "@/helpers/formatDates";
 import TimeLogsTable from "@/components/employees/time-logs-table";
 import FullPageLoader from "@/components/page-loader";
-import { useAuthStore } from "@/hooks/use-auth";
 import OvertimeRequestsCard from "@/components/employee-overtime";
 import LogoverrideRequests from "@/components/employee-logoverride";
 import EmployeeScheduleCard from "@/components/employee-schedule";
@@ -174,34 +173,34 @@ export default function EmployeeProfile() {
 
             {/* Tabs Section */}
             <Tabs defaultValue="data" className="w-full">
-                <TabsList className="border-muted-foreground/20 scrollbar-none mb-4 flex flex-nowrap justify-start gap-2 overflow-x-auto border-b px-1 sm:px-2">
+                <TabsList className="border-muted-foreground/20 scrollbar-none mb-4 flex w-full flex-nowrap justify-start gap-2 overflow-x-auto border-b px-1 sm:justify-center sm:gap-4 sm:px-2">
                     <TabsTrigger
                         value="data"
-                        className="text-sm whitespace-nowrap sm:text-base"
+                        className="text-xs whitespace-nowrap sm:text-sm md:text-base"
                     >
                         Profile
                     </TabsTrigger>
                     <TabsTrigger
                         value="logs"
-                        className="text-sm whitespace-nowrap sm:text-base"
+                        className="text-xs whitespace-nowrap sm:text-sm md:text-base"
                     >
                         Time Logs
                     </TabsTrigger>
                     <TabsTrigger
                         value="schedule"
-                        className="text-sm whitespace-nowrap sm:text-base"
+                        className="text-xs whitespace-nowrap sm:text-sm md:text-base"
                     >
                         Schedule
                     </TabsTrigger>
                     <TabsTrigger
                         value="logOverride"
-                        className="text-sm whitespace-nowrap sm:text-base"
+                        className="text-xs whitespace-nowrap sm:text-sm md:text-base"
                     >
                         Log Override
                     </TabsTrigger>
                     <TabsTrigger
                         value="overtime"
-                        className="text-sm whitespace-nowrap sm:text-base"
+                        className="text-xs whitespace-nowrap sm:text-sm md:text-base"
                     >
                         Overtime
                     </TabsTrigger>

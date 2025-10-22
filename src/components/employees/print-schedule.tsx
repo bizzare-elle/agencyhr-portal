@@ -102,6 +102,8 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
                     }
                     .signature {
                         margin-top: 40px;
+                        display: flex;
+                        justify-content: center;
                         text-align: center;
                         font-size: 11px;
                     }
@@ -142,7 +144,6 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
 
                 <div class="signature">
                     <div class="signature-line">${employeeName}</div>
-                  
                 </div>
             </body>
         </html>

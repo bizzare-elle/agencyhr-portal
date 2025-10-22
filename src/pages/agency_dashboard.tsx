@@ -60,6 +60,8 @@ export default function AgencyDashboard() {
     const agencyId = meQuery.data?.agency_id;
 
     const dashboardQuery = useQuery<DashboardResponse>({
+        staleTime: 1000 * 60 * 5,
+        // cacheTime: 1000 * 60 * 10,
         queryKey: ["agencyDashboard", agencyId],
         queryFn: async () => {
             const response = await api.get<ApiResponse<DashboardResponse>>(
@@ -93,7 +95,6 @@ export default function AgencyDashboard() {
     return (
         <ParentComponent>
             <div className="space-y-6">
-                {/* Header */}
                 <div className="flex flex-col gap-2">
                     <div className="align-center flex gap-x-2 text-2xl font-bold text-white">
                         <h3>Agency Dashboard</h3>
@@ -104,7 +105,6 @@ export default function AgencyDashboard() {
                     </p>
                 </div>
 
-                {/* Summary Cards */}
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
                     <Card className="bg-[#1f1f1f] text-white">
                         <CardHeader>
@@ -163,7 +163,6 @@ export default function AgencyDashboard() {
                     </Card>
                 </div>
 
-                {/* Employee Status Chart */}
                 <Card className="bg-[#1f1f1f] text-white">
                     <CardHeader>
                         <CardTitle>

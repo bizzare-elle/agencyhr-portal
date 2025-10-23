@@ -11,6 +11,7 @@ import { TextField } from "@/components/text-field";
 import { ImageUploader } from "@/components/image-dropzone";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Controller } from "react-hook-form";
 import {
     Form,
     FormField,
@@ -198,11 +199,49 @@ export default function LogoverrideForm() {
                                     </div>
                                 </div>
 
-                                {/* Remarks */}
-                                <TextField
+                                <Controller
                                     name="remarks"
-                                    label="Add Remarks"
                                     control={form.control}
+                                    render={({ field }) => (
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                                Remarks
+                                            </label>
+                                            <Select
+                                                onValueChange={field.onChange}
+                                                value={field.value}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select reason" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="System Maintenance">
+                                                        System Maintenance
+                                                    </SelectItem>
+                                                    <SelectItem value="No Internet Connection">
+                                                        No Internet Connection
+                                                    </SelectItem>
+                                                    <SelectItem value="Employee is not yet added in the System">
+                                                        Employee is not yet
+                                                        added in the System
+                                                    </SelectItem>
+                                                    <SelectItem value="Work Remotely (For Corporate Office Only)">
+                                                        Work Remotely (For
+                                                        Corporate Office Only)
+                                                    </SelectItem>
+                                                    <SelectItem value="Forgot Clock-In or Clock-Out">
+                                                        Forgot Clock-In or
+                                                        Clock-Out
+                                                    </SelectItem>
+                                                    <SelectItem value="Request for Change Clock Type (Clock-In, Clock-Out)">
+                                                        Request for Change Clock
+                                                        Type (Clock-In,
+                                                        Clock-Out)
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
                                 />
 
                                 {/* Image Upload */}

@@ -81,7 +81,6 @@ const columns: TableColumn<TimeLog>[] = [
     {
         name: "Image",
         cell: (row) => {
-            let imageSrc = "";
             const cutoffDate = new Date("2025-06-01T00:00:00");
             const recordDate = new Date(row.date_time);
 
@@ -91,35 +90,44 @@ const columns: TableColumn<TimeLog>[] = [
                     : "AtlasAgencyTimeTrackerv2-373955958";
             const tableName =
                 recordDate >= cutoffDate ? "Sheet1" : "hr_time_tracker";
-            if (row.image && row.image.startsWith("http")) {
+
+            let imageSrc = "";
+
+            if (row.image?.startsWith("http")) {
                 imageSrc = row.image;
-            } else if (row.image && row.image.includes("Sheet1_Images")) {
+            } else if (row.image?.includes("Sheet1_Images")) {
                 const encodedImage = encodeURIComponent(row.image).replace(
                     /%2F/g,
                     "/",
                 );
-                imageSrc = `http://localhost/backoffice/${encodedImage}`;
+                const baseUrl =
+                    import.meta.env.VITE_BACKOFFICE_URL ||
+                    `${window.location.origin}/backoffice`;
+                imageSrc = `${baseUrl}/${encodedImage}`;
             } else if (row.image) {
                 const cleanFileName = row.image.replace(/^.*[\\/]/, "");
-
-                const primaryAppSheet = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${row.image}`;
-
-                const secondaryAppSheet = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${row.image}`;
-
-                if (
+                const primaryUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${row.image}`;
+                const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
+                imageSrc =
                     row.image.includes("AppBackup") ||
                     row.image.includes("ImagesBackup")
-                ) {
-                    imageSrc = secondaryAppSheet;
-                } else {
-                    imageSrc = primaryAppSheet;
-                }
+                        ? backupUrl
+                        : primaryUrl;
             }
 
-            // Warn if no image could be resolved
             if (!imageSrc) {
                 console.warn("Missing image for record:", row);
+                imageSrc = "/no-image.png";
             }
+
+            const handleImageError = (
+                e: React.SyntheticEvent<HTMLImageElement>,
+            ) => {
+                const target = e.currentTarget;
+                const cleanFileName = row.image?.replace(/^.*[\\/]/, "");
+                target.onerror = null;
+                target.src = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
+            };
 
             return (
                 <Dialog>
@@ -128,15 +136,7 @@ const columns: TableColumn<TimeLog>[] = [
                             className="max-h-[50px]"
                             src={imageSrc}
                             alt="N/A"
-                            onError={(e) => {
-                                const target =
-                                    e.currentTarget as HTMLImageElement;
-                                const cleanFileName = row.image?.replace(
-                                    /^.*[\\/]/,
-                                    "",
-                                );
-                                target.src = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
-                            }}
+                            onError={handleImageError}
                         />
                     </DialogTrigger>
                     <DialogContent>
@@ -146,32 +146,20 @@ const columns: TableColumn<TimeLog>[] = [
                                 {formatToDateTime(row.date_time)}
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="flex items-center justify-center object-contain">
+                        <div className="flex items-center justify-center">
                             <img
-                                className="max-h-[400px]"
+                                className="max-h-[400px] object-contain"
                                 src={imageSrc}
                                 alt="Time Log"
-                                onError={(e) => {
-                                    const target =
-                                        e.currentTarget as HTMLImageElement;
-                                    const cleanFileName = row.image?.replace(
-                                        /^.*[\\/]/,
-                                        "",
-                                    );
-                                    target.src = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
-                                }}
+                                onError={handleImageError}
                             />
                         </div>
-                        <DialogFooter className="mt-4">
-                            <DialogClose asChild>
-                                <Button variant="secondary">Close</Button>
-                            </DialogClose>
-                        </DialogFooter>
                     </DialogContent>
                 </Dialog>
             );
         },
     },
+
     {
         name: "Status",
         cell: () => <Badge className="bg-green-600 text-white">Approved</Badge>,

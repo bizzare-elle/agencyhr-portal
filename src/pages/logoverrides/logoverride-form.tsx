@@ -93,11 +93,15 @@ export default function LogoverrideForm() {
                 formData.append("image", formValues.imageReference);
             }
 
-            const res = await api.post(`/api/v2/logoverride-form/`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
+            const res = await api.post(
+                `/api/v2/logoverrides/${employeeId}`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
                 },
-            });
+            );
 
             return res.data;
         },

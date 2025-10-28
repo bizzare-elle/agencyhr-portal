@@ -16,10 +16,7 @@ import {
     DialogTrigger,
     DialogContent,
     DialogDescription,
-    DialogFooter,
-    DialogClose,
 } from "../ui/dialog";
-import { Button } from "../ui/button";
 import FullPageLoader from "../page-loader";
 
 export interface TimeLog {
@@ -81,81 +78,110 @@ const columns: TableColumn<TimeLog>[] = [
     {
         name: "Image",
         cell: (row) => {
-            const cutoffDate = new Date("2025-06-01T00:00:00");
-            const recordDate = new Date(row.date_time);
+            const defaultImage = "/no-image.png";
+            const appName = "WFPhonetrics-373955958";
+            const tableName = "Sheet1";
 
-            const appName =
-                recordDate >= cutoffDate
-                    ? "WFPhonetrics-373955958"
-                    : "AtlasAgencyTimeTrackerv2-373955958";
-            const tableName =
-                recordDate >= cutoffDate ? "Sheet1" : "hr_time_tracker";
+            const baseUrl =
+                window.location.hostname === "localhost"
+                    ? "http://localhost/backoffice/"
+                    : "https://backoffice.wildflour.com.ph/";
 
-            let imageSrc = "";
+            let imageSrc = defaultImage;
 
-            if (row.image?.startsWith("http")) {
-                imageSrc = row.image;
-            } else if (row.image?.includes("Sheet1_Images")) {
-                const encodedImage = encodeURIComponent(row.image).replace(
-                    /%2F/g,
-                    "/",
-                );
-                const baseUrl =
-                    import.meta.env.VITE_BACKOFFICE_URL ||
-                    `${window.location.origin}/backoffice`;
-                imageSrc = `${baseUrl}/${encodedImage}`;
-            } else if (row.image) {
+            if (
+                row.image &&
+                typeof row.image === "string" &&
+                row.image.trim()
+            ) {
                 const cleanFileName = row.image.replace(/^.*[\\/]/, "");
-                const primaryUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${row.image}`;
+
+                // 🟢 Handle direct URLs first (already full http path)
+                if (row.image.startsWith("http")) {
+                    imageSrc = row.image;
+                }
+                // 🟢 Handle Log Override → always from local uploads
+                else if (row.is_logoverride === "1") {
+                    imageSrc = `${baseUrl}uploads/${cleanFileName}`;
+                }
+                // 🟢 Handle local Sheet1_Images or uploads paths
+                else if (
+                    row.image.includes("Sheet1_Images") ||
+                    row.image.includes("uploads")
+                ) {
+                    const encodedImage = encodeURIComponent(row.image).replace(
+                        /%2F/g,
+                        "/",
+                    );
+                    imageSrc = `${baseUrl}${encodedImage}`;
+                }
+                // 🟢 Default → AppSheet main URL
+                else {
+                    imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${row.image}`;
+                }
+
+                // 🟠 Backup and fallback URLs
                 const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
-                imageSrc =
-                    row.image.includes("AppBackup") ||
-                    row.image.includes("ImagesBackup")
-                        ? backupUrl
-                        : primaryUrl;
-            }
+                const localImageUrl = `${baseUrl}uploads/${cleanFileName}`;
 
-            if (!imageSrc) {
-                console.warn("Missing image for record:", row);
-                imageSrc = "/no-image.png";
-            }
+                // 🟣 Error handler — try backup → local → default
+                const handleImageError = (
+                    e: React.SyntheticEvent<HTMLImageElement>,
+                ) => {
+                    const target = e.currentTarget;
+                    target.onerror = null;
 
-            const handleImageError = (
-                e: React.SyntheticEvent<HTMLImageElement>,
-            ) => {
-                const target = e.currentTarget;
-                const cleanFileName = row.image?.replace(/^.*[\\/]/, "");
-                target.onerror = null;
-                target.src = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
-            };
+                    const tryBackup = new Image();
+                    tryBackup.src = backupUrl;
+                    tryBackup.onload = () => (target.src = backupUrl);
+                    tryBackup.onerror = () => {
+                        const tryLocal = new Image();
+                        tryLocal.src = localImageUrl;
+                        tryLocal.onload = () => (target.src = localImageUrl);
+                        tryLocal.onerror = () => {
+                            target.src = defaultImage;
+                        };
+                    };
+                };
 
-            return (
-                <Dialog>
-                    <DialogTrigger className="cursor-pointer">
-                        <img
-                            className="max-h-[50px]"
-                            src={imageSrc}
-                            alt="N/A"
-                            onError={handleImageError}
-                        />
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Time Log Image</DialogTitle>
-                            <DialogDescription>
-                                {formatToDateTime(row.date_time)}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex items-center justify-center">
+                // 🖼️ Render dialog with zoomable image
+                return (
+                    <Dialog>
+                        <DialogTrigger className="cursor-pointer">
                             <img
-                                className="max-h-[400px] object-contain"
+                                className="max-h-[50px] rounded object-contain"
                                 src={imageSrc}
-                                alt="Time Log"
+                                alt={`Time Log ${row.id}`}
                                 onError={handleImageError}
                             />
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Time Log Image</DialogTitle>
+                                <DialogDescription>
+                                    {formatToDateTime(row.date_time)}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex items-center justify-center">
+                                <img
+                                    className="max-h-[400px] object-contain"
+                                    src={imageSrc}
+                                    alt={`Time Log ${row.id}`}
+                                    onError={handleImageError}
+                                />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                );
+            }
+
+            // 🩶 No image fallback
+            return (
+                <img
+                    src={defaultImage}
+                    alt="No image"
+                    className="max-h-[50px] rounded object-contain opacity-70"
+                />
             );
         },
     },
@@ -172,21 +198,20 @@ export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ["employee-time-logs", employeeId, page, rowsPerPage],
-        queryFn: async function () {
+        queryFn: async () => {
             const response = await api.get<
                 ApiResponse<{ records: TimeLog[]; total: number }>
             >(
                 `/api/v2/employees/${employeeId}/time-logs?page=${page}&limit=${rowsPerPage}`,
             );
-
             return response.data;
         },
         placeholderData: (previousData) => previousData,
+        staleTime: 10 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
     });
 
-    if (isLoading) {
-        return <FullPageLoader />;
-    }
+    if (isLoading) return <FullPageLoader />;
 
     return (
         <DataTable
@@ -199,8 +224,8 @@ export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
             pagination
             paginationTotalRows={data?.data.total}
             paginationServer
-            onChangePage={(page) => setPage(page)}
-            onChangeRowsPerPage={(value) => setRowsPerPage(value)}
+            onChangePage={(p) => setPage(p)}
+            onChangeRowsPerPage={(v) => setRowsPerPage(v)}
             customStyles={{
                 header: {
                     style: {
@@ -210,16 +235,8 @@ export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
                         backgroundColor: "#1f2937",
                     },
                 },
-                headRow: {
-                    style: {
-                        borderBottom: "1px solid #374151",
-                    },
-                },
-                headCells: {
-                    style: {
-                        padding: "10px",
-                    },
-                },
+                headRow: { style: { borderBottom: "1px solid #374151" } },
+                headCells: { style: { padding: "10px" } },
                 rows: {
                     style: {
                         minHeight: "55px",
@@ -227,17 +244,9 @@ export default function TimeLogsTable({ employeeId }: { employeeId: number }) {
                         borderRadius: "8px",
                     },
                 },
-                cells: {
-                    style: {
-                        padding: "10px 8px",
-                        color: "#d1d5db",
-                    },
-                },
+                cells: { style: { padding: "10px 8px", color: "#d1d5db" } },
                 pagination: {
-                    style: {
-                        backgroundColor: "#111827",
-                        color: "#fff",
-                    },
+                    style: { backgroundColor: "#111827", color: "#fff" },
                 },
             }}
         />

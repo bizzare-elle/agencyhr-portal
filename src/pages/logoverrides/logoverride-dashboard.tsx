@@ -375,7 +375,6 @@ export default function LogoverrideDashboard() {
                                                                                 );
                                                                             }
 
-                                                                            // --- Determine which AppSheet app/table to use based on date (optional)
                                                                             const cutoffDate =
                                                                                 new Date(
                                                                                     "2025-06-01T00:00:00",

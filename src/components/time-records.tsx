@@ -97,17 +97,19 @@ export default function TimeRecords() {
 
     useEffect(() => {
         const today = moment();
-        const start =
-            today.date() <= 15
-                ? today.clone().startOf("month")
-                : today.clone().date(16);
-        const end =
-            today.date() <= 15
-                ? today.clone().date(15)
-                : today.clone().endOf("month");
+        let start: moment.Moment;
+        let end: moment.Moment;
+
+        if (today.date() <= 15) {
+            start = today.clone().subtract(1, "month").date(16);
+            end = today.clone().subtract(1, "month").endOf("month");
+        } else {
+            start = today.clone().startOf("month");
+            end = today.clone().date(15);
+        }
+
         setDatesToRender(getDatesInRange(start.toDate(), end.toDate()));
     }, []);
-
     const handleConsolidate = async () => {
         if (!employeeId || !queryTo) {
             toast.warning("Please select an employee and a cutoff date.");
@@ -206,15 +208,19 @@ export default function TimeRecords() {
                 </CardTitle>
 
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
-                    <DateRangePicker
-                        initialDateFrom={datesToRender[0]}
-                        initialDateTo={datesToRender[datesToRender.length - 1]}
-                        onUpdate={(value) => {
-                            const from = value.range.from;
-                            const to = value.range.to || value.range.from;
-                            setDatesToRender(getDatesInRange(from, to));
-                        }}
-                    />
+                    {datesToRender.length > 0 && (
+                        <DateRangePicker
+                            initialDateFrom={datesToRender[0]}
+                            initialDateTo={
+                                datesToRender[datesToRender.length - 1]
+                            }
+                            onUpdate={(value) => {
+                                const from = value.range.from;
+                                const to = value.range.to || value.range.from;
+                                setDatesToRender(getDatesInRange(from, to));
+                            }}
+                        />
+                    )}
 
                     <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                         <Button

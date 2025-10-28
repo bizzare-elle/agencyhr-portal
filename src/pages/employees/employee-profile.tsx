@@ -76,6 +76,39 @@ export default function EmployeeProfile() {
         enabled: !!employeeId,
     });
 
+    // const { data, isLoading, isError } = useQuery<EmployeeResponse>({
+    //     queryKey: ["employeeProfile", employeeId],
+    //     queryFn: async () => {
+    //         const response = await api.get<ApiResponse<EmployeeResponse>>(
+    //             `/api/v2/employees/${employeeId}`,
+    //             {
+    //                 withCredentials: true,
+    //                 headers: {
+    //                     "Cache-Control": "no-cache",
+    //                     Pragma: "no-cache",
+    //                     Expires: "0",
+    //                 },
+    //             },
+    //         );
+    //         return (
+    //             response.data.data ?? {
+    //                 info: [],
+    //                 schedules: [],
+    //                 logoverrides: [],
+    //                 overtimes: [],
+    //             }
+    //         );
+    //     },
+    //     enabled: !!employeeId,
+
+    //     gcTime: 1000 * 60 * 10,
+    //     staleTime: 1000 * 60 * 10,
+
+    //     refetchOnMount: true,
+    //     refetchOnWindowFocus: true,
+    //     refetchOnReconnect: true,
+    // });
+
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const midMonth = new Date(today.getFullYear(), today.getMonth(), 15);

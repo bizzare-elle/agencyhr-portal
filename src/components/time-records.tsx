@@ -110,6 +110,7 @@ export default function TimeRecords() {
 
         setDatesToRender(getDatesInRange(start.toDate(), end.toDate()));
     }, []);
+
     const handleConsolidate = async () => {
         if (!employeeId || !queryTo) {
             toast.warning("Please select an employee and a cutoff date.");
@@ -186,11 +187,7 @@ export default function TimeRecords() {
     }, [records]);
 
     if (isError) {
-        return (
-            <div className="text-destructive py-6 text-center">
-                Failed to load records. Please try again later.
-            </div>
-        );
+        return <p className="text-danger">Error! Failed to load data</p>;
     }
 
     return (

@@ -21,26 +21,14 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import { useAuthStore } from "@/hooks/use-auth";
+import { motion } from "framer-motion";
 
 export interface DashboardResponse {
     agency_name: string;
     total_employees: number;
-    pending_logoverrides: number;
-    pending_overtime: number;
-    pending_schedules: number;
-    employee_chart: {
-        month: string;
-        regular: number;
-        probationary: number;
-    }[];
-    logoverride_chart: {
-        month: string;
-        total: number;
-    }[];
-    overtime_chart: {
-        month: string;
-        total: number;
-    }[];
+    employee_chart: { month: string; regular: number; probationary: number }[];
+    logoverride_chart: { month: string; total: number }[];
+    overtime_chart: { month: string; total: number }[];
 }
 
 export default function AgencyDashboard() {
@@ -61,7 +49,6 @@ export default function AgencyDashboard() {
 
     const dashboardQuery = useQuery<DashboardResponse>({
         staleTime: 1000 * 60 * 5,
-        // cacheTime: 1000 * 60 * 10,
         queryKey: ["agencyDashboard", agencyId],
         queryFn: async () => {
             const response = await api.get<ApiResponse<DashboardResponse>>(
@@ -78,8 +65,8 @@ export default function AgencyDashboard() {
     if (meQuery.isError || dashboardQuery.isError)
         return (
             <ParentComponent>
-                <div className="text-center text-2xl font-bold text-red-500">
-                    Error fetching dashboard data.
+                <div className="flex h-[60vh] items-center justify-center text-2xl font-bold text-red-500">
+                    Failed to load dashboard data.
                 </div>
             </ParentComponent>
         );
@@ -94,86 +81,52 @@ export default function AgencyDashboard() {
 
     return (
         <ParentComponent>
-            <div className="space-y-6">
-                <div className="flex flex-col gap-2">
-                    <div className="align-center flex gap-x-2 text-2xl font-bold text-white">
+            <motion.div
+                className="space-y-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+            >
+                {/* Header */}
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3 text-2xl font-bold text-white">
                         <h3>Agency Dashboard</h3>
-                        <Badge>{data?.agency_name}</Badge>
+                        <Badge className="bg-blue-500 text-white">
+                            {data?.agency_name}
+                        </Badge>
                     </div>
                     <p className="text-sm text-white/60">
                         Workforce and time management overview.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
-                    <Card className="bg-[#1f1f1f] text-white">
-                        <CardHeader>
-                            <CardTitle>Total Employees</CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Active employees
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-4xl font-bold">
-                                {data?.total_employees ?? 0}
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Summary Card */}
+                <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
+                    <CardHeader>
+                        <CardTitle>Total Employees</CardTitle>
+                        <CardDescription className="text-gray-400">
+                            Currently active in your agency
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-5xl font-extrabold tracking-tight text-green-400">
+                            {data?.total_employees ?? 0}
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <Card className="bg-[#1f1f1f] text-white">
-                        <CardHeader>
-                            <CardTitle>Pending Log Overrides</CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Awaiting approval
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-4xl font-bold text-yellow-400">
-                                {data?.pending_logoverrides ?? 0}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-[#1f1f1f] text-white">
-                        <CardHeader>
-                            <CardTitle>Pending Overtime</CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Awaiting approval
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-4xl font-bold text-blue-400">
-                                {data?.pending_overtime ?? 0}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-[#1f1f1f] text-white">
-                        <CardHeader>
-                            <CardTitle>Pending Schedule Request</CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Awaiting approval
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-4xl font-bold text-yellow-400">
-                                {data?.pending_schedules ?? 0}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card className="bg-[#1f1f1f] text-white">
+                {/* Employee Growth Chart */}
+                <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
                     <CardHeader>
                         <CardTitle>
                             Employee Growth (Regular vs Probationary)
                         </CardTitle>
                         <CardDescription className="text-gray-400">
-                            Monthly breakdown of employees by status.
+                            Monthly breakdown of employees by status
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={320}>
                             <AreaChart data={data?.employee_chart || []}>
                                 <CartesianGrid
                                     strokeDasharray="3 3"
@@ -193,16 +146,16 @@ export default function AgencyDashboard() {
                                 <Area
                                     type="monotone"
                                     dataKey="regular"
-                                    stroke="#4ade80"
-                                    fill="#4ade80"
-                                    fillOpacity={0.5}
+                                    stroke="#22c55e"
+                                    fill="#22c55e"
+                                    fillOpacity={0.4}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="probationary"
-                                    stroke="#60a5fa"
-                                    fill="#60a5fa"
-                                    fillOpacity={0.5}
+                                    stroke="#3b82f6"
+                                    fill="#3b82f6"
+                                    fillOpacity={0.4}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -211,15 +164,15 @@ export default function AgencyDashboard() {
 
                 {/* Logoverride and Overtime Charts */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <Card className="bg-[#1f1f1f] text-white">
+                    <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
                         <CardHeader>
                             <CardTitle>Monthly Logoverride Files</CardTitle>
                             <CardDescription className="text-gray-400">
-                                Total number of logoverride requests filed.
+                                Total number of logoverride requests filed
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={280}>
                                 <AreaChart data={data?.logoverride_chart || []}>
                                     <CartesianGrid
                                         strokeDasharray="3 3"
@@ -239,8 +192,8 @@ export default function AgencyDashboard() {
                                     <Area
                                         type="monotone"
                                         dataKey="total"
-                                        stroke="#facc15"
-                                        fill="#facc15"
+                                        stroke="#fbbf24"
+                                        fill="#fbbf24"
                                         fillOpacity={0.5}
                                     />
                                 </AreaChart>
@@ -248,15 +201,15 @@ export default function AgencyDashboard() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-[#1f1f1f] text-white">
+                    <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
                         <CardHeader>
                             <CardTitle>Monthly Overtime Files</CardTitle>
                             <CardDescription className="text-gray-400">
-                                Total number of overtime requests filed.
+                                Total number of overtime requests filed
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
+                            <ResponsiveContainer width="100%" height={280}>
                                 <AreaChart data={data?.overtime_chart || []}>
                                     <CartesianGrid
                                         strokeDasharray="3 3"
@@ -285,7 +238,7 @@ export default function AgencyDashboard() {
                         </CardContent>
                     </Card>
                 </div>
-            </div>
+            </motion.div>
         </ParentComponent>
     );
 }

@@ -78,16 +78,18 @@ const columns: TableColumn<TimeLog>[] = [
     {
         name: "Image",
         cell: (row) => {
-            const defaultImage = "/no-image.png";
+            const hostname = window.location.hostname;
+            const isLocal = hostname === "localhost";
+
+            const baseUrl = isLocal
+                ? "http://localhost/backoffice/"
+                : "https://backoffice.wildflour.com.ph/";
+
             const appName = "WFPhonetrics-373955958";
             const tableName = "Sheet1";
 
-            const baseUrl =
-                window.location.hostname === "localhost"
-                    ? "http://localhost/backoffice/"
-                    : "https://backoffice.wildflour.com.ph/";
-
-            let imageSrc = defaultImage;
+            let imageSrc = "";
+            let hasImage = false;
 
             if (
                 row.image &&
@@ -95,97 +97,108 @@ const columns: TableColumn<TimeLog>[] = [
                 row.image.trim()
             ) {
                 const cleanFileName = row.image.replace(/^.*[\\/]/, "");
+                const encodedPath = encodeURI(row.image).replace(/%2F/g, "/");
 
-                // 🟢 Handle direct URLs first (already full http path)
+                hasImage = true;
+
                 if (row.image.startsWith("http")) {
                     imageSrc = row.image;
-                }
-                // 🟢 Handle Log Override → always from local uploads
-                else if (row.is_logoverride === "1") {
+                } else if (row.is_logoverride === "1") {
                     imageSrc = `${baseUrl}uploads/${cleanFileName}`;
-                }
-                // 🟢 Handle local Sheet1_Images or uploads paths
-                else if (
+                } else if (
                     row.image.includes("Sheet1_Images") ||
                     row.image.includes("uploads")
                 ) {
-                    const encodedImage = encodeURIComponent(row.image).replace(
-                        /%2F/g,
-                        "/",
-                    );
-                    imageSrc = `${baseUrl}${encodedImage}`;
+                    imageSrc = `${baseUrl}${encodedPath}`;
+                } else {
+                    imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${encodeURIComponent(
+                        row.image,
+                    )}`;
                 }
-                // 🟢 Default → AppSheet main URL
-                else {
-                    imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${row.image}`;
+            }
+
+            const cleanFileName = row.image
+                ? row.image.replace(/^.*[\\/]/, "")
+                : "";
+            const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${encodeURIComponent(
+                cleanFileName,
+            )}`;
+            const localImageUrl = `${baseUrl}${encodeURIComponent(
+                row.image || "",
+            ).replace(/%2F/g, "/")}`;
+
+            const handleImageError = (e: any) => {
+                const target = e.currentTarget;
+
+                if (target.dataset.tried === "true") {
+                    const parent = target.parentElement;
+                    const noImageText = document.createElement("span");
+                    noImageText.textContent = "No image";
+                    noImageText.className = "text-muted text-sm";
+                    parent.replaceChild(noImageText, target);
+                    return;
                 }
 
-                // 🟠 Backup and fallback URLs
-                const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
-                const localImageUrl = `${baseUrl}uploads/${cleanFileName}`;
+                target.dataset.tried = "true";
 
-                // 🟣 Error handler — try backup → local → default
-                const handleImageError = (
-                    e: React.SyntheticEvent<HTMLImageElement>,
-                ) => {
-                    const target = e.currentTarget;
-                    target.onerror = null;
-
-                    const tryBackup = new Image();
-                    tryBackup.src = backupUrl;
-                    tryBackup.onload = () => (target.src = backupUrl);
-                    tryBackup.onerror = () => {
-                        const tryLocal = new Image();
-                        tryLocal.src = localImageUrl;
-                        tryLocal.onload = () => (target.src = localImageUrl);
-                        tryLocal.onerror = () => {
-                            target.src = defaultImage;
-                        };
+                const tryBackup = new Image();
+                tryBackup.src = backupUrl;
+                tryBackup.onload = () => (target.src = backupUrl);
+                tryBackup.onerror = () => {
+                    const tryLocal = new Image();
+                    tryLocal.src = localImageUrl;
+                    tryLocal.onload = () => (target.src = localImageUrl);
+                    tryLocal.onerror = () => {
+                        const parent = target.parentElement;
+                        const noImageText = document.createElement("span");
+                        noImageText.textContent = "No image";
+                        noImageText.className = "text-muted text-sm";
+                        parent.replaceChild(noImageText, target);
                     };
                 };
+            };
 
-                // 🖼️ Render dialog with zoomable image
-                return (
-                    <Dialog>
-                        <DialogTrigger className="cursor-pointer">
-                            <img
-                                className="max-h-[50px] rounded object-contain"
-                                src={imageSrc}
-                                alt={`Time Log ${row.id}`}
-                                onError={handleImageError}
-                            />
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Time Log Image</DialogTitle>
-                                <DialogDescription>
-                                    {formatToDateTime(row.date_time)}
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="flex items-center justify-center">
+            if (!hasImage) {
+                return <span className="text-muted text-sm">No image</span>;
+            }
+
+            return (
+                <Dialog>
+                    <DialogTrigger className="cursor-pointer">
+                        <img
+                            className="max-h-[50px] rounded object-contain"
+                            src={imageSrc}
+                            alt={`Time Log ${row.id}`}
+                            onError={handleImageError}
+                            loading="lazy"
+                        />
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Time Log Image</DialogTitle>
+                            <DialogDescription>
+                                {formatToDateTime(row.date_time)}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex items-center justify-center">
+                            {hasImage ? (
                                 <img
                                     className="max-h-[400px] object-contain"
                                     src={imageSrc}
                                     alt={`Time Log ${row.id}`}
                                     onError={handleImageError}
                                 />
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                );
-            }
-
-            // 🩶 No image fallback
-            return (
-                <img
-                    src={defaultImage}
-                    alt="No image"
-                    className="max-h-[50px] rounded object-contain opacity-70"
-                />
+                            ) : (
+                                <span className="text-sm text-white">
+                                    No image
+                                </span>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
             );
         },
     },
-
     {
         name: "Status",
         cell: () => <Badge className="bg-green-600 text-white">Approved</Badge>,

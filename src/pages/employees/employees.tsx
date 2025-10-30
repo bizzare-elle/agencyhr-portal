@@ -84,10 +84,9 @@ export default function Employees() {
             return response.data.data;
         },
     });
-
     const { data, isLoading, isError } = useQuery({
         queryKey: ["employees", page, rowsPerPage, search],
-        queryFn: async () => {
+        queryFn: async function () {
             const response = await api.get<
                 ApiResponse<{ total: number; records: Employee[] }>
             >(
@@ -95,6 +94,7 @@ export default function Employees() {
             );
             return response.data;
         },
+
         placeholderData: (previousData) => previousData,
     });
 
@@ -242,6 +242,10 @@ export default function Employees() {
 
     const employees = data?.data.records ?? [];
 
+    function handleSort(rows: any, selector: any, direction: any) {}
+
+    console.log("Employees data:", data?.data.records);
+
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
             <div className="flex flex-col gap-1">
@@ -371,13 +375,15 @@ export default function Employees() {
                 <CardContent>
                     <DataTable
                         columns={columns}
-                        data={employees}
+                        data={[...(data?.data.records || [])]}
                         pagination
                         paginationServer
                         theme="dark"
                         responsive
                         progressPending={isLoading}
                         paginationPerPage={rowsPerPage}
+                        sortServer
+                        onSort={handleSort}
                         onChangePage={(page) => setPage(page)}
                         onChangeRowsPerPage={(value) => setRowsPerPage(value)}
                         paginationTotalRows={data?.data.total || 0}

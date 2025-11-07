@@ -9,15 +9,21 @@ import {
     formatToTime,
 } from "@/helpers/formatDates";
 import { Badge } from "../ui/badge";
-import {
-    Dialog,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogContent,
-    DialogDescription,
-} from "../ui/dialog";
 import FullPageLoader from "../page-loader";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export interface TimeLog {
     id: string;
@@ -75,133 +81,182 @@ const columns: TableColumn<TimeLog>[] = [
         name: "Location",
         selector: (row) => row.location as string,
     },
-    {
-        name: "Image",
-        cell: (row) => {
-            const hostname = window.location.hostname;
-            const isLocal = hostname === "localhost";
+    // {
+    //     name: "Image",
+    //     cell: (row) => {
+    //         const hostname = window.location.hostname;
+    //         const isLocal = hostname === "localhost";
 
-            const baseUrl = isLocal
-                ? "http://localhost/backoffice/"
-                : "https://backoffice.wildflour.com.ph/";
+    //         const baseUrl = isLocal
+    //             ? "http://localhost/backoffice/"
+    //             : "https://backoffice.wildflour.com.ph/";
 
-            const appName = "WFPhonetrics-373955958";
-            const tableName = "Sheet1";
+    //         const appName = "WFPhonetrics-373955958";
+    //         const tableName = "Sheet1";
 
-            let imageSrc = "";
-            let hasImage = false;
+    //         let imageSrc = "";
+    //         let hasImage = false;
 
-            if (
-                row.image &&
-                typeof row.image === "string" &&
-                row.image.trim()
-            ) {
-                const cleanFileName = row.image.replace(/^.*[\\/]/, "");
-                const encodedPath = encodeURI(row.image).replace(/%2F/g, "/");
+    //         if (
+    //             row.image &&
+    //             typeof row.image === "string" &&
+    //             row.image.trim()
+    //         ) {
+    //             const cleanFileName = row.image.replace(/^.*[\\/]/, "");
+    //             const encodedPath = encodeURI(row.image).replace(/%2F/g, "/");
 
-                hasImage = true;
+    //             hasImage = true;
 
-                if (row.image.startsWith("http")) {
-                    imageSrc = row.image;
-                } else if (row.is_logoverride === "1") {
-                    imageSrc = `${baseUrl}uploads/${cleanFileName}`;
-                } else if (
-                    row.image.includes("Sheet1_Images") ||
-                    row.image.includes("uploads")
-                ) {
-                    imageSrc = `${baseUrl}${encodedPath}`;
-                } else {
-                    imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${encodeURIComponent(
-                        row.image,
-                    )}`;
-                }
-            }
+    //             if (row.image.startsWith("http")) {
+    //                 imageSrc = row.image;
+    //             } else if (row.is_logoverride === "1") {
+    //                 imageSrc = `${baseUrl}uploads/${cleanFileName}`;
+    //             } else if (
+    //                 row.image.includes("Sheet1_Images") ||
+    //                 row.image.includes("uploads")
+    //             ) {
+    //                 imageSrc = `${baseUrl}${encodedPath}`;
+    //             } else {
+    //                 imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${encodeURIComponent(
+    //                     row.image,
+    //                 )}`;
+    //             }
+    //         }
 
-            const cleanFileName = row.image
-                ? row.image.replace(/^.*[\\/]/, "")
-                : "";
-            const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${encodeURIComponent(
-                cleanFileName,
-            )}`;
-            const localImageUrl = `${baseUrl}${encodeURIComponent(
-                row.image || "",
-            ).replace(/%2F/g, "/")}`;
+    //         const cleanFileName = row.image
+    //             ? row.image.replace(/^.*[\\/]/, "")
+    //             : "";
+    //         const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${encodeURIComponent(
+    //             cleanFileName,
+    //         )}`;
+    //         const localImageUrl = `${baseUrl}${encodeURIComponent(
+    //             row.image || "",
+    //         ).replace(/%2F/g, "/")}`;
 
-            const handleImageError = (e: any) => {
-                const target = e.currentTarget;
+    //         const handleImageError = (e: any) => {
+    //             const target = e.currentTarget;
 
-                if (target.dataset.tried === "true") {
-                    const parent = target.parentElement;
-                    const noImageText = document.createElement("span");
-                    noImageText.textContent = "No image";
-                    noImageText.className = "text-muted text-sm";
-                    parent.replaceChild(noImageText, target);
-                    return;
-                }
+    //             if (target.dataset.tried === "true") {
+    //                 const parent = target.parentElement;
+    //                 const noImageText = document.createElement("span");
+    //                 noImageText.textContent = "No image";
+    //                 noImageText.className = "text-muted text-sm";
+    //                 parent.replaceChild(noImageText, target);
+    //                 return;
+    //             }
 
-                target.dataset.tried = "true";
+    //             target.dataset.tried = "true";
 
-                const tryBackup = new Image();
-                tryBackup.src = backupUrl;
-                tryBackup.onload = () => (target.src = backupUrl);
-                tryBackup.onerror = () => {
-                    const tryLocal = new Image();
-                    tryLocal.src = localImageUrl;
-                    tryLocal.onload = () => (target.src = localImageUrl);
-                    tryLocal.onerror = () => {
-                        const parent = target.parentElement;
-                        const noImageText = document.createElement("span");
-                        noImageText.textContent = "No image";
-                        noImageText.className = "text-muted text-sm";
-                        parent.replaceChild(noImageText, target);
-                    };
-                };
-            };
+    //             const tryBackup = new Image();
+    //             tryBackup.src = backupUrl;
+    //             tryBackup.onload = () => (target.src = backupUrl);
+    //             tryBackup.onerror = () => {
+    //                 const tryLocal = new Image();
+    //                 tryLocal.src = localImageUrl;
+    //                 tryLocal.onload = () => (target.src = localImageUrl);
+    //                 tryLocal.onerror = () => {
+    //                     const parent = target.parentElement;
+    //                     const noImageText = document.createElement("span");
+    //                     noImageText.textContent = "No image";
+    //                     noImageText.className = "text-muted text-sm";
+    //                     parent.replaceChild(noImageText, target);
+    //                 };
+    //             };
+    //         };
 
-            if (!hasImage) {
-                return <span className="text-muted text-sm">No image</span>;
-            }
+    //         if (!hasImage) {
+    //             return <span className="text-muted text-sm">No image</span>;
+    //         }
 
-            return (
-                <Dialog>
-                    <DialogTrigger className="cursor-pointer">
-                        <img
-                            className="max-h-[50px] rounded object-contain"
-                            src={imageSrc}
-                            alt={`Time Log ${row.id}`}
-                            onError={handleImageError}
-                            loading="lazy"
-                        />
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Time Log Image</DialogTitle>
-                            <DialogDescription>
-                                {formatToDateTime(row.date_time)}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex items-center justify-center">
-                            {hasImage ? (
-                                <img
-                                    className="max-h-[400px] object-contain"
-                                    src={imageSrc}
-                                    alt={`Time Log ${row.id}`}
-                                    onError={handleImageError}
-                                />
-                            ) : (
-                                <span className="text-sm text-white">
-                                    No image
-                                </span>
-                            )}
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            );
-        },
-    },
+    //         return (
+    //             <Dialog>
+    //                 <DialogTrigger className="cursor-pointer">
+    //                     <img
+    //                         className="max-h-[50px] rounded object-contain"
+    //                         src={imageSrc}
+    //                         alt={`Time Log ${row.id}`}
+    //                         onError={handleImageError}
+    //                         loading="lazy"
+    //                     />
+    //                 </DialogTrigger>
+    //                 <DialogContent>
+    //                     <DialogHeader>
+    //                         <DialogTitle>Time Log Image</DialogTitle>
+    //                         <DialogDescription>
+    //                             {formatToDateTime(row.date_time)}
+    //                         </DialogDescription>
+    //                     </DialogHeader>
+    //                     <div className="flex items-center justify-center">
+    //                         {hasImage ? (
+    //                             <img
+    //                                 className="max-h-[400px] object-contain"
+    //                                 src={imageSrc}
+    //                                 alt={`Time Log ${row.id}`}
+    //                                 onError={handleImageError}
+    //                             />
+    //                         ) : (
+    //                             <span className="text-sm text-white">
+    //                                 No image
+    //                             </span>
+    //                         )}
+    //                     </div>
+    //                 </DialogContent>
+    //             </Dialog>
+    //         );
+    //     },
+    // },
     {
         name: "Status",
         cell: () => <Badge className="bg-green-600 text-white">Approved</Badge>,
+    },
+    {
+        name: "Actions",
+        cell: (row) => {
+            const queryClient = useQueryClient();
+
+            const handleWithdraw = async () => {
+                try {
+                    const res = await api.post(
+                        `/api/v2/withdraw_log/${row.id}`,
+                    );
+                    toast.success("Log withdrawn successfully!");
+
+                    queryClient.invalidateQueries({
+                        queryKey: ["employee-time-logs"],
+                        exact: false,
+                    });
+                } catch (error: any) {
+                    toast.error("Failed to withdraw log.");
+                }
+            };
+            return (
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                            Withdraw
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Withdraw Log</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to withdraw this log? This
+                                action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleWithdraw}>
+                                Confirm
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            );
+        },
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
     },
 ];
 

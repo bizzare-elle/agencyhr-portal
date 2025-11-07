@@ -35,6 +35,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
+// ✅ Safe date formatting helper
+const safeFormat = (
+    dateString?: string | Date,
+    fmt: string = "MMM d, yyyy",
+) => {
+    const d = new Date(dateString ?? "");
+    return !isNaN(d.getTime()) ? format(d, fmt) : "No Date";
+};
+
 interface OvertimeRequestsCardProps {
     employeeId: number | string;
     dateRange: { from?: Date; to?: Date };
@@ -51,7 +60,6 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(5);
 
-    // Filter overtimes by selected date range
     const filteredData = filteredOvertimes.filter((ot) => {
         const otDate = new Date(ot.date);
         return (
@@ -66,30 +74,12 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
         currentPage * pageSize,
     );
 
-    const renderPageNumbers = () => {
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            pages.push(
-                <Button
-                    key={i}
-                    size="sm"
-                    variant={i === currentPage ? "default" : "outline"}
-                    onClick={() => setCurrentPage(i)}
-                >
-                    {i}
-                </Button>,
-            );
-        }
-        return pages;
-    };
-
     return (
         <Card className="mt-6 p-4 shadow-sm sm:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <CardHeader className="w-full p-0">
                     <CardTitle>Employee Overtime</CardTitle>
                     <CardDescription>
-                        {" "}
                         List of overtime you applied and registered to the
                         system.
                     </CardDescription>
@@ -114,21 +104,11 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(
-                                                    dateRange.from,
-                                                    "MMM d, yyyy",
-                                                )}{" "}
-                                                –{" "}
-                                                {format(
-                                                    dateRange.to,
-                                                    "MMM d, yyyy",
-                                                )}
+                                                {safeFormat(dateRange.from)} –{" "}
+                                                {safeFormat(dateRange.to)}
                                             </>
                                         ) : (
-                                            format(
-                                                dateRange.from,
-                                                "MMM d, yyyy",
-                                            )
+                                            safeFormat(dateRange.from)
                                         )
                                     ) : (
                                         <span>Pick a date range</span>
@@ -170,10 +150,10 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                     Showing overtime requests for{" "}
                     <span className="font-bold text-white">
                         {dateRange.from
-                            ? format(dateRange.from, "MMMM d, yyyy - ")
+                            ? safeFormat(dateRange.from, "MMMM d, yyyy - ")
                             : "This cut-off"}
                         {dateRange.to
-                            ? format(dateRange.to, "MMMM d, yyyy")
+                            ? safeFormat(dateRange.to, "MMMM d, yyyy")
                             : "."}
                     </span>
                 </p>
@@ -214,10 +194,7 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                         className="hover:bg-primary/5 cursor-pointer transition-colors"
                                     >
                                         <TableCell className="px-4 py-3 font-medium">
-                                            {format(
-                                                new Date(ot.date),
-                                                "MMM d, yyyy",
-                                            )}
+                                            {safeFormat(ot.date)}
                                         </TableCell>
                                         <TableCell className="px-4 py-3">
                                             {ot.no_of_hours}
@@ -261,11 +238,8 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                                                 {[
                                                                     [
                                                                         "Date",
-                                                                        format(
-                                                                            new Date(
-                                                                                ot.date,
-                                                                            ),
-                                                                            "MMM d, yyyy",
+                                                                        safeFormat(
+                                                                            ot.date,
                                                                         ),
                                                                     ],
                                                                     [
@@ -283,10 +257,8 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                                                     ],
                                                                     [
                                                                         "Date Created",
-                                                                        format(
-                                                                            new Date(
-                                                                                ot.created_at,
-                                                                            ),
+                                                                        safeFormat(
+                                                                            ot.created_at,
                                                                             "MMM d, yyyy hh:mm a",
                                                                         ),
                                                                     ],
@@ -305,7 +277,6 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                                                                 {
                                                                                     label
                                                                                 }
-
                                                                                 :
                                                                             </Badge>
                                                                             <div className="text-right font-medium break-all">
@@ -422,10 +393,7 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                     No overtime requests found for the selected date
                     {dateRange.from &&
                         dateRange.to &&
-                        ` range (${format(dateRange.from, "MMM d, yyyy")} – ${format(dateRange.to, "MMM d, yyyy")})`}
-                    {dateRange.from &&
-                        dateRange.to &&
-                        ` (${format(dateRange.from, "MMM d, yyyy")})`}
+                        ` range (${safeFormat(dateRange.from)} – ${safeFormat(dateRange.to)})`}
                 </Card>
             )}
         </Card>

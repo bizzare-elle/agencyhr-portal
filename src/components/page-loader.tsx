@@ -1,6 +1,5 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { HashLoader } from "react-spinners";
+import { PropagateLoader } from "react-spinners";
 
 type FullPageLoaderProps = {
     message?: string;
@@ -10,8 +9,8 @@ type FullPageLoaderProps = {
 };
 
 export default function FullPageLoader({
-    size = 40,
-    color = "#0ea5e9",
+    size = 20,
+    color = "#ffffffff",
 }: FullPageLoaderProps) {
     return (
         <div
@@ -19,10 +18,7 @@ export default function FullPageLoader({
             aria-live="polite"
             aria-label="Loading"
         >
-            <HashLoader size={size} color={color} />
-            {/* <p className="text-center text-sm font-medium text-slate-700 dark:text-slate-200">
-                        Loading....
-                    </p> */}
+            <PropagateLoader size={size} color={color} />
         </div>
     );
 }

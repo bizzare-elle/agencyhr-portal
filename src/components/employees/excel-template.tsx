@@ -3,6 +3,7 @@ import moment from "moment";
 import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import { formatTime, formatNumber } from "@/helpers/formatDates";
+import { computeWorkedBill } from "@/helpers/computeHours";
 
 export const handleExportExcel = async (
     records: any[],
@@ -47,7 +48,6 @@ export const handleExportExcel = async (
     ];
 
     const headerRow = worksheet.addRow(headers);
-
     headerRow.eachCell((cell) => {
         cell.fill = {
             type: "pattern",
@@ -70,14 +70,21 @@ export const handleExportExcel = async (
     let totalOvertime = 0;
     let totalBillable = 0;
 
-    records.forEach((r) => {
-        const worked = parseFloat(r.total_hours_worked || 0);
-        const late = parseFloat(r.late_minutes_in_hours || r.late_minutes || 0);
-        const undertime = parseFloat(
-            r.undertime_minutes_in_hours || r.undertime_minutes || 0,
+    records.forEach((record) => {
+        const worked = parseFloat(record.total_hours_worked || 0);
+        const late = parseFloat(
+            record.late_minutes_in_hours || record.late_minutes || 0,
         );
-        const overtime = parseFloat(r.ot_no_of_hours || 0);
-        const billable = parseFloat(r.totWorkedBill || 0);
+        const undertime = parseFloat(
+            record.undertime_minutes_in_hours || record.undertime_minutes || 0,
+        );
+        const overtime = parseFloat(record.ot_no_of_hours || 0);
+
+        const totalHoursWorkedBilled =
+            Number(record.total_schedule_hours) === 4 ? 4 : 8;
+
+        const totWorkedBill = computeWorkedBill(record, totalHoursWorkedBilled);
+        const billable = parseFloat((totWorkedBill as any) || 0);
 
         totalHours += worked;
         totalLate += late;
@@ -86,14 +93,16 @@ export const handleExportExcel = async (
         totalBillable += billable;
 
         worksheet.addRow([
-            r.branch_name ?? "",
-            r.schedule_type ?? "",
-            r.work_date ? moment(r.work_date).format("MMM DD, YYYY") : "",
-            r.work_date ? moment(r.work_date).format("dddd") : "",
-            r.Clock_In ? formatTime(r.Clock_In) : "No Data",
-            r.Break_In ? formatTime(r.Break_In) : "No Data",
-            r.Break_Out ? formatTime(r.Break_Out) : "No Data",
-            r.Clock_Out ? formatTime(r.Clock_Out) : "No Data",
+            record.branch_name ?? "",
+            record.schedule_type ?? "",
+            record.work_date
+                ? moment(record.work_date).format("MMM DD, YYYY")
+                : "",
+            record.work_date ? moment(record.work_date).format("dddd") : "",
+            record.Clock_In ? formatTime(record.Clock_In) : "No Data",
+            record.Break_In ? formatTime(record.Break_In) : "No Data",
+            record.Break_Out ? formatTime(record.Break_Out) : "No Data",
+            record.Clock_Out ? formatTime(record.Clock_Out) : "No Data",
             formatNumber(overtime),
             formatNumber(late),
             formatNumber(undertime),

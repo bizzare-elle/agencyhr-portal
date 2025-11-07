@@ -265,7 +265,7 @@ export default function LogoverrideDashboard() {
                     className="sm:w-auto"
                     onClick={() => {
                         if (window.history.length > 1) navigate(-1);
-                        else navigate("/logoverrides"); 
+                        else navigate("/logoverrides");
                     }}
                 >
                     Back

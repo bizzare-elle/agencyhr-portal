@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
     Form,
     FormControl,
@@ -9,21 +10,24 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "../components/ui/form";
-import { Input } from "../components/ui/input";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
-} from "../components/ui/card";
+    CardDescription,
+} from "@/components/ui/card";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { useAuthStore } from "@/hooks/use-auth";
-import bgImg from "../assets/images/bg-3.avif";
+import bgImg from "@/assets/images/bg-3.avif";
 import { Spinner } from "@/components/ui/spinner";
+import { motion } from "framer-motion";
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -42,6 +46,8 @@ export default function LoginPage() {
     const setToken = useAuthStore((s) => s.setToken);
     const loadUser = useAuthStore((s) => s.loadUser);
 
+    const [showPassword, setShowPassword] = useState(false);
+
     const loginMutation = useMutation({
         mutationFn: async (data: LoginValues) => {
             const response = await api.post("/api/v2/auth/login", data);
@@ -56,14 +62,11 @@ export default function LoginPage() {
                 if (!token) return;
 
                 setToken(token);
-
                 const user = await loadUser();
 
                 if (user?.id) {
                     toast.success("Login successful!");
-
-                    console.log(user);
-                    if (user.role == "agency_coordinator") {
+                    if (user.role === "agency_coordinator") {
                         navigate(`/dashboard/${user.agency_id}`);
                     } else {
                         navigate(`/employees/${user.id}`);
@@ -87,91 +90,126 @@ export default function LoginPage() {
 
     return (
         <div
-            className="flex min-h-screen items-center justify-center p-4 sm:p-6 md:p-8"
+            className="relative flex min-h-screen items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8"
             style={back}
         >
-            <Card className="bg-background/40 w-full max-w-sm rounded-2xl shadow-xl backdrop-blur-md sm:max-w-md sm:px-8 sm:py-10">
-                <CardHeader className="space-y-2 text-center">
-                    <CardTitle className="text-2xl font-bold sm:text-3xl">
-                        Welcome Back
-                    </CardTitle>
-                    <p className="text-muted-foreground text-xs sm:text-sm">
-                        Sign in to manage your operations team and agency tasks.
-                    </p>
-                </CardHeader>
+            {/* Overlay for contrast */}
+            <div className="absolute inset-0 bg-black/60" />
 
-                <CardContent>
-                    <Form {...form}>
-                        <form
-                            onSubmit={form.handleSubmit(onSubmit)}
-                            className="space-y-5 sm:space-y-6"
-                        >
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-sm sm:text-base">
-                                            Email
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="you@example.com"
-                                                type="email"
-                                                {...field}
-                                                disabled={
-                                                    loginMutation.isPending
-                                                }
-                                                className="text-sm sm:text-base"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+            <motion.div
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="relative z-10 w-full max-w-sm sm:max-w-md"
+            >
+                <Card className="rounded-xl border border-white/20 bg-white/10 shadow-2xl backdrop-blur-md">
+                    <CardHeader className="space-y-1 pb-2 text-center">
+                        <CardTitle className="text-2xl font-semibold text-white">
+                            Welcome to AgencyHR
+                        </CardTitle>
+                        <CardDescription className="text-sm text-white/70">
+                            Sign in to manage your team and agency tasks.
+                        </CardDescription>
+                    </CardHeader>
 
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-sm sm:text-base">
-                                            Password
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="********"
-                                                type="password"
-                                                {...field}
-                                                disabled={
-                                                    loginMutation.isPending
-                                                }
-                                                className="text-sm sm:text-base"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <Button
-                                type="submit"
-                                className="mt-4 w-full text-sm sm:text-base"
-                                disabled={loginMutation.isPending}
+                    <CardContent>
+                        <Form {...form}>
+                            <form
+                                onSubmit={form.handleSubmit(onSubmit)}
+                                className="space-y-5"
                             >
-                                {loginMutation.isPending ? (
-                                    <>
-                                        <Spinner className="h-4 w-4" />
-                                        <span>Logging in</span>
-                                    </>
-                                ) : (
-                                    "Login"
-                                )}
-                            </Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white/90">
+                                                Email address
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="you@example.com"
+                                                    type="email"
+                                                    {...field}
+                                                    disabled={
+                                                        loginMutation.isPending
+                                                    }
+                                                    className="border-white/30 bg-white/20 text-white placeholder:text-white/60 focus:border-white/50 focus:ring-2 focus:ring-white/30"
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="text-red-200" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white/90">
+                                                Password
+                                            </FormLabel>
+                                            <div className="relative">
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="••••••••"
+                                                        type={
+                                                            showPassword
+                                                                ? "text"
+                                                                : "password"
+                                                        }
+                                                        {...field}
+                                                        disabled={
+                                                            loginMutation.isPending
+                                                        }
+                                                        className="border-white/30 bg-white/20 pr-10 text-white placeholder:text-white/60 focus:border-white/50 focus:ring-2 focus:ring-white/30"
+                                                    />
+                                                </FormControl>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShowPassword(
+                                                            !showPassword,
+                                                        )
+                                                    }
+                                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-black/70 transition hover:text-black"
+                                                >
+                                                    {showPassword ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <FormMessage className="text-red-200" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    className="mt-2 w-full bg-white font-semibold text-gray-900 hover:bg-white/90"
+                                    disabled={loginMutation.isPending}
+                                >
+                                    {loginMutation.isPending ? (
+                                        <div className="flex items-center gap-2">
+                                            <Spinner className="h-4 w-4" />
+                                            <span>Logging in...</span>
+                                        </div>
+                                    ) : (
+                                        "Log In"
+                                    )}
+                                </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                </Card>
+
+                <p className="mt-6 text-center text-xs text-white/70">
+                    © {new Date().getFullYear()} Wildflour Hospitality Group
+                </p>
+            </motion.div>
         </div>
     );
 }

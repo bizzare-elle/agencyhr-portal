@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { DateTimeField } from "@/components/date-time-picker";
@@ -35,7 +35,6 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui/card";
-
 import api from "@/lib/axios";
 import { useAuthStore } from "@/hooks/use-auth";
 import { ParentComponent } from "@/components/parent-container";
@@ -264,7 +263,7 @@ export default function LogoverrideForm() {
                             </div>
                         </CardContent>
 
-                        <CardFooter className="justify-end pt-6">
+                        <CardFooter className="justify-end space-x-3 pt-6">
                             <Button
                                 type="submit"
                                 disabled={logoverrideMutation.isPending}
@@ -278,6 +277,13 @@ export default function LogoverrideForm() {
                                 ) : (
                                     "Submit"
                                 )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="sm:w-auto"
+                                onClick={() => navigate(-1)}
+                            >
+                                Back
                             </Button>
                         </CardFooter>
                     </form>

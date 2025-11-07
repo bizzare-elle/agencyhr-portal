@@ -265,7 +265,7 @@ export default function OvertimeForm() {
                             </div>
                         </CardContent>
 
-                        <CardFooter className="justify-end pt-8">
+                        <CardFooter className="justify-end space-x-3 pt-8">
                             <Button
                                 type="submit"
                                 disabled={overtimeMutation.isPending}
@@ -279,6 +279,13 @@ export default function OvertimeForm() {
                                 ) : (
                                     "Submit"
                                 )}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="sm:w-auto"
+                                onClick={() => navigate(-1)}
+                            >
+                                Back
                             </Button>
                         </CardFooter>
                     </form>

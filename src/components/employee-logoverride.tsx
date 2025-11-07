@@ -34,6 +34,14 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface LogoverrideRequestsProps {
     dateRange: { from?: Date; to?: Date };
@@ -466,23 +474,37 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                     {/* Pagination */}
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center justify-center gap-2 sm:justify-start">
-                            <label className="text-sm">Rows per page:</label>
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
+                            <Label
+                                htmlFor="pageSize"
+                                className="text-muted-foreground text-sm"
+                            >
+                                Rows per page:
+                            </Label>
+                            <Select
+                                value={String(pageSize)}
+                                onValueChange={(value) => {
+                                    setPageSize(Number(value));
                                     setCurrentPage(1);
                                 }}
-                                className="rounded border p-1 text-sm"
                             >
-                                {[5, 10, 20, 50].map((size) => (
-                                    <option key={size} value={size}>
-                                        {size}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger
+                                    id="pageSize"
+                                    className="bg-background text-foreground border-input w-[80px] border"
+                                >
+                                    <SelectValue placeholder="Select" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[5, 10, 20, 50].map((size) => (
+                                        <SelectItem
+                                            key={size}
+                                            value={String(size)}
+                                        >
+                                            {size}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-
                         <div className="flex items-center justify-center gap-2 sm:justify-end">
                             <Button
                                 size="sm"

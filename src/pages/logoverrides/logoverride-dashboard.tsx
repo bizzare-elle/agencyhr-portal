@@ -62,6 +62,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { safeFormat } from "@/helpers/formatDates";
 
 export interface LogoverrideResponse {
     info: Logoverride[];
@@ -94,10 +95,11 @@ export default function LogoverrideDashboard() {
     });
 
     useMemo(() => {
-        if (dateRange.from) setDateFrom(format(dateRange.from, "yyyy-MM-dd"));
+        if (dateRange.from)
+            setDateFrom(safeFormat(dateRange.from, "yyyy-MM-dd"));
         else setDateFrom("");
 
-        if (dateRange.to) setDateTo(format(dateRange.to, "yyyy-MM-dd"));
+        if (dateRange.to) setDateTo(safeFormat(dateRange.to, "yyyy-MM-dd"));
         else setDateTo("");
     }, [dateRange]);
 
@@ -255,23 +257,8 @@ export default function LogoverrideDashboard() {
             </ParentComponent>
         );
     }
-
     return (
         <ParentComponent>
-            {/* Back Button */}
-            <div className="mb-4 flex justify-start px-3 sm:px-0">
-                <Button
-                    variant="outline"
-                    className="sm:w-auto"
-                    onClick={() => {
-                        if (window.history.length > 1) navigate(-1);
-                        else navigate("/logoverrides");
-                    }}
-                >
-                    Back
-                </Button>
-            </div>
-
             {logoverrides.length === 0 ? (
                 <div className="w-full px-3 sm:px-0">
                     <Card className="py-10">
@@ -328,7 +315,419 @@ export default function LogoverrideDashboard() {
 
                     {/* Table Section */}
                     <div className="w-full px-3 sm:px-0">
-                        {/* ...rest of your table and pagination code remains unchanged... */}
+                        <Card className="p-3 sm:p-5">
+                            <CardHeader className="pb-5">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <CardTitle className="text-base sm:text-lg">
+                                            List of filed logoverrides.
+                                        </CardTitle>
+                                        <CardDescription className="text-sm sm:text-base">
+                                            Your logoverride applications.
+                                        </CardDescription>
+                                    </div>
+
+                                    {/* Filters */}
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:space-x-4">
+                                        {/* Date Range */}
+                                        <div className="w-full sm:w-auto">
+                                            <label className="mb-1 block text-sm font-medium">
+                                                Date Range
+                                            </label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        id="date"
+                                                        variant="outline"
+                                                        className={cn(
+                                                            "w-full justify-start text-left font-normal sm:w-[260px]",
+                                                            !dateRange.from &&
+                                                                "text-muted-foreground",
+                                                        )}
+                                                    >
+                                                        <Calendar1Icon className="mr-2 h-4 w-4" />
+                                                        {dateRange.from ? (
+                                                            dateRange.to ? (
+                                                                <>
+                                                                    {safeFormat(
+                                                                        dateRange.from,
+                                                                        "LLL dd, y",
+                                                                    )}{" "}
+                                                                    -{" "}
+                                                                    {safeFormat(
+                                                                        dateRange.to,
+                                                                        "LLL dd, y",
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                safeFormat(
+                                                                    dateRange.from,
+                                                                    "LLL dd, y",
+                                                                )
+                                                            )
+                                                        ) : (
+                                                            <span>
+                                                                Select date
+                                                                range
+                                                            </span>
+                                                        )}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent
+                                                    className="w-auto p-0"
+                                                    align="start"
+                                                >
+                                                    <Calendar
+                                                        initialFocus
+                                                        mode="range"
+                                                        selected={
+                                                            dateRange as DateRange
+                                                        }
+                                                        onSelect={(range) => {
+                                                            setDateRange(
+                                                                range || {},
+                                                            );
+                                                            setCurrentPage(1);
+                                                        }}
+                                                        numberOfMonths={1}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+
+                                        {/* Sort By */}
+                                        <div className="w-full sm:w-auto">
+                                            <label className="mb-1 block text-sm font-medium">
+                                                Sort By
+                                            </label>
+                                            <select
+                                                value={sortOption}
+                                                onChange={(e) => {
+                                                    setSortOption(
+                                                        e.target.value,
+                                                    );
+                                                    setCurrentPage(1);
+                                                }}
+                                                className="bg-background focus:border-primary focus:ring-primary/40 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:ring-2 dark:border-gray-700 dark:bg-[#1E1E1E] dark:text-gray-100"
+                                            >
+                                                <optgroup label="Created Date">
+                                                    <option value="newest">
+                                                        Newest First
+                                                    </option>
+                                                    <option value="oldest">
+                                                        Oldest First
+                                                    </option>
+                                                </optgroup>
+                                                <optgroup label="Status">
+                                                    <option value="approved">
+                                                        Approved Only
+                                                    </option>
+                                                    <option value="pending">
+                                                        Pending Only
+                                                    </option>
+                                                    <option value="disapproved">
+                                                        Disapproved Only
+                                                    </option>
+                                                </optgroup>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardHeader>
+
+                            {/* Table */}
+                            <CardContent className="overflow-x-auto">
+                                <div className="border-border w-full overflow-x-auto rounded-md border">
+                                    <Table className="min-w-[600px] text-xs sm:text-sm">
+                                        <TableHeader className="bg-muted/50">
+                                            <TableRow>
+                                                <TableHead className="px-3 py-4 text-center">
+                                                    Date
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
+                                                    Clock Type
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
+                                                    Remarks
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
+                                                    Status
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
+                                                    Actions
+                                                </TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {paginatedData.length > 0 ? (
+                                                paginatedData.map((r) => (
+                                                    <TableRow
+                                                        key={r.id}
+                                                        className="hover:bg-muted/10 transition"
+                                                    >
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            {safeFormat(
+                                                                r.date_time,
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            {r.clock_type}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center capitalize">
+                                                            {r.remarks || "N/A"}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            <Badge
+                                                                className={
+                                                                    r.status_label ===
+                                                                    "Approved"
+                                                                        ? "bg-green-500 text-white"
+                                                                        : "bg-yellow-500 text-white"
+                                                                }
+                                                            >
+                                                                {r.status_label}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            <Dialog>
+                                                                <DialogTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                    >
+                                                                        View
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="max-w-sm sm:max-w-md">
+                                                                    <Card className="border-none bg-transparent shadow-none">
+                                                                        <CardHeader className="pb-2">
+                                                                            <CardTitle className="text-base font-semibold sm:text-lg">
+                                                                                Logoverride
+                                                                                Details
+                                                                            </CardTitle>
+                                                                            <CardDescription className="text-sm">
+                                                                                Review
+                                                                                your
+                                                                                filed
+                                                                                logoverride
+                                                                                details.
+                                                                            </CardDescription>
+                                                                        </CardHeader>
+                                                                        <CardContent className="space-y-4 text-sm">
+                                                                            {[
+                                                                                {
+                                                                                    label: "Date",
+                                                                                    value: safeFormat(
+                                                                                        r.date_time,
+                                                                                    ),
+                                                                                },
+                                                                                {
+                                                                                    label: "Clock Type",
+                                                                                    value: r.clock_type,
+                                                                                },
+                                                                                {
+                                                                                    label: "Remarks",
+                                                                                    value: r.remarks,
+                                                                                },
+                                                                                {
+                                                                                    label: "Status",
+                                                                                    value: r.status_label,
+                                                                                },
+                                                                                {
+                                                                                    label: "Date Created",
+                                                                                    value: format(
+                                                                                        new Date(
+                                                                                            r.created_at,
+                                                                                        ),
+                                                                                        "MMM d, yyyy hh:mm a",
+                                                                                    ),
+                                                                                },
+                                                                            ].map(
+                                                                                (
+                                                                                    item,
+                                                                                ) => (
+                                                                                    <div
+                                                                                        key={
+                                                                                            item.label
+                                                                                        }
+                                                                                        className="flex items-start justify-between"
+                                                                                    >
+                                                                                        <Badge>
+                                                                                            {
+                                                                                                item.label
+                                                                                            }
+
+                                                                                            :
+                                                                                        </Badge>
+                                                                                        <span className="max-w-[65%] text-right font-medium break-words capitalize">
+                                                                                            {item.value ||
+                                                                                                "N/A"}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                ),
+                                                                            )}
+                                                                        </CardContent>
+                                                                        <CardFooter className="flex flex-wrap justify-end gap-2 pt-2">
+                                                                            <DialogClose
+                                                                                asChild
+                                                                            >
+                                                                                <Button
+                                                                                    variant="secondary"
+                                                                                    size="sm"
+                                                                                >
+                                                                                    Close
+                                                                                </Button>
+                                                                            </DialogClose>
+                                                                            <AlertDialog>
+                                                                                <AlertDialogTrigger
+                                                                                    asChild
+                                                                                >
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant="destructive"
+                                                                                        disabled={
+                                                                                            r.status_label ===
+                                                                                            "Approved"
+                                                                                        }
+                                                                                    >
+                                                                                        Withdraw
+                                                                                    </Button>
+                                                                                </AlertDialogTrigger>
+                                                                                <AlertDialogContent>
+                                                                                    <AlertDialogHeader>
+                                                                                        <AlertDialogTitle>
+                                                                                            Withdraw
+                                                                                            Logoverride
+                                                                                        </AlertDialogTitle>
+                                                                                        <AlertDialogDescription>
+                                                                                            Are
+                                                                                            you
+                                                                                            sure
+                                                                                            you
+                                                                                            want
+                                                                                            to
+                                                                                            withdraw
+                                                                                            this
+                                                                                            logoverride?
+                                                                                            This
+                                                                                            action
+                                                                                            cannot
+                                                                                            be
+                                                                                            undone.
+                                                                                        </AlertDialogDescription>
+                                                                                    </AlertDialogHeader>
+                                                                                    <AlertDialogFooter>
+                                                                                        <AlertDialogCancel
+                                                                                            asChild
+                                                                                        >
+                                                                                            <Button variant="outline">
+                                                                                                Cancel
+                                                                                            </Button>
+                                                                                        </AlertDialogCancel>
+                                                                                        <Button
+                                                                                            variant="destructive"
+                                                                                            onClick={() =>
+                                                                                                handleWithdraw(
+                                                                                                    r.id,
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            Yes,
+                                                                                            Withdraw
+                                                                                        </Button>
+                                                                                    </AlertDialogFooter>
+                                                                                </AlertDialogContent>
+                                                                            </AlertDialog>
+                                                                        </CardFooter>
+                                                                    </Card>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell
+                                                        colSpan={5}
+                                                        className="py-5 text-center text-gray-500"
+                                                    >
+                                                        No records found.
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                {/* Pagination */}
+                                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center justify-center gap-2 sm:justify-start">
+                                        <Label
+                                            htmlFor="pageSize"
+                                            className="text-muted-foreground text-sm"
+                                        >
+                                            Rows per page:
+                                        </Label>
+                                        <Select
+                                            value={String(pageSize)}
+                                            onValueChange={(value) => {
+                                                setPageSize(Number(value));
+                                                setCurrentPage(1);
+                                            }}
+                                        >
+                                            <SelectTrigger
+                                                id="pageSize"
+                                                className="bg-background text-foreground border-input w-[80px] border"
+                                            >
+                                                <SelectValue placeholder="Select" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {[5, 10, 20, 50].map((size) => (
+                                                    <SelectItem
+                                                        key={size}
+                                                        value={String(size)}
+                                                    >
+                                                        {size}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="flex items-center justify-center gap-2 sm:justify-end">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            disabled={currentPage === 1}
+                                            onClick={() =>
+                                                setCurrentPage(
+                                                    (prev) => prev - 1,
+                                                )
+                                            }
+                                        >
+                                            Previous
+                                        </Button>
+                                        {renderPageNumbers()}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            disabled={
+                                                currentPage === totalPages
+                                            }
+                                            onClick={() =>
+                                                setCurrentPage(
+                                                    (prev) => prev + 1,
+                                                )
+                                            }
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </>
             )}

@@ -60,6 +60,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { safeFormat } from "@/helpers/formatDates";
 
 export interface OvertimeResponse {
     info: Overtime[];
@@ -92,10 +93,11 @@ export default function OvertimeDashboard() {
     });
 
     useMemo(() => {
-        if (dateRange.from) setDateFrom(format(dateRange.from, "yyyy-MM-dd"));
+        if (dateRange.from)
+            setDateFrom(safeFormat(dateRange.from, "yyyy-MM-dd"));
         else setDateFrom("");
 
-        if (dateRange.to) setDateTo(format(dateRange.to, "yyyy-MM-dd"));
+        if (dateRange.to) setDateTo(safeFormat(dateRange.to, "yyyy-MM-dd"));
         else setDateTo("");
     }, [dateRange]);
 
@@ -340,18 +342,18 @@ export default function OvertimeDashboard() {
                                                         {dateRange.from ? (
                                                             dateRange.to ? (
                                                                 <>
-                                                                    {format(
+                                                                    {safeFormat(
                                                                         dateRange.from,
                                                                         "LLL dd, y",
                                                                     )}{" "}
                                                                     -{" "}
-                                                                    {format(
+                                                                    {safeFormat(
                                                                         dateRange.to,
                                                                         "LLL dd, y",
                                                                     )}
                                                                 </>
                                                             ) : (
-                                                                format(
+                                                                safeFormat(
                                                                     dateRange.from,
                                                                     "LLL dd, y",
                                                                 )
@@ -458,7 +460,7 @@ export default function OvertimeDashboard() {
                                                     >
                                                         <TableCell className="px-3 py-4 text-center">
                                                             {r.date
-                                                                ? format(
+                                                                ? safeFormat(
                                                                       new Date(
                                                                           r.date,
                                                                       ),
@@ -519,7 +521,7 @@ export default function OvertimeDashboard() {
                                                                             {[
                                                                                 {
                                                                                     label: "Date",
-                                                                                    value: formatToDateTime(
+                                                                                    value: safeFormat(
                                                                                         r.date,
                                                                                     ),
                                                                                 },
@@ -541,7 +543,7 @@ export default function OvertimeDashboard() {
                                                                                 },
                                                                                 {
                                                                                     label: "Date Created",
-                                                                                    value: format(
+                                                                                    value: safeFormat(
                                                                                         new Date(
                                                                                             r.created_at,
                                                                                         ),

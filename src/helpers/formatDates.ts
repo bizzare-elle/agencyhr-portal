@@ -1,4 +1,5 @@
 import moment from "moment";
+import { format } from "date-fns";
 
 export function formatToMonthDayYear(dateString: string | null): string {
     if (!dateString) return "No data";
@@ -38,3 +39,18 @@ export function formatNumber(value: string | number | null): string {
     }
     return Number(value).toFixed(2);
 }
+
+export const safeFormat = (
+    value: any,
+    formatStr = "MMM d, yyyy hh:mm a",
+    fallback = "N/A",
+): string => {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return fallback;
+    try {
+        return format(date, formatStr);
+    } catch {
+        return fallback;
+    }
+};

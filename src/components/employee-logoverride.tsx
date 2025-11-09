@@ -42,6 +42,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { safeFormat } from "@/helpers/formatDates";
 
 interface LogoverrideRequestsProps {
     dateRange: { from?: Date; to?: Date };
@@ -74,8 +75,8 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
     const allLogOverrides = filteredDays.flatMap((day) =>
         filteredLogoverrides?.filter(
             (l) =>
-                format(new Date(l.date_time), "yyyy-MM-dd") ===
-                format(day, "yyyy-MM-dd"),
+                safeFormat(new Date(l.date_time), "yyyy-MM-dd") ===
+                safeFormat(day, "yyyy-MM-dd"),
         ),
     );
 
@@ -134,18 +135,18 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(
+                                                {safeFormat(
                                                     dateRange.from,
                                                     "MMM d, yyyy",
                                                 )}{" "}
                                                 –{" "}
-                                                {format(
+                                                {safeFormat(
                                                     dateRange.to,
                                                     "MMM d, yyyy",
                                                 )}
                                             </>
                                         ) : (
-                                            format(
+                                            safeFormat(
                                                 dateRange.from,
                                                 "MMM d, yyyy",
                                             )
@@ -188,10 +189,10 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                     <span>Showing log overrides for </span>
                     <span className="text-foreground font-medium">
                         {dateRange.from
-                            ? format(dateRange.from, "MMMM d, yyyy - ")
+                            ? safeFormat(dateRange.from, "MMMM d, yyyy - ")
                             : "This cut-off"}
                         {dateRange.to
-                            ? format(dateRange.to, "MMMM d, yyyy")
+                            ? safeFormat(dateRange.to, "MMMM d, yyyy")
                             : "."}
                     </span>
                 </div>
@@ -233,7 +234,7 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                         className="hover:bg-primary/5 cursor-pointer transition-colors"
                                     >
                                         <TableCell className="px-4 py-3 font-medium">
-                                            {format(
+                                            {safeFormat(
                                                 new Date(log.date_time),
                                                 "MMM d, yyyy",
                                             )}
@@ -283,7 +284,7 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                                                 {[
                                                                     [
                                                                         "Date",
-                                                                        format(
+                                                                        safeFormat(
                                                                             new Date(
                                                                                 log.date_time,
                                                                             ),
@@ -305,7 +306,7 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                                                     ],
                                                                     [
                                                                         "Date Created",
-                                                                        format(
+                                                                        safeFormat(
                                                                             new Date(
                                                                                 log.created_at,
                                                                             ),
@@ -535,13 +536,13 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                     No log overrides found for the selected date
                     {dateRange.from &&
                         dateRange.to &&
-                        ` range (${format(dateRange.from, "MMM d, yyyy")} – ${format(
+                        ` range (${safeFormat(dateRange.from, "MMM d, yyyy")} – ${safeFormat(
                             dateRange.to,
                             "MMM d, yyyy",
                         )})`}
                     {dateRange.from &&
                         dateRange.to &&
-                        ` (${format(dateRange.from, "MMM d, yyyy")})`}
+                        ` (${safeFormat(dateRange.from, "MMM d, yyyy")})`}
                 </Card>
             )}
         </Card>

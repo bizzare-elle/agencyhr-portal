@@ -11,7 +11,7 @@ import api from "@/lib/axios";
 import { TextField } from "@/components/text-field";
 import { ImageUploader } from "@/components/image-dropzone";
 import { Label } from "@/components/ui/label";
-import { Form, FormMessage } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -108,7 +108,6 @@ export default function OvertimeForm() {
                 "date",
                 formValues.date.toISOString().split("T")[0],
             );
-
             formData.append("startTime", formValues.startTime);
             formData.append("endTime", formValues.endTime);
             formData.append("totalOt", formValues.totalOt || "0");
@@ -125,7 +124,6 @@ export default function OvertimeForm() {
                     headers: { "Content-Type": "multipart/form-data" },
                 },
             );
-
             return response.data;
         },
     });
@@ -160,7 +158,7 @@ export default function OvertimeForm() {
     }
 
     return (
-        <div className="mx-auto flex w-full max-w-[800px] justify-center p-4 sm:p-6 md:p-10">
+        <div className="mx-auto w-full max-w-[800px] px-4 py-6 sm:px-6 md:px-10">
             <Card className="w-full">
                 <CardHeader>
                     <CardTitle className="text-2xl">Overtime</CardTitle>
@@ -171,101 +169,106 @@ export default function OvertimeForm() {
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <CardContent>
-                            <div className="flex flex-col gap-5">
-                                {/* Date Picker */}
-                                <div className="flex flex-col gap-3">
-                                    <Label htmlFor="date">Date</Label>
-                                    <Popover open={open} onOpenChange={setOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className="w-full justify-between font-normal"
-                                            >
-                                                {form.watch("date")
-                                                    ? form
-                                                          .watch("date")
-                                                          .toLocaleDateString(
-                                                              "en-CA",
-                                                          )
-                                                    : "Select date"}
-                                                <ChevronDownIcon />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent
-                                            className="w-auto p-0"
-                                            align="start"
+                        <CardContent className="space-y-6">
+                            {/* Date Picker */}
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="date">Date</Label>
+                                <Popover open={open} onOpenChange={setOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-between font-normal"
                                         >
-                                            <Calendar
-                                                mode="single"
-                                                selected={form.watch("date")}
-                                                onSelect={(date) => {
-                                                    if (date) {
-                                                        form.setValue(
-                                                            "date",
-                                                            date,
-                                                            {
-                                                                shouldValidate: true,
-                                                            },
-                                                        );
-                                                    }
-                                                    setOpen(false);
-                                                }}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-
-                                {/* From / To / Overtime Hours */}
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                    <div className="flex flex-col gap-y-2">
-                                        <Label>From</Label>
-                                        <Input
-                                            {...form.register("startTime")}
-                                            type="time"
-                                            step="60"
-                                            defaultValue="10:00"
+                                            {form.watch("date")
+                                                ? form
+                                                      .watch("date")
+                                                      .toLocaleDateString(
+                                                          "en-CA",
+                                                      )
+                                                : "Select date"}
+                                            <ChevronDownIcon />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-auto p-0"
+                                        align="start"
+                                    >
+                                        <Calendar
+                                            mode="single"
+                                            selected={form.watch("date")}
+                                            onSelect={(date) => {
+                                                if (date) {
+                                                    form.setValue(
+                                                        "date",
+                                                        date,
+                                                        {
+                                                            shouldValidate: true,
+                                                        },
+                                                    );
+                                                }
+                                                setOpen(false);
+                                            }}
                                         />
-                                    </div>
-
-                                    <div className="flex flex-col gap-y-2">
-                                        <Label>To</Label>
-                                        <Input
-                                            {...form.register("endTime")}
-                                            type="time"
-                                            step="60"
-                                            defaultValue="10:00"
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-col gap-y-2">
-                                        <Label>Overtime Hour/s</Label>
-                                        <Input
-                                            id="totalOt"
-                                            value={totalOt}
-                                            readOnly
-                                            className="bg-muted cursor-not-allowed"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Remarks */}
-                                <TextField
-                                    name="remarks"
-                                    label="Add remarks"
-                                    control={form.control}
-                                />
-
-                                {/* Image Upload */}
-                                <ImageUploader
-                                    name="imageReference"
-                                    label="Upload an image"
-                                    control={form.control}
-                                />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
+
+                            {/* From / To / Overtime Hours */}
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div className="flex flex-col gap-2">
+                                    <Label>From</Label>
+                                    <Input
+                                        {...form.register("startTime")}
+                                        type="time"
+                                        step="60"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <Label>To</Label>
+                                    <Input
+                                        {...form.register("endTime")}
+                                        type="time"
+                                        step="60"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <Label>Overtime Hour/s</Label>
+                                    <Input
+                                        id="totalOt"
+                                        value={totalOt}
+                                        readOnly
+                                        className="bg-muted cursor-not-allowed"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Remarks */}
+                            <TextField
+                                name="remarks"
+                                label="Add remarks"
+                                control={form.control}
+                            />
+
+                            {/* Image Upload */}
+                            <ImageUploader
+                                name="imageReference"
+                                label="Upload an image"
+                                control={form.control}
+                            />
                         </CardContent>
 
-                        <CardFooter className="justify-end space-x-3 pt-8">
+                        <CardFooter className="flex flex-col-reverse gap-3 pt-6 sm:flex-row sm:justify-end sm:gap-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                onClick={() => navigate(-1)}
+                            >
+                                Back
+                            </Button>
+
                             <Button
                                 type="submit"
                                 disabled={overtimeMutation.isPending}
@@ -279,13 +282,6 @@ export default function OvertimeForm() {
                                 ) : (
                                     "Submit"
                                 )}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="sm:w-auto"
-                                onClick={() => navigate(-1)}
-                            >
-                                Back
                             </Button>
                         </CardFooter>
                     </form>

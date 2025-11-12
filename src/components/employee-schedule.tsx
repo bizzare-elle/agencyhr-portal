@@ -9,6 +9,7 @@ import { Calendar } from "./ui/calendar";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { DateRange } from "react-day-picker";
+import { safeFormat } from "@/helpers/formatDates";
 
 interface Schedule {
     date: string;
@@ -66,18 +67,18 @@ const EmployeeScheduleCard: FC<EmployeeScheduleCardProps> = ({
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(
+                                                {safeFormat(
                                                     dateRange.from,
                                                     "MMM d, yyyy",
                                                 )}{" "}
                                                 –{" "}
-                                                {format(
+                                                {safeFormat(
                                                     dateRange.to,
                                                     "MMM d, yyyy",
                                                 )}
                                             </>
                                         ) : (
-                                            format(
+                                            safeFormat(
                                                 dateRange.from,
                                                 "MMM d, yyyy",
                                             )
@@ -122,10 +123,10 @@ const EmployeeScheduleCard: FC<EmployeeScheduleCardProps> = ({
                         Showing schedule for -{" "}
                         <span className="font-bold text-white">
                             {dateRange.from
-                                ? format(dateRange.from, "MMM d, yyyy")
+                                ? safeFormat(dateRange.from, "MMM d, yyyy")
                                 : "This cut-off"}
                             {dateRange.to &&
-                                ` to ${format(dateRange.to, "MMM d, yyyy")}`}
+                                ` to ${safeFormat(dateRange.to, "MMM d, yyyy")}`}
                         </span>
                     </p>
                 )}
@@ -136,13 +137,13 @@ const EmployeeScheduleCard: FC<EmployeeScheduleCardProps> = ({
                 {days.map((day, i) => {
                     const daySchedules = filteredSchedules?.filter(
                         (s) =>
-                            format(new Date(s.date), "yyyy-MM-dd") ===
-                            format(day, "yyyy-MM-dd"),
+                            safeFormat(new Date(s.date), "yyyy-MM-dd") ===
+                            safeFormat(day, "yyyy-MM-dd"),
                     );
 
                     const isToday =
-                        format(day, "yyyy-MM-dd") ===
-                        format(new Date(), "yyyy-MM-dd");
+                        safeFormat(day, "yyyy-MM-dd") ===
+                        safeFormat(new Date(), "yyyy-MM-dd");
 
                     return (
                         <div

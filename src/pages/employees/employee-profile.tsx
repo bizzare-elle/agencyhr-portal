@@ -136,7 +136,7 @@ export default function EmployeeProfile() {
                 <TabsList className="border-muted-foreground/20 scrollbar-none mb-4 flex w-full flex-nowrap justify-start gap-2 overflow-x-auto border-b px-1 sm:justify-center sm:gap-4 sm:px-2">
                     <TabsTrigger value="data">Profile</TabsTrigger>
                     <TabsTrigger value="logs">Time Logs</TabsTrigger>
-                    {/* <TabsTrigger value="schedule">Schedule</TabsTrigger> */}
+                    <TabsTrigger value="schedule">Schedule</TabsTrigger>
                     <TabsTrigger value="logOverride">Log Override</TabsTrigger>
                     <TabsTrigger value="overtime">Overtime</TabsTrigger>
                 </TabsList>
@@ -308,7 +308,7 @@ export default function EmployeeProfile() {
                     </TabsContent>
                 )}
 
-                {/* {activeTab === "schedule" && (
+                {activeTab === "schedule" && (
                     <TabsContent value="schedule">
                         <EmployeeScheduleCard
                             days={days}
@@ -318,7 +318,7 @@ export default function EmployeeProfile() {
                             setDateRange={setDateRange}
                         />
                     </TabsContent>
-                )} */}
+                )}
 
                 {activeTab === "logOverride" && (
                     <TabsContent value="logOverride">

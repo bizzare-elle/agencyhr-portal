@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Calendar1Icon } from "lucide-react";
-import { format } from "date-fns";
+import { format, isBefore, isAfter } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-
 import {
     FormField,
     FormItem,
@@ -21,17 +20,24 @@ import {
     FormControl,
     FormMessage,
 } from "@/components/ui/form";
-import { ControllerRenderProps, FieldValues } from "react-hook-form";
+import { ControllerRenderProps } from "react-hook-form";
 
 interface DateTimeFieldProps {
     name: string;
     label: string;
     control: any;
+    minDate?: Date;
+    maxDate?: Date;
 }
 
-export function DateTimeField({ name, label, control }: DateTimeFieldProps) {
+export function DateTimeField({
+    name,
+    label,
+    control,
+    minDate,
+    maxDate,
+}: DateTimeFieldProps) {
     const [isOpen, setIsOpen] = React.useState(false);
-
     const hours = Array.from({ length: 12 }, (_, i) => i + 1);
 
     return (
@@ -43,6 +49,17 @@ export function DateTimeField({ name, label, control }: DateTimeFieldProps) {
 
                 const handleDateSelect = (selectedDate: Date | undefined) => {
                     if (selectedDate) {
+                        // ✅ Enforce cutoff restriction
+                        if (
+                            (minDate && isBefore(selectedDate, minDate)) ||
+                            (maxDate && isAfter(selectedDate, maxDate))
+                        ) {
+                            alert(
+                                "Selected date is outside the allowed cutoff period.",
+                            );
+                            return;
+                        }
+
                         const formatted = format(
                             selectedDate,
                             "yyyy-MM-dd HH:mm:ss",
@@ -74,6 +91,18 @@ export function DateTimeField({ name, label, control }: DateTimeFieldProps) {
                                       : currentHours,
                             );
                         }
+
+                        // ✅ Re-validate if new time changes cutoff bounds
+                        if (
+                            (minDate && isBefore(newDate, minDate)) ||
+                            (maxDate && isAfter(newDate, maxDate))
+                        ) {
+                            alert(
+                                "Selected time falls outside the current cutoff period.",
+                            );
+                            return;
+                        }
+
                         const formatted = format(
                             newDate,
                             "yyyy-MM-dd HH:mm:ss",
@@ -109,6 +138,16 @@ export function DateTimeField({ name, label, control }: DateTimeFieldProps) {
                                             mode="single"
                                             selected={date}
                                             onSelect={handleDateSelect}
+                                            disabled={(date) => {
+                                                if (!date) return false;
+                                                const beforeMin = minDate
+                                                    ? isBefore(date, minDate)
+                                                    : false;
+                                                const afterMax = maxDate
+                                                    ? isAfter(date, maxDate)
+                                                    : false;
+                                                return beforeMin || afterMax;
+                                            }}
                                         />
                                         <div className="flex flex-col divide-y sm:h-[300px] sm:flex-row sm:divide-x sm:divide-y-0">
                                             {/* Hours */}
@@ -147,6 +186,7 @@ export function DateTimeField({ name, label, control }: DateTimeFieldProps) {
                                                 />
                                             </ScrollArea>
 
+                                            {/* Minutes */}
                                             <ScrollArea className="w-64 sm:w-auto">
                                                 <div className="flex p-2 sm:flex-col">
                                                     {Array.from(

@@ -15,6 +15,7 @@ export interface Logoverride {
     clock_type: string;
     location: string;
     branch_id: string | null;
+    branch_name: string | null;
     image: string;
     is_range: string;
     remarks: string;
@@ -33,6 +34,8 @@ export interface Overtime {
     id: string;
     employee_id: string;
     employee_name: string;
+    branch_id: string;
+    branch_name: string;
     date: string;
     no_of_hours: string;
     image: string;

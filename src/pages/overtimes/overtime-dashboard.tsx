@@ -438,6 +438,9 @@ export default function OvertimeDashboard() {
                                                     Date
                                                 </TableHead>
                                                 <TableHead className="px-3 py-4 text-center">
+                                                    Branch
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
                                                     Number of Hour/s
                                                 </TableHead>
                                                 <TableHead className="px-3 py-4 text-center">
@@ -467,6 +470,10 @@ export default function OvertimeDashboard() {
                                                                       "MMM d, yyyy",
                                                                   )
                                                                 : "N/A"}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            {r.branch_name ||
+                                                                "N/A"}
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
                                                             {r.no_of_hours ||
@@ -532,6 +539,10 @@ export default function OvertimeDashboard() {
                                                                                 {
                                                                                     label: "Number of Hour/s",
                                                                                     value: r.no_of_hours,
+                                                                                },
+                                                                                {
+                                                                                    label: "Branch",
+                                                                                    value: r.branch_name,
                                                                                 },
                                                                                 {
                                                                                     label: "Status",

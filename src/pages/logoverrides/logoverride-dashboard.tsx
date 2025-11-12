@@ -445,6 +445,9 @@ export default function LogoverrideDashboard() {
                                                     Date
                                                 </TableHead>
                                                 <TableHead className="px-3 py-4 text-center">
+                                                    Branch
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
                                                     Clock Type
                                                 </TableHead>
                                                 <TableHead className="px-3 py-4 text-center">
@@ -469,6 +472,9 @@ export default function LogoverrideDashboard() {
                                                             {safeFormat(
                                                                 r.date_time,
                                                             )}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            {r.branch_name}
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
                                                             {r.clock_type}
@@ -530,6 +536,10 @@ export default function LogoverrideDashboard() {
                                                                                 {
                                                                                     label: "Remarks",
                                                                                     value: r.remarks,
+                                                                                },
+                                                                                {
+                                                                                    label: "Branch",
+                                                                                    value: r.branch_name,
                                                                                 },
                                                                                 {
                                                                                     label: "Status",

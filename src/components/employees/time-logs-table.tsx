@@ -52,12 +52,6 @@ export interface TimeLog {
 
 const columns: TableColumn<TimeLog>[] = [
     {
-        name: "ID",
-        selector: (row) => row.id,
-        maxWidth: "100px",
-        sortable: true,
-    },
-    {
         name: "Date",
         selector: (row) => row.date_time,
         format: (row) => formatToMonthDayYear(row.date_time),
@@ -76,10 +70,6 @@ const columns: TableColumn<TimeLog>[] = [
     {
         name: "Branch",
         selector: (row) => row.branch_name as string,
-    },
-    {
-        name: "Location",
-        selector: (row) => row.location as string,
     },
     // {
     //     name: "Image",

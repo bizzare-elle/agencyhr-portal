@@ -181,6 +181,9 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                         Date
                                     </TableHead>
                                     <TableHead className="px-4 py-3 text-left">
+                                        Branch
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-left">
                                         Hours
                                     </TableHead>
                                     <TableHead className="px-4 py-3 text-left">
@@ -203,6 +206,10 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                         <TableCell className="px-4 py-3 font-medium">
                                             {safeFormat(ot.date)}
                                         </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            {ot.branch_name ?? "N/A"}
+                                        </TableCell>
+
                                         <TableCell className="px-4 py-3">
                                             {ot.no_of_hours}
                                         </TableCell>
@@ -233,12 +240,17 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                                         View
                                                     </Button>
                                                 </DialogTrigger>
-                                                <DialogContent className="w-[90vw] max-w-md sm:w-auto">
+                                                <DialogContent className="max-w-md">
                                                     <Card className="border-none bg-transparent">
                                                         <CardHeader className="mb-4 text-lg font-semibold">
                                                             <CardTitle>
                                                                 Overtime Details
                                                             </CardTitle>
+                                                            <CardDescription>
+                                                                Details of the
+                                                                overtime you’ve
+                                                                filed.
+                                                            </CardDescription>
                                                         </CardHeader>
                                                         <CardContent>
                                                             <div className="space-y-3 text-sm">
@@ -248,6 +260,10 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                                                         safeFormat(
                                                                             ot.date,
                                                                         ),
+                                                                    ],
+                                                                    [
+                                                                        "Branch",
+                                                                        ot.branch_name,
                                                                     ],
                                                                     [
                                                                         "Hours",
@@ -294,28 +310,6 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                                                             </div>
                                                                         </div>
                                                                     ),
-                                                                )}
-                                                                {ot.image ? (
-                                                                    <div className="my-4">
-                                                                        <img
-                                                                            src={
-                                                                                ot.image
-                                                                            }
-                                                                            alt="Overtime Reference"
-                                                                            className="max-h-64 w-full cursor-pointer rounded-lg border object-contain"
-                                                                            onClick={() =>
-                                                                                window.open(
-                                                                                    ot.image,
-                                                                                    "_blank",
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
-                                                                        No image
-                                                                        attached
-                                                                    </div>
                                                                 )}
                                                             </div>
                                                         </CardContent>

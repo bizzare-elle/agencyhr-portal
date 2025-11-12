@@ -217,7 +217,13 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                         Date
                                     </TableHead>
                                     <TableHead className="px-4 py-3 text-center">
+                                        Branch
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-center">
                                         Clock Type
+                                    </TableHead>
+                                    <TableHead className="px-4 py-3 text-center">
+                                        Remarks
                                     </TableHead>
                                     <TableHead className="px-4 py-3 text-center">
                                         Status
@@ -236,11 +242,17 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                         <TableCell className="px-4 py-3 font-medium">
                                             {safeFormat(
                                                 new Date(log.date_time),
-                                                "MMM d, yyyy",
+                                                "MMM d, yyyy hh:mm a",
                                             )}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-center">
+                                            {log.branch_name}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
                                             {log.clock_type}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-center">
+                                            {log.remarks}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-center">
                                             <Badge
@@ -288,7 +300,7 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                                                             new Date(
                                                                                 log.date_time,
                                                                             ),
-                                                                            "MMM d, yyyy",
+                                                                            "MMM d, yyyy hh:mm a",
                                                                         ),
                                                                     ],
                                                                     [
@@ -298,6 +310,10 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                                                     [
                                                                         "Status",
                                                                         log.status,
+                                                                    ],
+                                                                    [
+                                                                        "Branch",
+                                                                        log.branch_name,
                                                                     ],
                                                                     [
                                                                         "Remarks",
@@ -339,118 +355,6 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                                                         </div>
                                                                     ),
                                                                 )}
-                                                                {(() => {
-                                                                    if (
-                                                                        !log.image
-                                                                    ) {
-                                                                        return (
-                                                                            <div className="bg-muted text-muted-foreground my-4 rounded border border-dashed py-5 text-center text-sm">
-                                                                                No
-                                                                                image
-                                                                                attached
-                                                                            </div>
-                                                                        );
-                                                                    }
-
-                                                                    // --- Determine which AppSheet app/table to use based on date (optional)
-                                                                    const cutoffDate =
-                                                                        new Date(
-                                                                            "2025-06-01T00:00:00",
-                                                                        );
-                                                                    const recordDate =
-                                                                        log.date_time
-                                                                            ? new Date(
-                                                                                  log.date_time,
-                                                                              )
-                                                                            : cutoffDate;
-                                                                    const appName =
-                                                                        recordDate >=
-                                                                        cutoffDate
-                                                                            ? "WFPhonetrics-373955958"
-                                                                            : "AtlasAgencyTimeTrackerv2-373955958";
-                                                                    const tableName =
-                                                                        recordDate >=
-                                                                        cutoffDate
-                                                                            ? "Sheet1"
-                                                                            : "hr_time_tracker";
-
-                                                                    // --- Build the base image URL
-                                                                    let imageSrc =
-                                                                        "";
-                                                                    if (
-                                                                        log.image &&
-                                                                        log.image.startsWith(
-                                                                            "http",
-                                                                        )
-                                                                    ) {
-                                                                        // Direct URL (could be AppSheet or your backend)
-                                                                        imageSrc =
-                                                                            log.image;
-                                                                    } else if (
-                                                                        log.image &&
-                                                                        log.image.includes(
-                                                                            "Sheet1_Images",
-                                                                        )
-                                                                    ) {
-                                                                        // Local CodeIgniter-hosted file
-                                                                        const encodedImage =
-                                                                            encodeURIComponent(
-                                                                                log.image,
-                                                                            ).replace(
-                                                                                /%2F/g,
-                                                                                "/",
-                                                                            );
-                                                                        imageSrc = `http://localhost/backoffice/${encodedImage}`;
-                                                                    } else if (
-                                                                        log.image
-                                                                    ) {
-                                                                        // AppSheet-hosted file
-                                                                        const cleanFileName =
-                                                                            log.image.replace(
-                                                                                /^.*[\\/]/,
-                                                                                "",
-                                                                            );
-                                                                        imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${cleanFileName}`;
-                                                                    }
-
-                                                                    // --- Fallback URLs (if local/AppSheet image fails)
-                                                                    const cleanFileName =
-                                                                        log.image.replace(
-                                                                            /^.*[\\/]/,
-                                                                            "",
-                                                                        );
-                                                                    const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${cleanFileName}`;
-
-                                                                    return (
-                                                                        <div className="my-4">
-                                                                            <img
-                                                                                src={
-                                                                                    imageSrc
-                                                                                }
-                                                                                alt="Logoverride Reference"
-                                                                                className="max-h-64 w-full cursor-pointer rounded-lg border object-contain transition hover:opacity-90"
-                                                                                onClick={() =>
-                                                                                    window.open(
-                                                                                        imageSrc,
-                                                                                        "_blank",
-                                                                                    )
-                                                                                }
-                                                                                onError={(
-                                                                                    e,
-                                                                                ) => {
-                                                                                    const target =
-                                                                                        e.currentTarget as HTMLImageElement;
-                                                                                    console.warn(
-                                                                                        "Primary image failed, using backup:",
-                                                                                        backupUrl,
-                                                                                    );
-                                                                                    target.src =
-                                                                                        backupUrl;
-                                                                                }}
-                                                                            />
-                                                                        </div>
-                                                                    );
-                                                                })()}
                                                             </div>
                                                         </CardContent>
                                                         <CardFooter className="flex justify-end pt-2">

@@ -129,14 +129,6 @@ const EmployeeScheduleCard: FC<EmployeeScheduleCardProps> = ({
                         </span>
                     </p>
                 )}
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                    <Button asChild className="w-full sm:w-auto">
-                        <Link to={`/schedules/form/${employeeId}`}>
-                            Request Schedule
-                        </Link>
-                    </Button>
-                </div>
             </div>
 
             {/* Schedule Grid */}

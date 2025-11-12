@@ -29,6 +29,7 @@ export const handleExportExcel = async (
 
     worksheet.addRow([`Employee Name: ${employee}`]);
     worksheet.addRow([dateRange]);
+    worksheet.addRow(["Disclaimer: This is not an official document."]);
     worksheet.addRow([]);
 
     const headers = [

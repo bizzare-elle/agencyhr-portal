@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,14 @@ import api from "@/lib/axios";
 import { TextField } from "@/components/text-field";
 import { ImageUploader } from "@/components/image-dropzone";
 import { Label } from "@/components/ui/label";
-import { Form } from "@/components/ui/form";
+import {
+    Form,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -29,20 +36,28 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui/card";
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectContent,
+    SelectItem,
+} from "@/components/ui/select";
 import { useAuthStore } from "@/hooks/use-auth";
 import { ParentComponent } from "@/components/parent-container";
 
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const schema = z.object({
+    branch_id: z.string().min(1, { message: "Select a branch" }),
     date: z.date({ error: () => ({ message: "Date is required" }) }),
-    startTime: z.string().regex(timeRegex, {
-        message: "Start time is required (HH:mm)",
-    }),
-    endTime: z.string().regex(timeRegex, {
-        message: "End time is required (HH:mm)",
-    }),
-    totalOt: z.string().optional(),
+    startTime: z
+        .string()
+        .regex(timeRegex, { message: "Start time is required (HH:mm)" }),
+    endTime: z
+        .string()
+        .regex(timeRegex, { message: "End time is required (HH:mm)" }),
+    totalOt: z.string().min(1, { message: "Overtime hours cannot be empty" }),
     remarks: z.string().min(1, { message: "Remarks are required" }),
     imageReference: z
         .instanceof(File, { message: "Image is required" })
@@ -76,7 +91,7 @@ export default function OvertimeForm() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
-        defaultValues: { remarks: "" },
+        defaultValues: { remarks: "", branch_id: "" },
     });
 
     const { data: me } = useQuery({
@@ -84,6 +99,14 @@ export default function OvertimeForm() {
         queryFn: async () => {
             const res = await api.get(`/api/v2/auth/me`);
             return res.data.data;
+        },
+    });
+
+    const { data: branches } = useQuery({
+        queryKey: ["branches"],
+        queryFn: async () => {
+            const res = await api.get(`/api/v2/get_branch`);
+            return res.data.data; // assuming API returns { id, name }[]
         },
     });
 
@@ -103,14 +126,14 @@ export default function OvertimeForm() {
     const overtimeMutation = useMutation({
         mutationFn: async (formValues: FormValues) => {
             const formData = new FormData();
-
+            formData.append("branch_id", formValues.branch_id);
             formData.append(
                 "date",
                 formValues.date.toISOString().split("T")[0],
             );
             formData.append("startTime", formValues.startTime);
             formData.append("endTime", formValues.endTime);
-            formData.append("totalOt", formValues.totalOt || "0");
+            formData.append("totalOt", formValues.totalOt);
             formData.append("remarks", formValues.remarks);
 
             if (formValues.imageReference instanceof File) {
@@ -170,47 +193,82 @@ export default function OvertimeForm() {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <CardContent className="space-y-6">
-                            {/* Date Picker */}
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="date">Date</Label>
-                                <Popover open={open} onOpenChange={setOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-between font-normal"
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <FormField
+                                    control={form.control}
+                                    name="branch_id"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Branch</FormLabel>
+                                            <FormControl>
+                                                <Select
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                    value={field.value}
+                                                >
+                                                    <SelectTrigger className="w-full">
+                                                        <SelectValue placeholder="Select branch..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {branches?.map(
+                                                            (b: any) => (
+                                                                <SelectItem
+                                                                    key={b.id}
+                                                                    value={b.id}
+                                                                >
+                                                                    {b.name}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <div className="flex flex-col gap-2">
+                                    <Label htmlFor="date">Date</Label>
+                                    <Popover open={open} onOpenChange={setOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className="w-full justify-between font-normal"
+                                            >
+                                                {form.watch("date")
+                                                    ? form
+                                                          .watch("date")
+                                                          .toLocaleDateString(
+                                                              "en-CA",
+                                                          )
+                                                    : "Select date"}
+                                                <ChevronDownIcon />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            className="w-auto p-0"
+                                            align="start"
                                         >
-                                            {form.watch("date")
-                                                ? form
-                                                      .watch("date")
-                                                      .toLocaleDateString(
-                                                          "en-CA",
-                                                      )
-                                                : "Select date"}
-                                            <ChevronDownIcon />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent
-                                        className="w-auto p-0"
-                                        align="start"
-                                    >
-                                        <Calendar
-                                            mode="single"
-                                            selected={form.watch("date")}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    form.setValue(
-                                                        "date",
-                                                        date,
-                                                        {
-                                                            shouldValidate: true,
-                                                        },
-                                                    );
-                                                }
-                                                setOpen(false);
-                                            }}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                            <Calendar
+                                                mode="single"
+                                                selected={form.watch("date")}
+                                                onSelect={(date) => {
+                                                    if (date)
+                                                        form.setValue(
+                                                            "date",
+                                                            date,
+                                                            {
+                                                                shouldValidate: true,
+                                                            },
+                                                        );
+                                                    setOpen(false);
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                             </div>
 
                             {/* From / To / Overtime Hours */}
@@ -222,6 +280,14 @@ export default function OvertimeForm() {
                                         type="time"
                                         step="60"
                                     />
+                                    {form.formState.errors.startTime && (
+                                        <p className="text-sm text-red-500">
+                                            {
+                                                form.formState.errors.startTime
+                                                    .message
+                                            }
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col gap-2">
@@ -231,6 +297,14 @@ export default function OvertimeForm() {
                                         type="time"
                                         step="60"
                                     />
+                                    {form.formState.errors.endTime && (
+                                        <p className="text-sm text-red-500">
+                                            {
+                                                form.formState.errors.endTime
+                                                    .message
+                                            }
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col gap-2">
@@ -241,21 +315,33 @@ export default function OvertimeForm() {
                                         readOnly
                                         className="bg-muted cursor-not-allowed"
                                     />
+                                    {form.formState.errors.totalOt && (
+                                        <p className="text-sm text-red-500">
+                                            {
+                                                form.formState.errors.totalOt
+                                                    .message
+                                            }
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Remarks */}
                             <TextField
                                 name="remarks"
                                 label="Add remarks"
                                 control={form.control}
                             />
 
-                            {/* Image Upload */}
-                            <ImageUploader
+                            <Controller
                                 name="imageReference"
-                                label="Upload an image"
                                 control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <ImageUploader
+                                        field={field}
+                                        fieldState={fieldState}
+                                        label="Upload an Image"
+                                    />
+                                )}
                             />
                         </CardContent>
 

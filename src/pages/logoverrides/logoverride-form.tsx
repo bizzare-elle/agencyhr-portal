@@ -262,6 +262,9 @@ export default function LogoverrideForm() {
                                                         <SelectItem value="System Maintenance">
                                                             System Maintenance
                                                         </SelectItem>
+                                                        <SelectItem value="Off-site">
+                                                            Off-site
+                                                        </SelectItem>
                                                         <SelectItem value="No Internet Connection">
                                                             No Internet
                                                             Connection

@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc --noEmit --skipLibCheck && vite build",
+        "prod": "export NODE_OPTIONS='--max-old-space-size=2048' npm run build",
         "lint": "eslint .",
         "preview": "vite preview"
     },

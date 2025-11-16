@@ -22,6 +22,14 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import {
+    DropdownMenu,
+    DropdownMenuItem,
+    DropdownMenuContent,
+    DropdownMenuTrigger,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "../ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -71,130 +79,7 @@ const columns: TableColumn<TimeLog>[] = [
         name: "Branch",
         selector: (row) => row.branch_name as string,
     },
-    // {
-    //     name: "Image",
-    //     cell: (row) => {
-    //         const hostname = window.location.hostname;
-    //         const isLocal = hostname === "localhost";
 
-    //         const baseUrl = isLocal
-    //             ? "http://localhost/backoffice/"
-    //             : "https://backoffice.wildflour.com.ph/";
-
-    //         const appName = "WFPhonetrics-373955958";
-    //         const tableName = "Sheet1";
-
-    //         let imageSrc = "";
-    //         let hasImage = false;
-
-    //         if (
-    //             row.image &&
-    //             typeof row.image === "string" &&
-    //             row.image.trim()
-    //         ) {
-    //             const cleanFileName = row.image.replace(/^.*[\\/]/, "");
-    //             const encodedPath = encodeURI(row.image).replace(/%2F/g, "/");
-
-    //             hasImage = true;
-
-    //             if (row.image.startsWith("http")) {
-    //                 imageSrc = row.image;
-    //             } else if (row.is_logoverride === "1") {
-    //                 imageSrc = `${baseUrl}uploads/${cleanFileName}`;
-    //             } else if (
-    //                 row.image.includes("Sheet1_Images") ||
-    //                 row.image.includes("uploads")
-    //             ) {
-    //                 imageSrc = `${baseUrl}${encodedPath}`;
-    //             } else {
-    //                 imageSrc = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=${encodeURIComponent(
-    //                     row.image,
-    //                 )}`;
-    //             }
-    //         }
-
-    //         const cleanFileName = row.image
-    //             ? row.image.replace(/^.*[\\/]/, "")
-    //             : "";
-    //         const backupUrl = `https://www.appsheet.com/template/getappfileurl?appName=${appName}&tableName=${tableName}&fileName=Image_Back_Up/${encodeURIComponent(
-    //             cleanFileName,
-    //         )}`;
-    //         const localImageUrl = `${baseUrl}${encodeURIComponent(
-    //             row.image || "",
-    //         ).replace(/%2F/g, "/")}`;
-
-    //         const handleImageError = (e: any) => {
-    //             const target = e.currentTarget;
-
-    //             if (target.dataset.tried === "true") {
-    //                 const parent = target.parentElement;
-    //                 const noImageText = document.createElement("span");
-    //                 noImageText.textContent = "No image";
-    //                 noImageText.className = "text-muted text-sm";
-    //                 parent.replaceChild(noImageText, target);
-    //                 return;
-    //             }
-
-    //             target.dataset.tried = "true";
-
-    //             const tryBackup = new Image();
-    //             tryBackup.src = backupUrl;
-    //             tryBackup.onload = () => (target.src = backupUrl);
-    //             tryBackup.onerror = () => {
-    //                 const tryLocal = new Image();
-    //                 tryLocal.src = localImageUrl;
-    //                 tryLocal.onload = () => (target.src = localImageUrl);
-    //                 tryLocal.onerror = () => {
-    //                     const parent = target.parentElement;
-    //                     const noImageText = document.createElement("span");
-    //                     noImageText.textContent = "No image";
-    //                     noImageText.className = "text-muted text-sm";
-    //                     parent.replaceChild(noImageText, target);
-    //                 };
-    //             };
-    //         };
-
-    //         if (!hasImage) {
-    //             return <span className="text-muted text-sm">No image</span>;
-    //         }
-
-    //         return (
-    //             <Dialog>
-    //                 <DialogTrigger className="cursor-pointer">
-    //                     <img
-    //                         className="max-h-[50px] rounded object-contain"
-    //                         src={imageSrc}
-    //                         alt={`Time Log ${row.id}`}
-    //                         onError={handleImageError}
-    //                         loading="lazy"
-    //                     />
-    //                 </DialogTrigger>
-    //                 <DialogContent>
-    //                     <DialogHeader>
-    //                         <DialogTitle>Time Log Image</DialogTitle>
-    //                         <DialogDescription>
-    //                             {formatToDateTime(row.date_time)}
-    //                         </DialogDescription>
-    //                     </DialogHeader>
-    //                     <div className="flex items-center justify-center">
-    //                         {hasImage ? (
-    //                             <img
-    //                                 className="max-h-[400px] object-contain"
-    //                                 src={imageSrc}
-    //                                 alt={`Time Log ${row.id}`}
-    //                                 onError={handleImageError}
-    //                             />
-    //                         ) : (
-    //                             <span className="text-sm text-white">
-    //                                 No image
-    //                             </span>
-    //                         )}
-    //                     </div>
-    //                 </DialogContent>
-    //             </Dialog>
-    //         );
-    //     },
-    // },
     {
         name: "Status",
         cell: () => <Badge className="bg-green-600 text-white">Approved</Badge>,
@@ -203,45 +88,148 @@ const columns: TableColumn<TimeLog>[] = [
         name: "Actions",
         cell: (row) => {
             const queryClient = useQueryClient();
+            const [selectedType, setSelectedType] = useState<string | null>(
+                null,
+            );
 
             const handleWithdraw = async () => {
                 try {
-                    const res = await api.post(
-                        `/api/v2/withdraw_log/${row.id}`,
-                    );
+                    await api.post(`/api/v2/withdraw_log/${row.id}`);
                     toast.success("Log withdrawn successfully!");
-
                     queryClient.invalidateQueries({
                         queryKey: ["employee-time-logs"],
-                        exact: false,
                     });
-                } catch (error: any) {
+                } catch (error) {
                     toast.error("Failed to withdraw log.");
                 }
             };
+
+            const handleChangeClockType = async (type: string) => {
+                try {
+                    await api.post(`/api/v2/change_clock_type/${row.id}`, {
+                        type,
+                    });
+                    toast.success(`Clock type changed to ${type}!`);
+                    queryClient.invalidateQueries({
+                        queryKey: ["employee-time-logs"],
+                    });
+                } catch (error: any) {
+                    const message =
+                        error?.response?.data?.message ||
+                        "Failed to update clock type.";
+                    toast.error(message);
+                }
+            };
+
+            const CLOCK_TYPES = [
+                "Clock-In",
+                "Clock-Out",
+                "Break-In",
+                "Break-Out",
+            ];
+
             return (
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                            Withdraw
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Withdraw Log</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to withdraw this log? This
-                                action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleWithdraw}>
-                                Confirm
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                <>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="secondary" size="sm">
+                                Actions
+                            </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel className="text-muted-foreground text-xs">
+                                Change Clock Type
+                            </DropdownMenuLabel>
+
+                            {CLOCK_TYPES.map((type) => (
+                                <DropdownMenuItem
+                                    key={type}
+                                    onClick={() => setSelectedType(type)}
+                                    className={
+                                        type === row.clock_type
+                                            ? "bg-gray-200 font-bold text-black"
+                                            : ""
+                                    }
+                                >
+                                    {type}
+                                    {type === row.clock_type && (
+                                        <span className="ml-2 text-green-600">
+                                            ✔
+                                        </span>
+                                    )}
+                                </DropdownMenuItem>
+                            ))}
+
+                            <DropdownMenuSeparator />
+
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="font-medium text-red-600">
+                                        Withdraw Log
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Withdraw Log
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Are you sure you want to withdraw
+                                            this log? This action cannot be
+                                            undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                            Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleWithdraw}
+                                        >
+                                            Confirm
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <AlertDialog
+                        open={!!selectedType}
+                        onOpenChange={(open) => !open && setSelectedType(null)}
+                    >
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Change Clock Type
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to change this log to{" "}
+                                    <strong>{selectedType}</strong>?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel
+                                    onClick={() => setSelectedType(null)}
+                                >
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() => {
+                                        if (selectedType) {
+                                            handleChangeClockType(selectedType);
+                                            setSelectedType(null);
+                                        }
+                                    }}
+                                >
+                                    Confirm
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </>
             );
         },
         ignoreRowClick: true,

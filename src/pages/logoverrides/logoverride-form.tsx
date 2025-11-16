@@ -282,12 +282,6 @@ export default function LogoverrideForm() {
                                                             Forgot Clock-In or
                                                             Clock-Out
                                                         </SelectItem>
-                                                        <SelectItem value="Request for Change Clock Type (Clock-In, Clock-Out)">
-                                                            Request for Change
-                                                            Clock Type
-                                                            (Clock-In,
-                                                            Clock-Out)
-                                                        </SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </FormControl>

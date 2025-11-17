@@ -216,8 +216,8 @@ export default function LogoverrideForm() {
                                         name="dateTime"
                                         label="Date and Time"
                                         control={form.control}
-                                        minDate={startDate}
-                                        maxDate={endDate}
+                                        // minDate={startDate}
+                                        // maxDate={endDate}
                                     />
                                 </div>
                             </div>

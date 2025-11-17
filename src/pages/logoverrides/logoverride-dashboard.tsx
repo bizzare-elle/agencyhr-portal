@@ -597,10 +597,6 @@ export default function LogoverrideDashboard() {
                                                                                     <Button
                                                                                         size="sm"
                                                                                         variant="destructive"
-                                                                                        disabled={
-                                                                                            r.status_label ===
-                                                                                            "Approved"
-                                                                                        }
                                                                                     >
                                                                                         Withdraw
                                                                                     </Button>

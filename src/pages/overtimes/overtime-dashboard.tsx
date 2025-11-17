@@ -599,13 +599,7 @@ export default function OvertimeDashboard() {
                                                                                 <AlertDialogTrigger
                                                                                     asChild
                                                                                 >
-                                                                                    <Button
-                                                                                        variant="destructive"
-                                                                                        disabled={
-                                                                                            r.status ==
-                                                                                            "1"
-                                                                                        }
-                                                                                    >
+                                                                                    <Button variant="destructive">
                                                                                         Withdraw
                                                                                     </Button>
                                                                                 </AlertDialogTrigger>

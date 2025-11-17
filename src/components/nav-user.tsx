@@ -119,6 +119,21 @@ export function NavUser({
                                 </DropdownMenuItem>
 
                                 <DropdownMenuItem
+                                    asChild
+                                    className="cursor-pointer"
+                                >
+                                    <a
+                                        href="https://support.agencyhr.ph"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex w-full items-center gap-2"
+                                    >
+                                        <IconDotsVertical className="mr-2 h-4 w-4" />
+                                        Submit Support Ticket
+                                    </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
                                     onClick={handleLogout}
                                     className="cursor-pointer"
                                 >

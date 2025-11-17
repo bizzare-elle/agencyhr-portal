@@ -204,6 +204,16 @@ export default function LoginPage() {
                             </form>
                         </Form>
                     </CardContent>
+                    <p className="mt-4 text-center text-sm text-white/80">
+                        <a
+                            href="https://support.agencyhr.ph"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-white"
+                        >
+                            Need support? Click here to submit a ticket
+                        </a>
+                    </p>
                 </Card>
 
                 <p className="mt-6 text-center text-xs text-white/70">

@@ -106,7 +106,7 @@ export default function OvertimeForm() {
         queryKey: ["branches"],
         queryFn: async () => {
             const res = await api.get(`/api/v2/get_branch`);
-            return res.data.data; // assuming API returns { id, name }[]
+            return res.data.data;
         },
     });
 
@@ -124,29 +124,37 @@ export default function OvertimeForm() {
     const employeeId = me?.hr_id;
 
     const overtimeMutation = useMutation({
-        mutationFn: async (formValues: FormValues) => {
+        mutationFn: async (values: FormValues) => {
             const formData = new FormData();
-            formData.append("branch_id", formValues.branch_id);
-            formData.append(
-                "date",
-                formValues.date.toISOString().split("T")[0],
-            );
-            formData.append("startTime", formValues.startTime);
-            formData.append("endTime", formValues.endTime);
-            formData.append("totalOt", formValues.totalOt);
-            formData.append("remarks", formValues.remarks);
 
-            if (formValues.imageReference instanceof File) {
-                formData.append("imageReference", formValues.imageReference);
+            const d = values.date;
+            const formattedDate = `${d.getFullYear()}-${String(
+                d.getMonth() + 1,
+            ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+            const fields = {
+                branch_id: values.branch_id,
+                date: formattedDate,
+                startTime: values.startTime,
+                endTime: values.endTime,
+                totalOt: values.totalOt,
+                remarks: values.remarks,
+            };
+
+            Object.entries(fields).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            if (values.imageReference instanceof File) {
+                formData.append("imageReference", values.imageReference);
             }
 
             const response = await api.post(
                 `/api/v2/overtime/${employeeId}`,
                 formData,
-                {
-                    headers: { "Content-Type": "multipart/form-data" },
-                },
+                { headers: { "Content-Type": "multipart/form-data" } },
             );
+
             return response.data;
         },
     });

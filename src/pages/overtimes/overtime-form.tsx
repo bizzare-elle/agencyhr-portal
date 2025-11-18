@@ -268,9 +268,11 @@ export default function OvertimeForm() {
 
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="date">Date</Label>
+
                                     <Popover open={open} onOpenChange={setOpen}>
                                         <PopoverTrigger asChild>
                                             <Button
+                                                type="button" // IMPORTANT FIX
                                                 variant="outline"
                                                 className="w-full justify-between font-normal"
                                             >
@@ -281,9 +283,10 @@ export default function OvertimeForm() {
                                                               "en-CA",
                                                           )
                                                     : "Select date"}
-                                                <ChevronDownIcon />
+                                                <ChevronDownIcon className="h-4 w-4 opacity-70" />
                                             </Button>
                                         </PopoverTrigger>
+
                                         <PopoverContent
                                             className="w-auto p-0"
                                             align="start"
@@ -292,7 +295,7 @@ export default function OvertimeForm() {
                                                 mode="single"
                                                 selected={form.watch("date")}
                                                 onSelect={(date) => {
-                                                    if (date)
+                                                    if (date) {
                                                         form.setValue(
                                                             "date",
                                                             date,
@@ -300,16 +303,9 @@ export default function OvertimeForm() {
                                                                 shouldValidate: true,
                                                             },
                                                         );
+                                                    }
                                                     setOpen(false);
                                                 }}
-                                                // disabled={[
-                                                //     {
-                                                //         before: startDate,
-                                                //     },
-                                                //     {
-                                                //         after: endDate,
-                                                //     },
-                                                // ]}
                                             />
                                         </PopoverContent>
                                     </Popover>

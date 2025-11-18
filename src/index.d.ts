@@ -189,4 +189,5 @@ export interface TimeRecord {
     total_schedule_hours: number | null;
     schedule: string | null;
     totWorkedBill: string | null;
+    permission: string | null;
 }

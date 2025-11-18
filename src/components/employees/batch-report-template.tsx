@@ -12,6 +12,7 @@ interface EmployeeData {
     id_number: string;
     branch: string;
     agency_name: string;
+    permissions: string;
     department: string;
     employment_status: string;
     time_records: TimeRecord[];
@@ -103,12 +104,11 @@ export const ConsolidatedTimeRecordsPDF = ({
                     acc.hours += Number(rec.hours) || 0;
                     return acc;
                 },
-                { late: 0, overtime: 0, undertime: 0, hours: 0, billable: 0 },
+                { late: 0, overtime: 0, undertime: 0, hours: 0 },
             );
 
             return (
                 <Page key={emp.id} size="A4" style={styles.page}>
-                    {/* Header */}
                     <View style={styles.header}>
                         <Text style={styles.title}>Employee Time Records</Text>
                         <Text style={styles.subtitle}>
@@ -116,16 +116,13 @@ export const ConsolidatedTimeRecordsPDF = ({
                         </Text>
                     </View>
 
-                    {/* Employee Info */}
                     <View style={styles.section}>
                         <Text>Name: {emp.employee_name}</Text>
                         <Text>ID Number: {emp.id_number}</Text>
                         <Text>Branch: {emp.branch}</Text>
-                        <Text>Department: {emp.department}</Text>
                         <Text>Agency: {emp.agency_name}</Text>
                     </View>
 
-                    {/* Table Header */}
                     <View style={styles.tableHeader}>
                         <Text style={[styles.cell, { flex: 1.2 }]}>Date</Text>
                         <Text style={[styles.cell, { flex: 1 }]}>Schedule</Text>

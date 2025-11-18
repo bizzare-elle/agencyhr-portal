@@ -174,7 +174,6 @@ export default function Employees() {
                         employee_name: empRecords[0].employee_name,
                         id_number: empRecords[0].id_number,
                         branch: empRecords[0].branch_name,
-                        department: empRecords[0].department_name,
                         employment_status: empRecords[0].employment_status,
                         agency_name: empRecords[0].agency_name,
                         time_records: empRecords.map((rec) => {

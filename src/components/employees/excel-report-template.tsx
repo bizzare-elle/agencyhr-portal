@@ -15,7 +15,6 @@ export function exportConsolidatedToExcel(
         wsData.push(["Employee Name:", emp.employee_name || ""]);
         wsData.push(["Employee ID:", emp.id_number || ""]);
         wsData.push(["Branch:", emp.branch || ""]);
-        wsData.push(["Department:", emp.department || ""]);
         wsData.push(["Agency:", emp.agency_name || ""]);
         wsData.push([]);
 

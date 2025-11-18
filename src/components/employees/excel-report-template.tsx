@@ -30,7 +30,6 @@ export function exportConsolidatedToExcel(
             "Overtime (hrs)",
             "Undertime (hrs)",
             "Total Hours Worked",
-            "Billable Hours",
         ]);
 
         if (emp.time_records?.length > 0) {
@@ -39,11 +38,10 @@ export function exportConsolidatedToExcel(
                 const undertime = minutesToHours(rec.undertime);
                 const overtime = Number(rec.overtime) || 0;
                 const hours = Number(rec.hours) || 0;
-                const billable = Number(rec.totWorkedBill) || 0;
 
                 wsData.push([
                     moment(rec.date).format("MMM DD, YYYY"),
-                    rec.schedule_name || "",
+                    rec.schedule || "",
                     formatTime(rec.time_in) || "",
                     formatTime(rec.break_in) || "",
                     formatTime(rec.break_out) || "",
@@ -52,7 +50,6 @@ export function exportConsolidatedToExcel(
                     formatNumber(overtime),
                     formatNumber(undertime),
                     formatNumber(hours),
-                    formatNumber(billable),
                 ]);
             });
 
@@ -62,7 +59,6 @@ export function exportConsolidatedToExcel(
                     acc.overtime += Number(rec.overtime) || 0;
                     acc.undertime += minutesToHours(rec.undertime);
                     acc.hours += Number(rec.hours) || 0;
-                    acc.billable_hours += Number(rec.totWorkedBill) || 0;
                     return acc;
                 },
                 {
@@ -70,7 +66,6 @@ export function exportConsolidatedToExcel(
                     overtime: 0,
                     undertime: 0,
                     hours: 0,
-                    billable_hours: 0,
                 },
             );
 
@@ -86,7 +81,6 @@ export function exportConsolidatedToExcel(
                 totals.overtime.toFixed(2),
                 totals.undertime.toFixed(2),
                 totals.hours.toFixed(2),
-                totals.billable_hours.toFixed(2),
             ]);
         } else {
             wsData.push(["No time records found"]);

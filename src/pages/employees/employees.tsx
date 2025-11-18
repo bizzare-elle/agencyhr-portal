@@ -68,7 +68,7 @@ export default function Employees() {
     const [isConsolidating, setIsConsolidating] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<string>("");
     const [consolidatedData, setConsolidatedData] = useState<any[]>([]);
-    const [hasConsolidated, setHasConsolidated] = useState(false); // ✅ NEW STATE
+    const [hasConsolidated, setHasConsolidated] = useState(false);
 
     const meQuery = useQuery({
         queryKey: ["me"],
@@ -178,34 +178,17 @@ export default function Employees() {
                         employment_status: empRecords[0].employment_status,
                         agency_name: empRecords[0].agency_name,
                         time_records: empRecords.map((rec) => {
-                            const totalHrs = parseFloat(
-                                rec.total_hours_worked || "0",
-                            );
-                            const late = parseFloat(rec.late_minutes || "0");
-                            const overtime = parseFloat(
-                                rec.ot_no_of_hours || "0",
-                            );
-
-                            const totalHoursWorkedBilled =
-                                Number(rec.total_schedule_hours) === 4 ? 4 : 8;
-
-                            const totWorkedBill = computeWorkedBill(
-                                rec,
-                                totalHoursWorkedBilled,
-                            );
-
                             return {
-                                date: rec.work_date,
-                                schedule_name: rec.schedule_type,
-                                time_in: rec.Clock_In,
-                                time_out: rec.Clock_Out,
-                                break_in: rec.Break_In,
-                                break_out: rec.Break_Out,
-                                hours: rec.total_hours_worked,
-                                late: rec.late_minutes,
-                                overtime: rec.ot_no_of_hours,
+                                date: rec.cut_off,
+                                schedule: rec.schedule_name,
+                                time_in: rec.clock_in,
+                                time_out: rec.clock_out,
+                                break_in: rec.break_in,
+                                break_out: rec.break_out,
+                                hours: rec.total_hrs,
+                                late: rec.total_hrs_late,
+                                overtime: rec.total_overtime,
                                 undertime: rec.undertime_minutes,
-                                totWorkedBill,
                             };
                         }),
                     };
@@ -244,7 +227,7 @@ export default function Employees() {
 
     function handleSort(rows: any, selector: any, direction: any) {}
 
-    console.log("Employees data:", data?.data.records);
+    // console.log("Employees data:", data?.data.records);
 
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">

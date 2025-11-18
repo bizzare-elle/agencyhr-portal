@@ -179,6 +179,7 @@ export interface TimeRecord {
     undertime: string | null;
     total_hours_worked: string | null;
     ot_no_of_hours: string | null;
+    total_overtime: string | null;
     is_bill_off: string | null;
     is_half_day: string | null;
     total_hours_worked: string | null;
@@ -186,5 +187,6 @@ export interface TimeRecord {
     late_minutes: string | null;
     total_late_minutes: string | null;
     total_schedule_hours: number | null;
+    schedule: string | null;
     totWorkedBill: string | null;
 }

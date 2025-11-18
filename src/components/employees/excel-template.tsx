@@ -45,7 +45,6 @@ export const handleExportExcel = async (
         "Late (hrs)",
         "Undertime (hrs)",
         "Total Worked Hours",
-        "Billable Hours",
     ];
 
     const headerRow = worksheet.addRow(headers);
@@ -72,43 +71,31 @@ export const handleExportExcel = async (
     let totalBillable = 0;
 
     records.forEach((record) => {
-        const worked = parseFloat(record.total_hours_worked || 0);
-        const late = parseFloat(
-            record.late_minutes_in_hours || record.late_minutes || 0,
-        );
+        const worked = parseFloat(record.total_hrs || 0);
+        const late = parseFloat(record.total_hrs_late || 0);
         const undertime = parseFloat(
             record.undertime_minutes_in_hours || record.undertime_minutes || 0,
         );
-        const overtime = parseFloat(record.ot_no_of_hours || 0);
-
-        const totalHoursWorkedBilled =
-            Number(record.total_schedule_hours) === 4 ? 4 : 8;
-
-        const totWorkedBill = computeWorkedBill(record, totalHoursWorkedBilled);
-        const billable = parseFloat((totWorkedBill as any) || 0);
+        const overtime = parseFloat(record.total_overtime || 0);
 
         totalHours += worked;
         totalLate += late;
         totalUndertime += undertime;
         totalOvertime += overtime;
-        totalBillable += billable;
 
         worksheet.addRow([
             record.branch_name ?? "",
-            record.schedule_type ?? "",
-            record.work_date
-                ? moment(record.work_date).format("MMM DD, YYYY")
-                : "",
-            record.work_date ? moment(record.work_date).format("dddd") : "",
-            record.Clock_In ? formatTime(record.Clock_In) : "No Data",
-            record.Break_In ? formatTime(record.Break_In) : "No Data",
-            record.Break_Out ? formatTime(record.Break_Out) : "No Data",
-            record.Clock_Out ? formatTime(record.Clock_Out) : "No Data",
+            record.schedule_name ?? "",
+            record.cut_off ? moment(record.cut_off).format("MMM DD, YYYY") : "",
+            record.cut_off ? moment(record.cut_off).format("dddd") : "",
+            record.clock_in ? formatTime(record.clock_in) : "No Data",
+            record.break_in ? formatTime(record.break_in) : "No Data",
+            record.break_out ? formatTime(record.break_out) : "No Data",
+            record.clock_out ? formatTime(record.clock_out) : "No Data",
             formatNumber(overtime),
             formatNumber(late),
             formatNumber(undertime),
             formatNumber(worked),
-            formatNumber(billable),
         ]);
     });
 
@@ -125,7 +112,6 @@ export const handleExportExcel = async (
         totalLate.toFixed(2),
         totalUndertime.toFixed(2),
         totalHours.toFixed(2),
-        totalBillable.toFixed(2),
     ]);
 
     totalsRow.eachCell((cell, colNumber) => {
@@ -159,7 +145,6 @@ export const handleExportExcel = async (
         { width: 15 },
         { width: 15 },
         { width: 15 },
-        { width: 18 },
     ];
 
     const buffer = await workbook.xlsx.writeBuffer();

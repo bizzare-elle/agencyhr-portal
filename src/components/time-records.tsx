@@ -160,28 +160,20 @@ export default function TimeRecords() {
 
     const tableData = useMemo(() => {
         return records.map((record) => {
-            const totalHoursWorkedBilled =
-                Number(record.total_schedule_hours) === 4 ? 4 : 8;
-
-            const totWorkedBill = computeWorkedBill(
-                record,
-                totalHoursWorkedBilled,
-            );
             return {
                 branch: record.branch_name || "No data",
-                scheduleName: record.schedule_type,
-                date: moment(record.work_date).format("YYYY-MM-DD"),
-                dayName: moment(record.work_date).format("dddd"),
+                scheduleName: record.schedule_name,
+                date: moment(record.cut_off).format("YYYY-MM-DD"),
+                dayName: moment(record.cut_off).format("dddd"),
                 agencyName: record.agency_name,
-                timeIn: record.Clock_In,
-                timeOut: record.Clock_Out,
-                breakIn: record.Break_In,
-                breakOut: record.Break_Out,
-                totalHrs: parseFloat(record.total_hours_worked || "0"),
-                totalLate: record.late_minutes || "0",
-                totalOvertime: parseFloat(record.ot_no_of_hours || "0"),
+                timeIn: record.clock_in,
+                timeOut: record.clock_out,
+                breakIn: record.break_in,
+                breakOut: record.break_out,
+                totalHrs: parseFloat(record.total_hrs || "0"),
+                totalLate: parseFloat(record.total_hrs_late || "0"),
+                totalOvertime: parseFloat(record.total_overtime || "0"),
                 undertimeMinutes: record.undertime_minutes,
-                totWorkedBill,
             };
         });
     }, [records]);
@@ -299,9 +291,6 @@ export default function TimeRecords() {
                             <TableHead className="px-2 py-4 text-center">
                                 Total Hours
                             </TableHead>
-                            <TableHead className="px-2 py-4 text-center">
-                                Billable Hours
-                            </TableHead>
                         </TableRow>
                     </TableHeader>
 
@@ -387,7 +376,7 @@ export default function TimeRecords() {
                                                 "font-semibold text-red-500",
                                         )}
                                     >
-                                        {minutesToHours(String(row.totalLate))}
+                                        {row.totalLate}
                                     </TableCell>
 
                                     <TableCell className="px-2 py-4 text-center">
@@ -398,11 +387,6 @@ export default function TimeRecords() {
 
                                     <TableCell className="px-2 py-4 text-center">
                                         {formatNumber(String(row.totalHrs))}
-                                    </TableCell>
-                                    <TableCell className="px-2 py-4 text-center">
-                                        {formatNumber(
-                                            String(row.totWorkedBill),
-                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

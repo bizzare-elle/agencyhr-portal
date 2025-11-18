@@ -601,7 +601,7 @@ export default function OvertimeDashboard() {
                                                                                 >
                                                                                     <Button variant="destructive">
                                                                                         Withdraw
-                                                                                    </Button>
+                                                                                </Button>
                                                                                 </AlertDialogTrigger>
                                                                                 <AlertDialogContent>
                                                                                     <AlertDialogHeader>

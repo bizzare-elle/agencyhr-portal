@@ -38,7 +38,6 @@ import api from "@/lib/axios";
 import { useAuthStore } from "@/hooks/use-auth";
 import { ParentComponent } from "@/components/parent-container";
 
-// ✅ Compute current cutoff range (1–15 or 16–end)
 const getCutoffRange = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -62,19 +61,17 @@ const { startDate, endDate } = getCutoffRange();
 const schema = z.object({
     branch_id: z.string().min(1, "Select a branch"),
     clockType: z.string().min(1, "Enter clock type"),
-    dateTime: z
-        .string()
-        .min(1, "Enter date and time")
-        .refine(
-            (val) => {
-                const selected = new Date(val);
-                return selected >= startDate && selected <= endDate;
-            },
-            {
-                message:
-                    "Selected date must be within the current cutoff period",
-            },
-        ),
+    dateTime: z.string().min(1, "Enter date and time"),
+    // .refine(
+    //     (val) => {
+    //         const selected = new Date(val);
+    //         return selected >= startDate && selected <= endDate;
+    //     },
+    //     {
+    //         message:
+    //             "Selected date must be within the current cutoff period",
+    //     },
+    // ),
     remarks: z.string().min(1, "Enter remarks"),
     imageReference: z
         .any()

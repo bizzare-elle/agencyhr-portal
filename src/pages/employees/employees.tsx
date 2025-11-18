@@ -185,9 +185,9 @@ export default function Employees() {
                                 time_out: rec.clock_out,
                                 break_in: rec.break_in,
                                 break_out: rec.break_out,
-                                hours: rec.total_hrs,
-                                late: rec.total_hrs_late,
-                                overtime: rec.total_overtime,
+                                hours: parseFloat(rec.total_hrs || "0"),
+                                late: parseFloat(rec.total_hrs_late || "0"),
+                                overtime: parseFloat(rec.total_overtime || "0"),
                                 undertime: rec.undertime_minutes,
                             };
                         }),

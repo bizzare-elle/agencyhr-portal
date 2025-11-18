@@ -48,37 +48,38 @@ import { ParentComponent } from "@/components/parent-container";
 
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const getCutoffRange = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+// const getCutoffRange = () => {
+//     const now = new Date();
+//     const year = now.getFullYear();
+//     const month = now.getMonth();
 
-    let startDate: Date, endDate: Date;
+//     let startDate: Date, endDate: Date;
 
-    if (now.getDate() <= 15) {
-        startDate = new Date(year, month, 1);
-        endDate = new Date(year, month, 15, 23, 59, 59);
-    } else {
-        startDate = new Date(year, month, 16);
-        endDate = new Date(year, month + 1, 0, 23, 59, 59);
-    }
+//     if (now.getDate() <= 15) {
+//         startDate = new Date(year, month, 1);
+//         endDate = new Date(year, month, 15, 23, 59, 59);
+//     } else {
+//         startDate = new Date(year, month, 16);
+//         endDate = new Date(year, month + 1, 0, 23, 59, 59);
+//     }
 
-    return { startDate, endDate };
-};
+//     return { startDate, endDate };
+// };
 
-const { startDate, endDate } = getCutoffRange();
+// const { startDate, endDate } = getCutoffRange();
 
 const schema = z.object({
     branch_id: z.string().min(1, { message: "Select a branch" }),
-    date: z.date({ error: () => ({ message: "Date is required" }) }).refine(
-        (val) => {
-            const selected = new Date(val);
-            return selected >= startDate && selected <= endDate;
-        },
-        {
-            message: "Selected date must be within the current cutoff period",
-        },
-    ),
+    date: z.date({ error: () => ({ message: "Date is required" }) }),
+    //     .refine(
+    //     (val) => {
+    //         const selected = new Date(val);
+    //         return selected >= startDate && selected <= endDate;
+    //     },
+    //     {
+    //         message: "Selected date must be within the current cutoff period",
+    //     },
+    // ),
     startTime: z
         .string()
         .regex(timeRegex, { message: "Start time is required (HH:mm)" }),

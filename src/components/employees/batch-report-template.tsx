@@ -4,7 +4,6 @@ import moment from "moment";
 import { minutesToHours } from "@/helpers/computeHours";
 import { TimeRecord } from "@/index";
 import { formatTime, formatNumber } from "@/helpers/formatDates";
-import { exit } from "process";
 
 interface EmployeeData {
     id: string;
@@ -12,8 +11,6 @@ interface EmployeeData {
     id_number: string;
     branch: string;
     agency_name: string;
-    permissions: string;
-    department: string;
     employment_status: string;
     time_records: TimeRecord[];
 }

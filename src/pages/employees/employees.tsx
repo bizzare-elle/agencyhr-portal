@@ -151,6 +151,8 @@ export default function Employees() {
                 if (res.data.data.time_records?.length) {
                     allRecords.push(...res.data.data.time_records);
                 }
+
+                console.log(allRecords);
             }
 
             if (allRecords.length === 0) {

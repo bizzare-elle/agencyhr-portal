@@ -48,38 +48,25 @@ import { ParentComponent } from "@/components/parent-container";
 
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-// const getCutoffRange = () => {
-//     const now = new Date();
-//     const year = now.getFullYear();
-//     const month = now.getMonth();
-
-//     let startDate: Date, endDate: Date;
-
-//     if (now.getDate() <= 15) {
-//         startDate = new Date(year, month, 1);
-//         endDate = new Date(year, month, 15, 23, 59, 59);
-//     } else {
-//         startDate = new Date(year, month, 16);
-//         endDate = new Date(year, month + 1, 0, 23, 59, 59);
-//     }
-
-//     return { startDate, endDate };
-// };
-
-// const { startDate, endDate } = getCutoffRange();
-
 const schema = z.object({
     branch_id: z.string().min(1, { message: "Select a branch" }),
-    date: z.date({ error: () => ({ message: "Date is required" }) }),
-    //     .refine(
-    //     (val) => {
-    //         const selected = new Date(val);
-    //         return selected >= startDate && selected <= endDate;
-    //     },
-    //     {
-    //         message: "Selected date must be within the current cutoff period",
-    //     },
-    // ),
+    date: z.date({ error: () => ({ message: "Date is required" }) }).refine(
+        (val) => {
+            const today = new Date();
+            const selected = new Date(val);
+
+            today.setHours(0, 0, 0, 0);
+            selected.setHours(0, 0, 0, 0);
+
+            const diffDays =
+                (today.getTime() - selected.getTime()) / (1000 * 60 * 60 * 24);
+
+            return diffDays >= 0 && diffDays <= 2;
+        },
+        {
+            message: "You can only file overtime within 2 days from today",
+        },
+    ),
     startTime: z
         .string()
         .regex(timeRegex, { message: "Start time is required (HH:mm)" }),
@@ -306,6 +293,17 @@ export default function OvertimeForm() {
                                                     }
                                                     setOpen(false);
                                                 }}
+                                                disabled={[
+                                                    {
+                                                        before: new Date(
+                                                            new Date().getFullYear(),
+                                                            new Date().getMonth(),
+                                                            new Date().getDate() -
+                                                                2,
+                                                        ),
+                                                    },
+                                                    { after: new Date() },
+                                                ]}
                                             />
                                         </PopoverContent>
                                     </Popover>

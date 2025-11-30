@@ -148,6 +148,7 @@ export interface Schedule {
 }
 
 export interface TimeRecord {
+    id: number;
     employee_id: number;
     agency_name: string;
     work_date: string | null;
@@ -157,6 +158,7 @@ export interface TimeRecord {
     employment_status: string;
     id_number: string;
     department_name: string;
+    branch: string;
     cut_off: string;
     clock_in: string | null;
     schedule_type: string | null;
@@ -183,11 +185,23 @@ export interface TimeRecord {
     is_bill_off: string | null;
     is_half_day: string | null;
     total_hours_worked: string | null;
-    undertime_minutes: string | null;
+    undertime_minutes: number | null;
     late_minutes: string | null;
     total_late_minutes: string | null;
     total_schedule_hours: number | null;
     schedule: string | null;
     totWorkedBill: string | null;
     permission: string | null;
+    time_records: {
+        date: string;
+        schedule: string;
+        time_in: string | null;
+        time_out: string | null;
+        break_in: string | null;
+        break_out: string | null;
+        hours: number;
+        late: number;
+        overtime: number;
+        undertime: number;
+    }[];
 }

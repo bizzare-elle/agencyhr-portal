@@ -25,8 +25,30 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import { Spinner } from "@/components/ui/spinner";
 import { TimeRecord } from "@/index";
 import { Link } from "react-router-dom";
-import { computeWorkedBill } from "@/helpers/computeHours";
 import { exportConsolidatedToExcel } from "@/components/employees/excel-report-template";
+
+interface EmployeeTimeRecord {
+    date: string;
+    schedule: string;
+    time_in: string | null;
+    time_out: string | null;
+    break_in: string | null;
+    break_out: string | null;
+    hours: number;
+    late: number;
+    overtime: number;
+    undertime: number;
+}
+
+interface GroupedEmployee {
+    id: number;
+    employee_name: string;
+    id_number: string;
+    branch: string;
+    employment_status: string;
+    agency_name: string;
+    time_records: EmployeeTimeRecord[];
+}
 
 const columns: TableColumn<Employee>[] = [
     { name: "ID", selector: (row) => row.id, sortable: true },
@@ -104,14 +126,16 @@ export default function Employees() {
             return;
         }
 
+        setIsConsolidating(true);
+        setHasConsolidated(false);
+
         try {
-            setIsConsolidating(true);
-            setHasConsolidated(false);
             const agency_id = meQuery.data?.agency_id;
             const branch_id = selectedBranch;
 
-            const consolidateResponse = await api.post(
-                "/api/v2/time-records/consolidate_agency",
+            // 1️⃣ Consolidate time records and get processed employee IDs
+            const { data: consolidateData } = await api.post(
+                "/api/v2/time-records/consolidate",
                 {
                     agency_id,
                     cut_off_date: format(cutOffDate, "yyyy-MM-dd"),
@@ -119,7 +143,9 @@ export default function Employees() {
                 },
             );
 
-            const employee_ids = consolidateResponse.data.employee_ids || [];
+            const employee_ids: number[] =
+                consolidateData.employees_processed || [];
+
             if (employee_ids.length === 0) {
                 toast.info("No employees found for this cutoff");
                 setConsolidatedData([]);
@@ -127,6 +153,7 @@ export default function Employees() {
                 return;
             }
 
+            // 2️⃣ Determine cutoff date range
             const day = cutOffDate.getDate();
             const month = cutOffDate.getMonth() + 1;
             const year = cutOffDate.getFullYear();
@@ -139,23 +166,21 @@ export default function Employees() {
                     ? `${year}-${month}-${lastDay}`
                     : `${year}-${month}-15`;
 
-            const allRecords: TimeRecord[] = [];
+            // 3️⃣ Fetch all employees' time records in parallel
+            const allRecordsResponses = await Promise.all(
+                employee_ids.map((empId) =>
+                    api
+                        .get<
+                            ApiResponse<{ time_records: TimeRecord[] }>
+                        >(`/api/v2/time-records/${empId}?from=${date_from}&to=${date_to}`)
+                        .then((res) => res.data.data.time_records || []),
+                ),
+            );
 
-            for (const emp_id of employee_ids) {
-                const res = await api.get<
-                    ApiResponse<{ time_records: TimeRecord[] }>
-                >(
-                    `/api/v2/time-records/${emp_id}?from=${date_from}&to=${date_to}`,
-                );
+            // Flatten all responses
+            const allRecords: TimeRecord[] = allRecordsResponses.flat();
 
-                if (res.data.data.time_records?.length) {
-                    allRecords.push(...res.data.data.time_records);
-                }
-
-                console.log(allRecords);
-            }
-
-            if (allRecords.length === 0) {
+            if (!allRecords.length) {
                 toast.info(
                     "No time records found for the selected cutoff period.",
                 );
@@ -164,40 +189,46 @@ export default function Employees() {
                 return;
             }
 
-            const groupedByEmployee = employee_ids
-                .map((emp_id: number) => {
-                    const empRecords = allRecords.filter(
-                        (r) => (r.employee_id as number) === emp_id,
-                    );
-                    if (!empRecords.length) return null;
+            // 4️⃣ Group records by employee
+            const groupedByEmployee: Record<number, GroupedEmployee> =
+                allRecords.reduce(
+                    (acc, rec) => {
+                        const empId = rec.employee_id as number;
 
-                    return {
-                        id: emp_id,
-                        employee_name: empRecords[0].employee_name,
-                        id_number: empRecords[0].id_number,
-                        branch: empRecords[0].branch_name,
-                        employment_status: empRecords[0].employment_status,
-                        agency_name: empRecords[0].agency_name,
-                        time_records: empRecords.map((rec) => {
-                            return {
-                                date: rec.cut_off,
-                                schedule: rec.schedule_name,
-                                time_in: rec.clock_in,
-                                time_out: rec.clock_out,
-                                break_in: rec.break_in,
-                                break_out: rec.break_out,
-                                hours: parseFloat(rec.total_hrs || "0"),
-                                late: parseFloat(rec.total_hrs_late || "0"),
-                                overtime: parseFloat(rec.total_overtime || "0"),
-                                undertime: rec.undertime_minutes,
+                        if (!acc[empId]) {
+                            acc[empId] = {
+                                id: empId,
+                                employee_name: rec.employee_name,
+                                id_number: rec.id_number,
+                                branch: rec.branch_name,
+                                employment_status: rec.employment_status,
+                                agency_name: rec.agency_name,
+                                time_records: [],
                             };
-                        }),
-                    };
-                })
-                .filter(Boolean);
+                        }
 
-            setConsolidatedData(groupedByEmployee);
-            toast.success("Consolidation successfully completed!");
+                        acc[empId].time_records.push({
+                            date: rec.cut_off,
+                            schedule: rec.schedule_name,
+                            time_in: rec.clock_in,
+                            time_out: rec.clock_out,
+                            break_in: rec.break_in,
+                            break_out: rec.break_out,
+                            hours: parseFloat(rec.total_hrs || "0"),
+                            late: parseFloat(rec.total_hrs_late || "0"),
+                            overtime: parseFloat(rec.total_overtime || "0"),
+                            undertime: rec.undertime_minutes as number,
+                        });
+
+                        return acc;
+                    },
+                    {} as Record<number, GroupedEmployee>,
+                );
+
+            setConsolidatedData(Object.values(groupedByEmployee));
+            toast.success(
+                "Consolidation and time record fetch successfully completed!",
+            );
         } catch (error: any) {
             console.error(error);
             toast.error("Consolidation Failed!");
@@ -228,7 +259,7 @@ export default function Employees() {
 
     function handleSort(rows: any, selector: any, direction: any) {}
 
-    // console.log("Employees data:", data?.data.records);
+    console.log("Employees data:", data?.data.records);
 
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">

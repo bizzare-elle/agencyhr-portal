@@ -50,23 +50,43 @@ const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const schema = z.object({
     branch_id: z.string().min(1, { message: "Select a branch" }),
+    // date: z.date({ error: () => ({ message: "Date is required" }) }).refine(
+    //     (val) => {
+    //         const today = new Date();
+    //         const selected = new Date(val);
+
+    //         today.setHours(0, 0, 0, 0);
+    //         selected.setHours(0, 0, 0, 0);
+
+    //         const diffDays =
+    //             (today.getTime() - selected.getTime()) / (1000 * 60 * 60 * 24);
+
+    //         return diffDays >= 0 && diffDays <= 2;
+    //     },
+    //     {
+    //         message: "You can only file overtime within 2 days from today",
+    //     },
+    // ),
+
     date: z.date({ error: () => ({ message: "Date is required" }) }).refine(
         (val) => {
-            const today = new Date();
             const selected = new Date(val);
-
-            today.setHours(0, 0, 0, 0);
             selected.setHours(0, 0, 0, 0);
 
-            const diffDays =
-                (today.getTime() - selected.getTime()) / (1000 * 60 * 60 * 24);
+            // Previous cut-off range
+            const cutoffStart = new Date(2025, 10, 16); // Nov 16, 2025
+            const cutoffEnd = new Date(2025, 11, 1); // Dec 1, 2025
 
-            return diffDays >= 0 && diffDays <= 2;
+            cutoffStart.setHours(0, 0, 0, 0);
+            cutoffEnd.setHours(0, 0, 0, 0);
+
+            return selected >= cutoffStart && selected <= cutoffEnd;
         },
         {
-            message: "You can only file overtime within 2 days from today",
+            message: "You can only select a date within the previous cut-off",
         },
     ),
+
     startTime: z
         .string()
         .regex(timeRegex, { message: "Start time is required (HH:mm)" }),

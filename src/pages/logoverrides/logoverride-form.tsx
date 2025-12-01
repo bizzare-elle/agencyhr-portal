@@ -43,17 +43,49 @@ const getCutoffRange = () => {
     const year = now.getFullYear();
     const month = now.getMonth();
 
-    let startDate: Date, endDate: Date;
+    const lastDay = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
 
-    if (now.getDate() <= 15) {
-        startDate = new Date(year, month, 1);
-        endDate = new Date(year, month, 15, 23, 59, 59);
-    } else {
-        startDate = new Date(year, month, 16);
-        endDate = new Date(year, month + 1, 0, 23, 59, 59);
+    const c1Start = new Date(year, month, 1);
+    const c1End = new Date(year, month, 15, 23, 59, 59);
+    const c1Allow = new Date(year, month, 16, 23, 59, 59);
+
+    const c2Start = new Date(year, month, 16);
+    const c2End = new Date(year, month, lastDay(year, month), 23, 59, 59);
+    const c2Allow = new Date(year, month + 1, 1, 23, 59, 59);
+
+    const pm = month - 1 < 0 ? 11 : month - 1;
+    const py = month - 1 < 0 ? year - 1 : year;
+
+    const p2Start = new Date(py, pm, 16);
+    const p2End = new Date(py, pm, lastDay(py, pm), 23, 59, 59);
+    const p2Allow = new Date(year, month, 1, 23, 59, 59);
+
+    if (now <= p2Allow) {
+        return {
+            startDate: p2Start,
+            endDate: c1End,
+        };
     }
 
-    return { startDate, endDate };
+    if (now <= c1Allow) {
+        return {
+            startDate: c1Start,
+            endDate: c1End,
+        };
+    }
+
+    if (now <= c2Allow) {
+        return {
+            startDate: c2Start,
+            endDate: c2End,
+        };
+    }
+
+    const next = new Date(year, month + 1, 1);
+    return {
+        startDate: new Date(next.getFullYear(), next.getMonth(), 1),
+        endDate: new Date(next.getFullYear(), next.getMonth(), 15, 23, 59, 59),
+    };
 };
 
 const { startDate, endDate } = getCutoffRange();

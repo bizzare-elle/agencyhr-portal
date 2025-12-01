@@ -252,17 +252,17 @@ const LogoverrideRequests: React.FC<LogoverrideRequestsProps> = ({
                                             {log.clock_type}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-center">
-                                            {log.remarks}
+                                            {log.remarks ?? "N/A"}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-center">
                                             <Badge
                                                 className={cn(
                                                     log.status === "Approved"
-                                                        ? "bg-green-600 text-white"
+                                                        ? "bg-green-100 px-3 py-1 text-green-800"
                                                         : log.status ===
                                                             "For Approval"
-                                                          ? "bg-yellow-600 text-white"
-                                                          : "bg-red-600 text-white",
+                                                          ? "bg-yellow-100 px-3 py-1 text-yellow-800"
+                                                          : "bg-red-100 px-3 py-1 text-red-800",
                                                 )}
                                             >
                                                 {log.status}

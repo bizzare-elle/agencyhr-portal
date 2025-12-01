@@ -214,17 +214,17 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                             {ot.no_of_hours}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 capitalize">
-                                            {ot.remarks}
+                                            {ot.remarks ?? "N/A"}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-center">
                                             <Badge
                                                 className={cn(
                                                     ot.status === "Approved"
-                                                        ? "bg-green-600 text-white"
+                                                        ? "bg-green-100 px-3 py-1 text-green-800"
                                                         : ot.status ===
                                                             "Pending for Approval"
-                                                          ? "bg-yellow-600 text-white"
-                                                          : "bg-red-600 text-white",
+                                                          ? "bg-yellow-100 px-3 py-1 text-yellow-800"
+                                                          : "bg-red-100 px-3 py-1 text-red-800",
                                                 )}
                                             >
                                                 {ot.status}

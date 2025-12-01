@@ -278,7 +278,7 @@ export default function OvertimeForm() {
                                             className="w-auto p-0"
                                             align="start"
                                         >
-                                            <Calendar
+                                            {/* <Calendar
                                                 mode="single"
                                                 selected={form.watch("date")}
                                                 onSelect={(date) => {
@@ -303,6 +303,39 @@ export default function OvertimeForm() {
                                                         ),
                                                     },
                                                     { after: new Date() },
+                                                ]}
+                                            /> */}
+
+                                            <Calendar
+                                                mode="single"
+                                                selected={form.watch("date")}
+                                                onSelect={(date) => {
+                                                    if (date) {
+                                                        form.setValue(
+                                                            "date",
+                                                            date,
+                                                            {
+                                                                shouldValidate: true,
+                                                            },
+                                                        );
+                                                    }
+                                                    setOpen(false);
+                                                }}
+                                                disabled={[
+                                                    {
+                                                        before: new Date(
+                                                            2025,
+                                                            10,
+                                                            16,
+                                                        ), // Nov 16, 2025
+                                                    },
+                                                    {
+                                                        after: new Date(
+                                                            2025,
+                                                            11,
+                                                            1,
+                                                        ), // December 1, 2025
+                                                    },
                                                 ]}
                                             />
                                         </PopoverContent>

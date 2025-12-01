@@ -1,5 +1,5 @@
 import { ParentComponent } from "@/components/parent-container";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, data } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +65,18 @@ import { safeFormat } from "@/helpers/formatDates";
 export interface OvertimeResponse {
     info: Overtime[];
     employee: Employee;
+
+    cutoffs: {
+        current: CutoffGroup;
+        previous: CutoffGroup;
+    };
+}
+
+export interface CutoffGroup {
+    cutoff: string;
+    approved_hours: number;
+    pending_hours: number;
+    items: Overtime[];
 }
 
 export default function OvertimeDashboard() {
@@ -110,6 +122,8 @@ export default function OvertimeDashboard() {
                 `/api/v2/overtime/${employeeId}`,
             );
             const data = response.data.data;
+
+            console.log(data);
             return data ?? { employee: {} as Employee, info: [] };
         },
         enabled: !!employeeId,
@@ -118,6 +132,8 @@ export default function OvertimeDashboard() {
     const { refetch } = overtimeQuery;
     const overtimes = overtimeQuery.data?.info ?? [];
     const employee = overtimeQuery.data?.employee;
+    const current = overtimeQuery.data?.cutoffs.current;
+    const previous = overtimeQuery.data?.cutoffs.previous;
 
     const filteredData = useMemo(() => {
         let data = [...overtimes];
@@ -269,8 +285,7 @@ export default function OvertimeDashboard() {
                 </div>
             ) : (
                 <>
-                    {/* Employee Info Card */}
-                    <div className="mb-4 w-full px-3 sm:px-0">
+                    <div className="mb-5 w-full px-3 sm:px-0">
                         <Card className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-4 text-white shadow-md sm:flex-row sm:justify-between sm:p-6">
                             {/* Employee Info */}
                             <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
@@ -303,6 +318,68 @@ export default function OvertimeDashboard() {
                                     </Button>
                                 </Link>
                             </div>
+                        </Card>
+                    </div>
+
+                    <div className="grid w-full grid-cols-1 gap-4 px-3 sm:px-0 md:grid-cols-2">
+                        {/* Approved Hours */}
+                        <Card className="rounded-2xl p-4 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                    Total Approved Overtime Hours
+                                </CardTitle>
+                            </CardHeader>
+
+                            <CardContent className="space-y-3 text-sm md:text-base">
+                                <div className="flex w-full items-center justify-between">
+                                    <Badge className="w-fit bg-green-100 px-3 py-1 text-green-800">
+                                        Previous Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {previous?.approved_hours} hours
+                                    </span>
+                                </div>
+
+                                <div className="flex w-full items-center justify-between">
+                                    <Badge className="w-fit bg-green-100 px-3 py-1 text-green-800">
+                                        Current Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {current?.approved_hours} hours
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Pending Hours */}
+                        <Card className="rounded-2xl p-4 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                                    <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                                    Total Pending Overtime Hours
+                                </CardTitle>
+                            </CardHeader>
+
+                            <CardContent className="space-y-3 text-sm md:text-base">
+                                <div className="flex w-full items-center justify-between">
+                                    <Badge className="w-fit bg-yellow-100 px-3 py-1 text-yellow-800">
+                                        Previous Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {previous?.pending_hours} hours
+                                    </span>
+                                </div>
+
+                                <div className="flex w-full items-center justify-between">
+                                    <Badge className="w-fit bg-yellow-100 px-3 py-1 text-yellow-800">
+                                        Current Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {current?.pending_hours} hours
+                                    </span>
+                                </div>
+                            </CardContent>
                         </Card>
                     </div>
 
@@ -487,8 +564,8 @@ export default function OvertimeDashboard() {
                                                                 className={
                                                                     r.status ===
                                                                     "1"
-                                                                        ? "bg-green-500 text-white"
-                                                                        : "bg-yellow-500 text-white"
+                                                                        ? "bg-green-100 px-3 py-1 text-green-800"
+                                                                        : "bg-yellow-100 px-3 py-1 text-yellow-800"
                                                                 }
                                                             >
                                                                 {r.status ===
@@ -601,7 +678,7 @@ export default function OvertimeDashboard() {
                                                                                 >
                                                                                     <Button variant="destructive">
                                                                                         Withdraw
-                                                                                </Button>
+                                                                                    </Button>
                                                                                 </AlertDialogTrigger>
                                                                                 <AlertDialogContent>
                                                                                     <AlertDialogHeader>

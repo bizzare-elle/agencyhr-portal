@@ -487,8 +487,8 @@ export default function LogoverrideDashboard() {
                                                                 className={
                                                                     r.status_label ===
                                                                     "Approved"
-                                                                        ? "bg-green-500 text-white"
-                                                                        : "bg-yellow-500 text-white"
+                                                                        ? "bg-green-100 px-3 py-1 text-green-800"
+                                                                        : "bg-yellow-100 px-3 py-1 text-yellow-800"
                                                                 }
                                                             >
                                                                 {r.status_label}

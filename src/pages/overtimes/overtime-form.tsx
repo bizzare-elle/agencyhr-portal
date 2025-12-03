@@ -68,24 +68,54 @@ const schema = z.object({
     //     },
     // ),
 
-    date: z.date({ error: () => ({ message: "Date is required" }) }).refine(
-        (val) => {
-            const selected = new Date(val);
-            selected.setHours(0, 0, 0, 0);
+    date: z
+        .date({
+            error: () => ({ message: "Date is required" }),
+        })
+        .refine(
+            (val) => {
+                const selected = new Date(val);
+                selected.setHours(0, 0, 0, 0);
 
-            // Previous cut-off range
-            const cutoffStart = new Date(2025, 10, 16); // Nov 16, 2025
-            const cutoffEnd = new Date(2025, 11, 1); // Dec 1, 2025
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-            cutoffStart.setHours(0, 0, 0, 0);
-            cutoffEnd.setHours(0, 0, 0, 0);
+                const year = today.getFullYear();
+                const month = today.getMonth();
+                const day = today.getDate();
 
-            return selected >= cutoffStart && selected <= cutoffEnd;
-        },
-        {
-            message: "You can only select a date within the previous cut-off",
-        },
-    ),
+                // -------- RULE 1: If today is 1st → allow 16 to end of last month ------
+                if (day === 1) {
+                    const lastMonthDate = new Date(year, month, 0); // last day of previous month
+                    const prevMonth = lastMonthDate.getMonth();
+                    const prevYear = lastMonthDate.getFullYear();
+                    const lastDayPrevMonth = lastMonthDate.getDate();
+
+                    const cutoffStart = new Date(prevYear, prevMonth, 16);
+                    const cutoffEnd = new Date(
+                        prevYear,
+                        prevMonth,
+                        lastDayPrevMonth,
+                    );
+
+                    return selected >= cutoffStart && selected <= cutoffEnd;
+                }
+
+                if (day === 16) {
+                    const cutoffStart = new Date(year, month, 1);
+                    const cutoffEnd = new Date(year, month, 15);
+                    return selected >= cutoffStart && selected <= cutoffEnd;
+                }
+
+                const twoDaysAgo = new Date(today);
+                twoDaysAgo.setDate(today.getDate() - 2);
+
+                return selected >= twoDaysAgo && selected <= today;
+            },
+            {
+                message: "You can only select a valid date for filing.",
+            },
+        ),
 
     startTime: z
         .string()
@@ -341,22 +371,83 @@ export default function OvertimeForm() {
                                                     }
                                                     setOpen(false);
                                                 }}
-                                                disabled={[
-                                                    {
-                                                        before: new Date(
-                                                            2025,
-                                                            10,
+                                                disabled={(() => {
+                                                    const today = new Date();
+                                                    today.setHours(0, 0, 0, 0);
+
+                                                    const year =
+                                                        today.getFullYear();
+                                                    const month =
+                                                        today.getMonth();
+                                                    const day = today.getDate();
+
+                                                    let allowStart: Date;
+                                                    let allowEnd: Date;
+
+                                                    if (day === 1) {
+                                                        const lastDayPrevMonth =
+                                                            new Date(
+                                                                year,
+                                                                month,
+                                                                0,
+                                                            ).getDate();
+                                                        const prevMonth =
+                                                            month - 1;
+
+                                                        allowStart = new Date(
+                                                            year,
+                                                            prevMonth,
                                                             16,
-                                                        ), // Nov 16, 2025
-                                                    },
-                                                    {
-                                                        after: new Date(
-                                                            2025,
-                                                            11,
+                                                        );
+                                                        allowEnd = new Date(
+                                                            year,
+                                                            prevMonth,
+                                                            lastDayPrevMonth,
+                                                        );
+
+                                                        return [
+                                                            {
+                                                                before: allowStart,
+                                                            },
+                                                            { after: allowEnd },
+                                                        ];
+                                                    }
+
+                                                    if (day === 16) {
+                                                        allowStart = new Date(
+                                                            year,
+                                                            month,
                                                             1,
-                                                        ), // December 1, 2025
-                                                    },
-                                                ]}
+                                                        );
+                                                        allowEnd = new Date(
+                                                            year,
+                                                            month,
+                                                            15,
+                                                        );
+
+                                                        return [
+                                                            {
+                                                                before: allowStart,
+                                                            },
+                                                            { after: allowEnd },
+                                                        ];
+                                                    }
+
+                                                    const twoDaysAgo = new Date(
+                                                        today,
+                                                    );
+                                                    twoDaysAgo.setDate(
+                                                        today.getDate() - 2,
+                                                    );
+
+                                                    allowStart = twoDaysAgo;
+                                                    allowEnd = today;
+
+                                                    return [
+                                                        { before: allowStart },
+                                                        { after: allowEnd },
+                                                    ];
+                                                })()}
                                             />
                                         </PopoverContent>
                                     </Popover>

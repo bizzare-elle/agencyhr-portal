@@ -127,8 +127,8 @@ const schema = z.object({
     remarks: z.string().min(1, { message: "Remarks are required" }),
     imageReference: z
         .instanceof(File, { message: "Image is required" })
-        .refine((file) => file.size <= 5 * 1024 * 1024, {
-            message: "File must be less than 5MB",
+        .refine((file) => file.size <= 20 * 1024 * 1024, {
+            message: "File must be less than 20MB",
         })
         .refine(
             (file) =>

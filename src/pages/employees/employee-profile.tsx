@@ -176,6 +176,10 @@ export default function EmployeeProfile() {
                                         label="Address"
                                         value={employee.address}
                                     />
+                                    <InfoRow
+                                        label="Personal Email Address"
+                                        value={employee.personal_email_address}
+                                    />
                                 </Card>
 
                                 <Card className="p-4 shadow-sm sm:p-6">
@@ -218,6 +222,10 @@ export default function EmployeeProfile() {
                                                     : "Inactive"}
                                             </Badge>
                                         }
+                                    />
+                                    <InfoRow
+                                        label="Company Email  Address"
+                                        value={employee.company_email_address}
                                     />
                                 </Card>
                             </div>

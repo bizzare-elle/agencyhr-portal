@@ -50,23 +50,54 @@ const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const schema = z.object({
     branch_id: z.string().min(1, { message: "Select a branch" }),
-    // date: z.date({ error: () => ({ message: "Date is required" }) }).refine(
-    //     (val) => {
-    //         const today = new Date();
-    //         const selected = new Date(val);
 
-    //         today.setHours(0, 0, 0, 0);
-    //         selected.setHours(0, 0, 0, 0);
+    // date: z
+    //     .date({
+    //         error: () => ({ message: "Date is required" }),
+    //     })
+    //     .refine(
+    //         (val) => {
+    //             const selected = new Date(val);
+    //             selected.setHours(0, 0, 0, 0);
 
-    //         const diffDays =
-    //             (today.getTime() - selected.getTime()) / (1000 * 60 * 60 * 24);
+    //             const today = new Date();
+    //             today.setHours(0, 0, 0, 0);
 
-    //         return diffDays >= 0 && diffDays <= 2;
-    //     },
-    //     {
-    //         message: "You can only file overtime within 2 days from today",
-    //     },
-    // ),
+    //             const year = today.getFullYear();
+    //             const month = today.getMonth();
+    //             const day = today.getDate();
+
+    //             if (day === 1) {
+    //                 const lastMonthDate = new Date(year, month, 0);
+    //                 const prevMonth = lastMonthDate.getMonth();
+    //                 const prevYear = lastMonthDate.getFullYear();
+    //                 const lastDayPrevMonth = lastMonthDate.getDate();
+
+    //                 const cutoffStart = new Date(prevYear, prevMonth, 16);
+    //                 const cutoffEnd = new Date(
+    //                     prevYear,
+    //                     prevMonth,
+    //                     lastDayPrevMonth,
+    //                 );
+
+    //                 return selected >= cutoffStart && selected <= cutoffEnd;
+    //             }
+
+    //             if (day === 16) {
+    //                 const cutoffStart = new Date(year, month, 1);
+    //                 const cutoffEnd = new Date(year, month, 15);
+    //                 return selected >= cutoffStart && selected <= cutoffEnd;
+    //             }
+
+    //             const twoDaysAgo = new Date(today);
+    //             twoDaysAgo.setDate(today.getDate() - 2);
+
+    //             return selected >= twoDaysAgo && selected <= today;
+    //         },
+    //         {
+    //             message: "You can only select a valid date for filing.",
+    //         },
+    //     ),
 
     date: z
         .date({
@@ -82,38 +113,18 @@ const schema = z.object({
 
                 const year = today.getFullYear();
                 const month = today.getMonth();
-                const day = today.getDate();
 
-                // -------- RULE 1: If today is 1st → allow 16 to end of last month ------
-                if (day === 1) {
-                    const lastMonthDate = new Date(year, month, 0); // last day of previous month
-                    const prevMonth = lastMonthDate.getMonth();
-                    const prevYear = lastMonthDate.getFullYear();
-                    const lastDayPrevMonth = lastMonthDate.getDate();
-
-                    const cutoffStart = new Date(prevYear, prevMonth, 16);
-                    const cutoffEnd = new Date(
-                        prevYear,
-                        prevMonth,
-                        lastDayPrevMonth,
-                    );
-
-                    return selected >= cutoffStart && selected <= cutoffEnd;
-                }
-
-                if (day === 16) {
+                if (today.getDate() <= 15) {
                     const cutoffStart = new Date(year, month, 1);
                     const cutoffEnd = new Date(year, month, 15);
+
                     return selected >= cutoffStart && selected <= cutoffEnd;
                 }
 
-                const twoDaysAgo = new Date(today);
-                twoDaysAgo.setDate(today.getDate() - 2);
-
-                return selected >= twoDaysAgo && selected <= today;
+                return false;
             },
             {
-                message: "You can only select a valid date for filing.",
+                message: "You can only select dates within the 1–15 cutoff.",
             },
         ),
 
@@ -328,7 +339,7 @@ export default function OvertimeForm() {
                                             className="w-auto p-0"
                                             align="start"
                                         >
-                                            {/* <Calendar
+                                            <Calendar
                                                 mode="single"
                                                 selected={form.watch("date")}
                                                 onSelect={(date) => {
@@ -345,18 +356,21 @@ export default function OvertimeForm() {
                                                 }}
                                                 disabled={[
                                                     {
+                                                        after: new Date(
+                                                            new Date().getFullYear(),
+                                                            new Date().getMonth(),
+                                                            15,
+                                                        ),
                                                         before: new Date(
                                                             new Date().getFullYear(),
                                                             new Date().getMonth(),
-                                                            new Date().getDate() -
-                                                                2,
+                                                            1,
                                                         ),
                                                     },
-                                                    { after: new Date() },
                                                 ]}
-                                            /> */}
+                                            />
 
-                                            <Calendar
+                                            {/* <Calendar
                                                 mode="single"
                                                 selected={form.watch("date")}
                                                 onSelect={(date) => {
@@ -448,7 +462,7 @@ export default function OvertimeForm() {
                                                         { after: allowEnd },
                                                     ];
                                                 })()}
-                                            />
+                                            /> */}
                                         </PopoverContent>
                                     </Popover>
                                 </div>

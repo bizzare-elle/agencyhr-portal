@@ -106,6 +106,7 @@ export default function Employees() {
             return response.data.data;
         },
     });
+
     const { data, isLoading, isError } = useQuery({
         queryKey: ["employees", page, rowsPerPage, search],
         queryFn: async function () {
@@ -132,28 +133,24 @@ export default function Employees() {
         try {
             const agency_id = meQuery.data?.agency_id;
             const branch_id = selectedBranch;
+            const employee_id = null;
 
-            // 1️⃣ Consolidate time records and get processed employee IDs
             const { data: consolidateData } = await api.post(
                 "/api/v2/time-records/consolidate",
                 {
-                    agency_id,
                     cut_off_date: format(cutOffDate, "yyyy-MM-dd"),
                     branch_id,
+                    employee_id,
+                    agency_id,
                 },
             );
 
-            const employee_ids: number[] =
-                consolidateData.employees_processed || [];
+            const employee_ids: number[] = Array.isArray(
+                consolidateData.employees_processed?.employee_ids,
+            )
+                ? consolidateData.employees_processed.employee_ids.map(Number)
+                : [];
 
-            if (employee_ids.length === 0) {
-                toast.info("No employees found for this cutoff");
-                setConsolidatedData([]);
-                setHasConsolidated(true);
-                return;
-            }
-
-            // 2️⃣ Determine cutoff date range
             const day = cutOffDate.getDate();
             const month = cutOffDate.getMonth() + 1;
             const year = cutOffDate.getFullYear();
@@ -166,7 +163,6 @@ export default function Employees() {
                     ? `${year}-${month}-${lastDay}`
                     : `${year}-${month}-15`;
 
-            // 3️⃣ Fetch all employees' time records in parallel
             const allRecordsResponses = await Promise.all(
                 employee_ids.map((empId) =>
                     api
@@ -177,7 +173,6 @@ export default function Employees() {
                 ),
             );
 
-            // Flatten all responses
             const allRecords: TimeRecord[] = allRecordsResponses.flat();
 
             if (!allRecords.length) {
@@ -189,7 +184,6 @@ export default function Employees() {
                 return;
             }
 
-            // 4️⃣ Group records by employee
             const groupedByEmployee: Record<number, GroupedEmployee> =
                 allRecords.reduce(
                     (acc, rec) => {
@@ -258,8 +252,6 @@ export default function Employees() {
     const employees = data?.data.records ?? [];
 
     function handleSort(rows: any, selector: any, direction: any) {}
-
-    console.log("Employees data:", data?.data.records);
 
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">

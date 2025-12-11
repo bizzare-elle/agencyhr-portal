@@ -32,6 +32,7 @@ export interface Logoverride {
 
 export interface Overtime {
     id: string;
+    edit_id: string;
     employee_id: string;
     employee_name: string;
     branch_id: string;
@@ -192,6 +193,7 @@ export interface TimeRecord {
     schedule: string | null;
     totWorkedBill: string | null;
     permission: string | null;
+    total_worked_billing_hours: string | null;
     time_records: {
         date: string;
         schedule: string;

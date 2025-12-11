@@ -95,13 +95,14 @@ export const ConsolidatedTimeRecordsPDF = ({
         {recordsByEmployee.map((emp, idx) => {
             const totals = emp.time_records.reduce(
                 (acc, rec) => {
+                    acc.late_break += minutesToHours(rec.late_break);
                     acc.late += minutesToHours(rec.late);
                     acc.overtime += Number(rec.overtime) || 0;
                     acc.undertime += minutesToHours(rec.undertime);
                     acc.hours += Number(rec.hours) || 0;
                     return acc;
                 },
-                { late: 0, overtime: 0, undertime: 0, hours: 0 },
+                { late_break: 0, late: 0, overtime: 0, undertime: 0, hours: 0 },
             );
 
             return (
@@ -133,6 +134,9 @@ export const ConsolidatedTimeRecordsPDF = ({
                             Late (hrs)
                         </Text>
                         <Text style={[styles.cell, { flex: 0.8 }]}>
+                            Late Break (hrs)
+                        </Text>
+                        <Text style={[styles.cell, { flex: 0.8 }]}>
                             Overtime (hrs)
                         </Text>
                         <Text style={[styles.cell, { flex: 0.8 }]}>
@@ -145,6 +149,7 @@ export const ConsolidatedTimeRecordsPDF = ({
 
                     {emp.time_records.map((rec, i) => {
                         const late = minutesToHours(rec.late);
+                        const late_break = minutesToHours(rec.late_break);
                         const undertime = minutesToHours(rec.undertime);
                         const overtime = Number(rec.overtime) || 0;
                         const hours = Number(rec.hours) || 0;
@@ -173,6 +178,9 @@ export const ConsolidatedTimeRecordsPDF = ({
                                     {formatNumber(late)}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
+                                    {formatNumber(late_break)}
+                                </Text>
+                                <Text style={[styles.cell, { flex: 0.8 }]}>
                                     {formatNumber(overtime)}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
@@ -187,6 +195,10 @@ export const ConsolidatedTimeRecordsPDF = ({
 
                     {/* Totals Section */}
                     <View style={styles.totals}>
+                        <Text>
+                            Total Break Late (hrs):{" "}
+                            {totals.late_break.toFixed(2)}
+                        </Text>
                         <Text>Total Late (hrs): {totals.late.toFixed(2)}</Text>
                         <Text>
                             Total Overtime (hrs): {totals.overtime.toFixed(2)}

@@ -42,6 +42,7 @@ export const handleExportExcel = async (
         "Break Out",
         "Time Out",
         "Overtime (hrs)",
+        "Break Late (hrs)",
         "Late (hrs)",
         "Undertime (hrs)",
         "Total Worked Hours",
@@ -68,11 +69,13 @@ export const handleExportExcel = async (
     let totalLate = 0;
     let totalUndertime = 0;
     let totalOvertime = 0;
+    let totalBreakLate = 0;
     let totalBillable = 0;
 
     records.forEach((record) => {
         const worked = parseFloat(record.total_hrs || 0);
         const late = parseFloat(record.total_hrs_late || 0);
+        const breakLate = parseFloat(record.total_hrs_break_late || 0);
         const undertime = parseFloat(
             record.undertime_minutes_in_hours || record.undertime_minutes || 0,
         );
@@ -80,6 +83,7 @@ export const handleExportExcel = async (
 
         totalHours += worked;
         totalLate += late;
+        totalBreakLate += breakLate;
         totalUndertime += undertime;
         totalOvertime += overtime;
 
@@ -93,6 +97,7 @@ export const handleExportExcel = async (
             record.break_out ? formatTime(record.break_out) : "No Data",
             record.clock_out ? formatTime(record.clock_out) : "No Data",
             formatNumber(overtime),
+            formatNumber(breakLate),
             formatNumber(late),
             formatNumber(undertime),
             formatNumber(worked),
@@ -109,6 +114,7 @@ export const handleExportExcel = async (
         "",
         "TOTALS:",
         totalOvertime.toFixed(2),
+        totalBreakLate.toFixed(2),
         totalLate.toFixed(2),
         totalUndertime.toFixed(2),
         totalHours.toFixed(2),
@@ -136,6 +142,7 @@ export const handleExportExcel = async (
         { width: 25 },
         { width: 25 },
         { width: 18 },
+        { width: 15 },
         { width: 15 },
         { width: 15 },
         { width: 15 },

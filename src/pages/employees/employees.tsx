@@ -38,6 +38,7 @@ interface EmployeeTimeRecord {
     late: number;
     overtime: number;
     undertime: number;
+    late_break: number;
 }
 
 interface GroupedEmployee {
@@ -151,6 +152,19 @@ export default function Employees() {
                 ? consolidateData.employees_processed.employee_ids.map(Number)
                 : [];
 
+            //FOR LOCAL TESTING
+            // const employee_ids: number[] = Array.isArray(
+            //     consolidateData.employees_processed,
+            // )
+            //     ? consolidateData.employees_processed
+            //     : [];
+            // if (employee_ids.length === 0) {
+            //     toast.info("No employees found for this cutoff");
+            //     setConsolidatedData([]);
+            //     setHasConsolidated(true);
+            //     return;
+            // }
+
             const day = cutOffDate.getDate();
             const month = cutOffDate.getMonth() + 1;
             const year = cutOffDate.getFullYear();
@@ -212,6 +226,9 @@ export default function Employees() {
                             late: parseFloat(rec.total_hrs_late || "0"),
                             overtime: parseFloat(rec.total_overtime || "0"),
                             undertime: rec.undertime_minutes as number,
+                            late_break: parseFloat(
+                                rec.total_hrs_break_late || "0",
+                            ),
                         });
 
                         return acc;

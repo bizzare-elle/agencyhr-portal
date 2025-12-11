@@ -172,6 +172,7 @@ export default function TimeRecords() {
                 breakOut: record.break_out,
                 totalHrs: parseFloat(record.total_hrs || "0"),
                 totalLate: parseFloat(record.total_hrs_late || "0"),
+                totalBreakLate: parseFloat(record.total_hrs_break_late || "0"),
                 totalOvertime: parseFloat(record.total_overtime || "0"),
                 undertimeMinutes: record.undertime_minutes,
             };
@@ -282,6 +283,9 @@ export default function TimeRecords() {
                                 Overtime (hrs)
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
+                                Break Late (hrs)
+                            </TableHead>
+                            <TableHead className="px-2 py-4 text-center">
                                 Late (hrs)
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
@@ -368,6 +372,15 @@ export default function TimeRecords() {
                                         {row.totalOvertime
                                             ? row.totalOvertime
                                             : "No Filed"}
+                                    </TableCell>
+                                    <TableCell
+                                        className={cn(
+                                            "px-2 py-4 text-center",
+                                            Number(row.totalBreakLate) !== 0 &&
+                                                "font-semibold text-red-500",
+                                        )}
+                                    >
+                                        {row.totalBreakLate}
                                     </TableCell>
                                     <TableCell
                                         className={cn(

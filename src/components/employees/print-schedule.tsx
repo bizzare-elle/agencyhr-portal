@@ -33,10 +33,11 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
             }, 0);
         };
 
-        const totalLate = sumColumnByIndex(9);
-        const totalUndertime = sumColumnByIndex(10);
+        const totalBreakLate = sumColumnByIndex(9);
+        const totalLate = sumColumnByIndex(10);
+        const totalUndertime = sumColumnByIndex(11);
         const totalOvertime = sumColumnByIndex(8);
-        const totalBillable = sumColumnByIndex(11);
+        const totalBillable = sumColumnByIndex(12);
 
         const printContent = table.outerHTML;
         const printWindow = window.open("", "_blank");
@@ -136,8 +137,9 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
                     ${printContent}
 
                     <div class="totals">
-                        <div>Total Overtime (Hours): ${totalOvertime.toFixed(2)}</div>
+                        <div>Total Break Late (Hours): ${totalBreakLate.toFixed(2)}</div>
                         <div>Total Late (Hours): ${totalLate.toFixed(2)}</div>
+                        <div>Total Overtime (Hours): ${totalOvertime.toFixed(2)}</div>
                         <div>Total Undertime (Hours): ${totalUndertime.toFixed(2)}</div>
                         <div>Total Hours Worked: ${totalBillable.toFixed(2)}</div>
                     </div>

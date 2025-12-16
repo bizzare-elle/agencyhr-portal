@@ -150,38 +150,59 @@ export default function LoginPage() {
                                             <FormLabel className="text-white/90">
                                                 Password
                                             </FormLabel>
-                                            <div className="relative">
-                                                <FormControl>
-                                                    <Input
-                                                        placeholder="••••••••"
-                                                        type={
+                                            <div className="space-y-2">
+                                                {/* Password input */}
+                                                <div className="relative">
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="••••••••"
+                                                            type={
+                                                                showPassword
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
+                                                            {...field}
+                                                            disabled={
+                                                                loginMutation.isPending
+                                                            }
+                                                            className="border-white/30 bg-white/20 pr-10 text-white placeholder:text-white/60 focus:border-white/50 focus:ring-2 focus:ring-white/30"
+                                                        />
+                                                    </FormControl>
+
+                                                    {/* Toggle password visibility */}
+                                                    <button
+                                                        type="button"
+                                                        aria-label={
                                                             showPassword
-                                                                ? "text"
-                                                                : "password"
+                                                                ? "Hide password"
+                                                                : "Show password"
                                                         }
-                                                        {...field}
-                                                        disabled={
-                                                            loginMutation.isPending
+                                                        onClick={() =>
+                                                            setShowPassword(
+                                                                !showPassword,
+                                                            )
                                                         }
-                                                        className="border-white/30 bg-white/20 pr-10 text-white placeholder:text-white/60 focus:border-white/50 focus:ring-2 focus:ring-white/30"
-                                                    />
-                                                </FormControl>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setShowPassword(
-                                                            !showPassword,
-                                                        )
-                                                    }
-                                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-black/70 transition hover:text-black"
-                                                >
-                                                    {showPassword ? (
-                                                        <EyeOff className="h-4 w-4" />
-                                                    ) : (
-                                                        <Eye className="h-4 w-4" />
-                                                    )}
-                                                </button>
+                                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-white/70 transition hover:text-white"
+                                                    >
+                                                        {showPassword ? (
+                                                            <EyeOff className="h-4 w-4" />
+                                                        ) : (
+                                                            <Eye className="h-4 w-4" />
+                                                        )}
+                                                    </button>
+                                                </div>
+
+                                                {/* Forgot password link */}
+                                                <div className="text-left">
+                                                    <a
+                                                        href="https://backoffice.wildflour.com.ph/forgot_email_agency"
+                                                        className="text-sm text-white/80 underline transition hover:text-white"
+                                                    >
+                                                        Forgot password?
+                                                    </a>
+                                                </div>
                                             </div>
+
                                             <FormMessage className="text-red-200" />
                                         </FormItem>
                                     )}

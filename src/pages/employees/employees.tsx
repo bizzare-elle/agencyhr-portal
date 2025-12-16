@@ -146,24 +146,11 @@ export default function Employees() {
                 },
             );
 
-            // const employee_ids: number[] = Array.isArray(
-            //     consolidateData.employees_processed?.employee_ids,
-            // )
-            //     ? consolidateData.employees_processed.employee_ids.map(Number)
-            //     : [];
-
-            //FOR LOCAL TESTING
             const employee_ids: number[] = Array.isArray(
-                consolidateData.employees_processed,
+                consolidateData.employees_processed?.employee_ids,
             )
-                ? consolidateData.employees_processed
+                ? consolidateData.employees_processed.employee_ids.map(Number)
                 : [];
-            if (employee_ids.length === 0) {
-                toast.info("No employees found for this cutoff");
-                setConsolidatedData([]);
-                setHasConsolidated(true);
-                return;
-            }
 
             const day = cutOffDate.getDate();
             const month = cutOffDate.getMonth() + 1;

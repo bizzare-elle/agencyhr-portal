@@ -99,34 +99,33 @@ const schema = z.object({
     //         },
     //     ),
 
-    date: z
-        .date({
-            error: () => ({ message: "Date is required" }),
-        })
-        .refine(
-            (val) => {
-                const selected = new Date(val);
-                selected.setHours(0, 0, 0, 0);
+    date: z.date({
+        error: () => ({ message: "Date is required" }),
+    }),
+    // .refine(
+    //     (val) => {
+    //         const selected = new Date(val);
+    //         selected.setHours(0, 0, 0, 0);
 
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+    //         const today = new Date();
+    //         today.setHours(0, 0, 0, 0);
 
-                const year = today.getFullYear();
-                const month = today.getMonth();
+    //         const year = today.getFullYear();
+    //         const month = today.getMonth();
 
-                if (today.getDate() <= 15) {
-                    const cutoffStart = new Date(year, month, 1);
-                    const cutoffEnd = new Date(year, month, 15);
+    //         if (today.getDate() <= 15) {
+    //             const cutoffStart = new Date(year, month, 1);
+    //             const cutoffEnd = new Date(year, month, 15);
 
-                    return selected >= cutoffStart && selected <= cutoffEnd;
-                }
+    //             return selected >= cutoffStart && selected <= cutoffEnd;
+    //         }
 
-                return false;
-            },
-            {
-                message: "You can only select dates within the 1–15 cutoff.",
-            },
-        ),
+    //         return false;
+    //     },
+    //     {
+    //         message: "You can only select dates within the 1–15 cutoff.",
+    //     },
+    // ),
 
     startTime: z
         .string()

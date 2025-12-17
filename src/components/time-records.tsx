@@ -271,10 +271,10 @@ export default function TimeRecords() {
                                 Time In
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
-                                Break In
+                                Break Out
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
-                                Break Out
+                                Break In
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
                                 Time Out
@@ -335,24 +335,24 @@ export default function TimeRecords() {
                                     <TableCell
                                         className={cn(
                                             "px-2 py-4 text-center",
-                                            !row.breakIn &&
-                                                "font-semibold text-red-500",
-                                        )}
-                                    >
-                                        {row.breakIn
-                                            ? formatTime(row.breakIn)
-                                            : "No Data"}
-                                    </TableCell>
-
-                                    <TableCell
-                                        className={cn(
-                                            "px-2 py-4 text-center",
                                             !row.breakOut &&
                                                 "font-semibold text-red-500",
                                         )}
                                     >
                                         {row.breakOut
                                             ? formatTime(row.breakOut)
+                                            : "No Data"}
+                                    </TableCell>
+
+                                    <TableCell
+                                        className={cn(
+                                            "px-2 py-4 text-center",
+                                            !row.breakIn &&
+                                                "font-semibold text-red-500",
+                                        )}
+                                    >
+                                        {row.breakIn
+                                            ? formatTime(row.breakIn)
                                             : "No Data"}
                                     </TableCell>
 

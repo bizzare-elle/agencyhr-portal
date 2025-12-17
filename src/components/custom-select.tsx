@@ -38,8 +38,11 @@ export default function CustomSelect({
         queryKey: ["custom-select", apiUrl],
         queryFn: async () => {
             const res = await api.get(apiUrl);
-            return res.data?.data || res.data;
+            const payload = res.data?.data ?? res.data;
+
+            return Array.isArray(payload) ? payload : [];
         },
+
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
     });

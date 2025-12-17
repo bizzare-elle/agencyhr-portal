@@ -48,11 +48,6 @@ const navMainItems = (userId?: string, role?: string, agency_id?: string) => {
                 url: `/overtime/${userId ?? ""}`,
                 icon: Timer,
             },
-            // {
-            //     title: "Schedule",
-            //     url: `/schedules/${userId ?? ""}`,
-            //     icon: IconCalendarCheck,
-            // },
         );
     } else if (role === "agency_coordinator") {
         items.push(
@@ -65,6 +60,11 @@ const navMainItems = (userId?: string, role?: string, agency_id?: string) => {
                 title: "Employee List",
                 url: "/employees",
                 icon: IconUsers,
+            },
+            {
+                title: "Schedule",
+                url: `/schedules/${userId ?? ""}`,
+                icon: IconCalendarCheck,
             },
         );
     }

@@ -390,6 +390,9 @@ export default function ScheduleDashboard() {
                                         <TableHeader className="bg-muted/50">
                                             <TableRow>
                                                 <TableHead className="px-3 py-4 text-center">
+                                                    Employee Name
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
                                                     Date
                                                 </TableHead>
                                                 <TableHead className="px-3 py-4 text-center">
@@ -413,6 +416,10 @@ export default function ScheduleDashboard() {
                                                         key={r.id}
                                                         className="hover:bg-muted/10 transition"
                                                     >
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            {r.employee_name ??
+                                                                "N/A"}
+                                                        </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
                                                             {formatToDateTime(
                                                                 r.date,

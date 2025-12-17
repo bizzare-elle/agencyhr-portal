@@ -2,7 +2,9 @@ import {
     IconDotsVertical,
     IconLogout,
     IconLockCode,
+    IconFileAnalytics,
 } from "@tabler/icons-react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -117,7 +119,20 @@ export function NavUser({
                                     <IconLockCode className="mr-2 h-4 w-4" />
                                     Reset Password
                                 </DropdownMenuItem>
-
+                                <DropdownMenuItem
+                                    asChild
+                                    className="cursor-pointer"
+                                >
+                                    <a
+                                        href="https://docs.google.com/presentation/d/1ZJLVoaMvxBzwrYFoSkINOSpktURRJBSM/edit?slide=id.p1#slide=id.p1"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex w-full items-center gap-2"
+                                    >
+                                        <IconFileAnalytics className="mr-2 h-4 w-4" />
+                                        View System Guide
+                                    </a>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                     asChild
                                     className="cursor-pointer"

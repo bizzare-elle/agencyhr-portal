@@ -35,6 +35,7 @@ export default function ScheduleForm() {
         [key: string]: string;
     }>({});
     const [selectedBranch, setSelectedBranch] = useState<string>("");
+    const [selectedEmployee, setSeletedEmployee] = useState<string>("");
 
     const queryClient = useQueryClient();
 
@@ -99,6 +100,7 @@ export default function ScheduleForm() {
             setSelectedSchedules({});
             setDate(undefined);
             setSelectedBranch("");
+            setSeletedEmployee("");
             navigate(`/schedules/${employeeId}`);
         },
         onError: (error: any) => {
@@ -134,6 +136,7 @@ export default function ScheduleForm() {
 
         const payload = {
             branch_id: selectedBranch,
+            employee_id: selectedEmployee,
             cutoff_date: format(date, "yyyy-MM-dd"),
             schedules: formattedSchedules,
         };
@@ -155,7 +158,17 @@ export default function ScheduleForm() {
 
                 <CardContent className="space-y-6">
                     <div className="flex flex-col gap-4 sm:flex-row">
-                        {/* Cutoff Date Picker */}
+                        <div className="w-full sm:w-[280px]">
+                            <span className="mb-1 text-sm font-medium">
+                                Select Employee:
+                            </span>
+                            <CustomSelect
+                                apiUrl="api/v2/get_employees"
+                                value={selectedEmployee}
+                                onChange={(value) => setSeletedEmployee(value)}
+                                placeholder="Select employee..."
+                            />
+                        </div>
                         <div className="w-full sm:w-[280px]">
                             <span className="mb-1 block text-sm font-medium">
                                 Select a cut-off date:

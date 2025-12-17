@@ -33,6 +33,15 @@ export function formatTime(
     return parsed.isValid() ? parsed.format("hh:mm A") : "Invalid";
 }
 
+export function formatDuration(hours: number | null | undefined): string {
+    if (!hours || hours <= 0) return "0:00";
+
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export function formatNumber(value: string | number | null): string {
     if (value === null || value === "" || isNaN(Number(value))) {
         return "No data";
@@ -53,4 +62,8 @@ export const safeFormat = (
     } catch {
         return fallback;
     }
+};
+export const toNumber = (value: string | number | null | undefined): number => {
+    const n = parseFloat(String(value));
+    return isNaN(n) ? 0 : n;
 };

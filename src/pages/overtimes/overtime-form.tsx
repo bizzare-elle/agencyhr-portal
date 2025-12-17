@@ -51,82 +51,53 @@ const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const schema = z.object({
     branch_id: z.string().min(1, { message: "Select a branch" }),
 
-    // date: z
-    //     .date({
-    //         error: () => ({ message: "Date is required" }),
-    //     })
-    //     .refine(
-    //         (val) => {
-    //             const selected = new Date(val);
-    //             selected.setHours(0, 0, 0, 0);
+    date: z
+        .date({
+            error: () => ({ message: "Date is required" }),
+        })
+        .refine(
+            (val) => {
+                const selected = new Date(val);
+                selected.setHours(0, 0, 0, 0);
 
-    //             const today = new Date();
-    //             today.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-    //             const year = today.getFullYear();
-    //             const month = today.getMonth();
-    //             const day = today.getDate();
+                const year = today.getFullYear();
+                const month = today.getMonth();
+                const day = today.getDate();
 
-    //             if (day === 1) {
-    //                 const lastMonthDate = new Date(year, month, 0);
-    //                 const prevMonth = lastMonthDate.getMonth();
-    //                 const prevYear = lastMonthDate.getFullYear();
-    //                 const lastDayPrevMonth = lastMonthDate.getDate();
+                if (day === 1) {
+                    const lastMonthDate = new Date(year, month, 0);
+                    const prevMonth = lastMonthDate.getMonth();
+                    const prevYear = lastMonthDate.getFullYear();
+                    const lastDayPrevMonth = lastMonthDate.getDate();
 
-    //                 const cutoffStart = new Date(prevYear, prevMonth, 16);
-    //                 const cutoffEnd = new Date(
-    //                     prevYear,
-    //                     prevMonth,
-    //                     lastDayPrevMonth,
-    //                 );
+                    const cutoffStart = new Date(prevYear, prevMonth, 16);
+                    const cutoffEnd = new Date(
+                        prevYear,
+                        prevMonth,
+                        lastDayPrevMonth,
+                    );
 
-    //                 return selected >= cutoffStart && selected <= cutoffEnd;
-    //             }
+                    return selected >= cutoffStart && selected <= cutoffEnd;
+                }
 
-    //             if (day === 16) {
-    //                 const cutoffStart = new Date(year, month, 1);
-    //                 const cutoffEnd = new Date(year, month, 15);
-    //                 return selected >= cutoffStart && selected <= cutoffEnd;
-    //             }
+                if (day === 16) {
+                    const cutoffStart = new Date(year, month, 1);
+                    const cutoffEnd = new Date(year, month, 15);
+                    return selected >= cutoffStart && selected <= cutoffEnd;
+                }
 
-    //             const twoDaysAgo = new Date(today);
-    //             twoDaysAgo.setDate(today.getDate() - 2);
+                const twoDaysAgo = new Date(today);
+                twoDaysAgo.setDate(today.getDate() - 2);
 
-    //             return selected >= twoDaysAgo && selected <= today;
-    //         },
-    //         {
-    //             message: "You can only select a valid date for filing.",
-    //         },
-    //     ),
-
-    date: z.date({
-        error: () => ({ message: "Date is required" }),
-    }),
-    // .refine(
-    //     (val) => {
-    //         const selected = new Date(val);
-    //         selected.setHours(0, 0, 0, 0);
-
-    //         const today = new Date();
-    //         today.setHours(0, 0, 0, 0);
-
-    //         const year = today.getFullYear();
-    //         const month = today.getMonth();
-
-    //         if (today.getDate() <= 15) {
-    //             const cutoffStart = new Date(year, month, 1);
-    //             const cutoffEnd = new Date(year, month, 15);
-
-    //             return selected >= cutoffStart && selected <= cutoffEnd;
-    //         }
-
-    //         return false;
-    //     },
-    //     {
-    //         message: "You can only select dates within the 1–15 cutoff.",
-    //     },
-    // ),
-
+                return selected >= twoDaysAgo && selected <= today;
+            },
+            {
+                message: "You can only select a valid date for filing.",
+            },
+        ),
     startTime: z
         .string()
         .regex(timeRegex, { message: "Start time is required (HH:mm)" }),
@@ -338,7 +309,7 @@ export default function OvertimeForm() {
                                             className="w-auto p-0"
                                             align="start"
                                         >
-                                            <Calendar
+                                            {/* <Calendar
                                                 mode="single"
                                                 selected={form.watch("date")}
                                                 onSelect={(date) => {
@@ -367,9 +338,9 @@ export default function OvertimeForm() {
                                                         ),
                                                     },
                                                 ]}
-                                            />
+                                            /> */}
 
-                                            {/* <Calendar
+                                            <Calendar
                                                 mode="single"
                                                 selected={form.watch("date")}
                                                 onSelect={(date) => {
@@ -461,7 +432,7 @@ export default function OvertimeForm() {
                                                         { after: allowEnd },
                                                     ];
                                                 })()}
-                                            /> */}
+                                            />
                                         </PopoverContent>
                                     </Popover>
                                 </div>

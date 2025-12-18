@@ -21,7 +21,7 @@ import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { handleExportExcel } from "./employees/excel-template";
 import { TimeRecord } from "..";
-import { computeWorkedBill, minutesToHours } from "@/helpers/computeHours";
+import { minutesToHours } from "@/helpers/computeHours";
 import { formatTime, formatNumber } from "@/helpers/formatDates";
 import { PrintTimeRecords } from "./employees/print-schedule";
 

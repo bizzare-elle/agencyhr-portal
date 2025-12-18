@@ -67,3 +67,10 @@ export const toNumber = (value: string | number | null | undefined): number => {
     const n = parseFloat(String(value));
     return isNaN(n) ? 0 : n;
 };
+
+const displayHours = (hrs: number) => {
+    if (hrs > 0 && hrs < 0.1) {
+        return `${Math.round(hrs * 60)} min`;
+    }
+    return formatNumber(hrs);
+};

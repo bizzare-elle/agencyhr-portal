@@ -223,7 +223,7 @@ export default function LogoverrideForm() {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="Clock-In">
-                                                            Clock-in
+                                                  *          Clock-in
                                                         </SelectItem>
                                                         <SelectItem value="Clock-Out">
                                                             Clock-out

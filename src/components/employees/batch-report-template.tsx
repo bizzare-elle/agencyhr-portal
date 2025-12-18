@@ -4,6 +4,8 @@ import moment from "moment";
 import { minutesToHours } from "@/helpers/computeHours";
 import { TimeRecord } from "@/index";
 import { formatTime, formatNumber } from "@/helpers/formatDates";
+import { displayHours } from "@/helpers/computeHours";
+import { cn } from "@/lib/utils";
 
 interface EmployeeData {
     id: string;
@@ -90,139 +92,198 @@ const styles = StyleSheet.create({
 
 export const ConsolidatedTimeRecordsPDF = ({
     recordsByEmployee,
-}: ConsolidatedPDFProps) => (
-    <Document>
-        {recordsByEmployee.map((emp, idx) => {
-            const totals = emp.time_records.reduce(
-                (acc, rec) => {
-                    acc.late_break += minutesToHours(rec.late_break);
-                    acc.late += minutesToHours(rec.late);
-                    acc.overtime += Number(rec.overtime) || 0;
-                    acc.undertime += minutesToHours(rec.undertime);
-                    acc.hours += Number(rec.hours) || 0;
-                    return acc;
-                },
-                { late_break: 0, late: 0, overtime: 0, undertime: 0, hours: 0 },
-            );
+}: ConsolidatedPDFProps) => {
+    const displayHours = (hrs: number | null | undefined) => {
+        const h = Number(hrs ?? 0);
+        return h.toFixed(2);
+    };
 
-            return (
-                <Page key={emp.id} size="A4" style={styles.page}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Employee Time Records</Text>
-                        <Text style={styles.subtitle}>
-                            Generated: {format(new Date(), "PPpp")}
-                        </Text>
-                    </View>
+    return (
+        <Document>
+            {recordsByEmployee.map((emp, idx) => {
+                const totals = emp.time_records.reduce(
+                    (acc, rec) => {
+                        acc.late_break += Number(rec.late_break ?? 0);
+                        acc.late += Number(rec.late ?? 0);
+                        acc.overtime += Number(rec.overtime ?? 0);
+                        acc.undertime += Number(rec.undertime ?? 0);
+                        acc.hours += Number(rec.hours ?? 0);
+                        return acc;
+                    },
+                    {
+                        late_break: 0,
+                        late: 0,
+                        overtime: 0,
+                        undertime: 0,
+                        hours: 0,
+                    },
+                );
 
-                    <View style={styles.section}>
-                        <Text>Name: {emp.employee_name}</Text>
-                        <Text>ID Number: {emp.id_number}</Text>
-                        <Text>Branch: {emp.branch}</Text>
-                        <Text>Agency: {emp.agency_name}</Text>
-                    </View>
+                return (
+                    <Page key={emp.id} size="A4" style={styles.page}>
+                        {/* Header */}
+                        <View style={styles.header}>
+                            <Text style={styles.title}>
+                                Employee Time Records
+                            </Text>
+                            <Text style={styles.subtitle}>
+                                Generated: {format(new Date(), "PPpp")}
+                            </Text>
+                        </View>
 
-                    <View style={styles.tableHeader}>
-                        <Text style={[styles.cell, { flex: 1.2 }]}>Date</Text>
-                        <Text style={[styles.cell, { flex: 1 }]}>Schedule</Text>
-                        <Text style={[styles.cell, { flex: 1 }]}>Time In</Text>
-                        <Text style={[styles.cell, { flex: 1 }]}>Break In</Text>
-                        <Text style={[styles.cell, { flex: 1 }]}>
-                            Break Out
-                        </Text>
-                        <Text style={[styles.cell, { flex: 1 }]}>Time Out</Text>
-                        <Text style={[styles.cell, { flex: 0.8 }]}>
-                            Late (hrs)
-                        </Text>
-                        <Text style={[styles.cell, { flex: 0.8 }]}>
-                            Late Break (hrs)
-                        </Text>
-                        <Text style={[styles.cell, { flex: 0.8 }]}>
-                            Overtime (hrs)
-                        </Text>
-                        <Text style={[styles.cell, { flex: 0.8 }]}>
-                            Undertime (hrs)
-                        </Text>
-                        <Text style={[styles.cell, { flex: 1 }]}>
-                            Total Hours Worked
-                        </Text>
-                    </View>
+                        {/* Employee Info */}
+                        <View style={styles.section}>
+                            <Text>Name: {emp.employee_name}</Text>
+                            <Text>ID Number: {emp.id_number}</Text>
+                            <Text>Branch: {emp.branch}</Text>
+                            <Text>Agency: {emp.agency_name}</Text>
+                        </View>
 
-                    {emp.time_records.map((rec, i) => {
-                        const late = minutesToHours(rec.late);
-                        const late_break = minutesToHours(rec.late_break);
-                        const undertime = minutesToHours(rec.undertime);
-                        const overtime = Number(rec.overtime) || 0;
-                        const hours = Number(rec.hours) || 0;
+                        {/* Table Header */}
+                        <View style={styles.tableHeader}>
+                            <Text style={[styles.cell, { flex: 1.2 }]}>
+                                Date
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                Schedule
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                Time In
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                Break Out
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                Break In
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                Time Out
+                            </Text>
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                Overtime (hrs)
+                            </Text>
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                Break Late (hrs)
+                            </Text>
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                Late (hrs)
+                            </Text>
+                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                                Undertime (hrs)
+                            </Text>
+                            <Text style={[styles.cell, { flex: 1 }]}>
+                                Total Hours
+                            </Text>
+                        </View>
 
-                        return (
+                        {/* Table Rows */}
+                        {emp.time_records.map((rec, i) => (
                             <View style={styles.tableRow} key={i}>
                                 <Text style={[styles.cell, { flex: 1.2 }]}>
-                                    {moment(rec.date).format("MMM DD, YYYY")}
+                                    {moment(rec.date).format("LL")}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
-                                    {rec.schedule || ""}
+                                    {rec.schedule ?? "No data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
-                                    {formatTime(rec.time_in)}
+                                    {rec.time_in
+                                        ? formatTime(rec.time_in)
+                                        : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
-                                    {formatTime(rec.break_in)}
+                                    {rec.break_out
+                                        ? formatTime(rec.break_out)
+                                        : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
-                                    {formatTime(rec.break_out)}
+                                    {rec.break_in
+                                        ? formatTime(rec.break_in)
+                                        : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
-                                    {formatTime(rec.time_out)}
+                                    {rec.time_out
+                                        ? formatTime(rec.time_out)
+                                        : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {formatNumber(late)}
+                                    {Number(rec.overtime ?? 0)
+                                        ? formatNumber(rec.overtime)
+                                        : "No Filed"}
                                 </Text>
+                                <Text
+                                    style={[
+                                        styles.cell,
+                                        { flex: 0.8 },
+                                        Number(rec.late_break ?? 0) !== 0
+                                            ? {
+                                                  fontWeight: "bold",
+                                                  color: "red",
+                                              }
+                                            : {},
+                                    ]}
+                                >
+                                    {displayHours(rec.late_break)}
+                                </Text>
+
+                                <Text
+                                    style={[
+                                        styles.cell,
+                                        { flex: 0.8 },
+                                        Number(rec.late ?? 0) !== 0
+                                            ? {
+                                                  fontWeight: "bold",
+                                                  color: "red",
+                                              }
+                                            : {},
+                                    ]}
+                                >
+                                    {displayHours(Number(rec.late ?? 0))}
+                                </Text>
+
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {formatNumber(late_break)}
+                                    {displayHours(Number(rec.undertime ?? 0))}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {formatNumber(overtime)}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {formatNumber(undertime)}
-                                </Text>
+
                                 <Text style={[styles.cell, { flex: 1 }]}>
-                                    {formatNumber(hours)}
+                                    {formatNumber(rec.hours ?? 0)}
                                 </Text>
                             </View>
-                        );
-                    })}
+                        ))}
 
-                    {/* Totals Section */}
-                    <View style={styles.totals}>
-                        <Text>
-                            Total Break Late (hrs):{" "}
-                            {totals.late_break.toFixed(2)}
-                        </Text>
-                        <Text>Total Late (hrs): {totals.late.toFixed(2)}</Text>
-                        <Text>
-                            Total Overtime (hrs): {totals.overtime.toFixed(2)}
-                        </Text>
-                        <Text>
-                            Total Undertime (hrs): {totals.undertime.toFixed(2)}
-                        </Text>
-                        <Text>
-                            Total Hours Worked: {totals.hours.toFixed(2)}
-                        </Text>
-                    </View>
+                        {/* Totals */}
+                        <View style={styles.totals}>
+                            <Text>
+                                Total Overtime: {formatNumber(totals.overtime)}
+                            </Text>
+                            <Text>
+                                Total Break Late:{" "}
+                                {displayHours(totals.late_break)}
+                            </Text>
+                            <Text>Total Late: {displayHours(totals.late)}</Text>
+                            <Text>
+                                Total Undertime:{" "}
+                                {displayHours(totals.undertime)}
+                            </Text>
+                            <Text>
+                                Total Hours Worked: {formatNumber(totals.hours)}
+                            </Text>
+                        </View>
 
-                    <View style={styles.signatureSection}>
-                        <View style={styles.signatureLine} />
-                        <Text style={styles.signatureLabel}>
-                            {emp.employee_name}
-                        </Text>
-                    </View>
+                        {/* Signature */}
+                        <View style={styles.signatureSection}>
+                            <View style={styles.signatureLine} />
+                            <Text style={styles.signatureLabel}>
+                                {emp.employee_name}
+                            </Text>
+                        </View>
 
-                    <Text style={styles.footer}>
-                        Page {idx + 1} of {recordsByEmployee.length}
-                    </Text>
-                </Page>
-            );
-        })}
-    </Document>
-);
+                        {/* Footer */}
+                        <Text style={styles.footer}>
+                            Page {idx + 1} of {recordsByEmployee.length}
+                        </Text>
+                    </Page>
+                );
+            })}
+        </Document>
+    );
+};

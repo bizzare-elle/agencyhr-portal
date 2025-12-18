@@ -209,13 +209,12 @@ export default function Employees() {
                             time_out: rec.clock_out,
                             break_in: rec.break_in,
                             break_out: rec.break_out,
-                            hours: parseFloat(rec.total_hrs || "0"),
-                            late: parseFloat(rec.total_hrs_late || "0"),
-                            overtime: parseFloat(rec.total_overtime || "0"),
-                            undertime: parseFloat(rec.undertime_minutes || "0"),
-                            late_break: parseFloat(
-                                rec.total_hrs_break_late || "0",
-                            ),
+
+                            hours: Number(rec.total_hrs ?? 0),
+                            late: Number(rec.total_hrs_late ?? 0),
+                            overtime: Number(rec.total_overtime ?? 0),
+                            late_break: Number(rec.total_hrs_break_late ?? 0),
+                            undertime: Number(rec.undertime_minutes ?? 0),
                         });
 
                         return acc;

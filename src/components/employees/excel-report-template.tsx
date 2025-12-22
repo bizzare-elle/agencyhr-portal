@@ -21,6 +21,7 @@ export function exportConsolidatedToExcel(
         wsData.push([
             "Date",
             "Schedule",
+            "Branch Location (In-Out)",
             "Time In",
             "Break Out",
             "Break In",
@@ -41,6 +42,13 @@ export function exportConsolidatedToExcel(
                 wsData.push([
                     moment(rec.date).format("MMM DD, YYYY"),
                     rec.schedule || "",
+                    rec.branch_timeIn && rec.branch_timeOut
+                        ? `In: ${rec.branch_timeIn} Out: ${rec.branch_timeOut}`
+                        : rec.branch_timeIn
+                          ? `In: ${rec.branch_timeIn}`
+                          : rec.branch_timeOut
+                            ? `Out: ${rec.branch_timeOut}`
+                            : "No Data",
                     formatTime(rec.time_in) || "",
                     formatTime(rec.break_out) || "",
                     formatTime(rec.break_in) || "",

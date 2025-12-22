@@ -166,6 +166,8 @@ export interface TimeRecord {
     date: string | null;
     time_in: string | null;
     Clock_In: string | null;
+    clock_in_branch: string | null;
+    clock_out_branch: string | null;
     Clock_Out: string | null;
     time_out: string | null;
     break_in: string | null;
@@ -196,6 +198,8 @@ export interface TimeRecord {
     total_worked_billing_hours: string | null;
     total_hrs_break_late: string | null;
     late_break: number | null;
+    branch_timeIn: string | null;
+    branch_timeOut: string | null;
     time_records: {
         date: string;
         schedule: string;
@@ -203,6 +207,8 @@ export interface TimeRecord {
         time_out: string | null;
         break_in: string | null;
         break_out: string | null;
+        branch_timeIn: string | null;
+        branch_timeOut: string | null;
         hours: number;
         late: number;
         late_break: number;

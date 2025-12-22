@@ -34,6 +34,8 @@ interface EmployeeTimeRecord {
     time_out: string | null;
     break_in: string | null;
     break_out: string | null;
+    branch_timeIn: string | null;
+    branch_timeOut: string | null;
     hours: number;
     late: number;
     overtime: number;
@@ -214,6 +216,8 @@ export default function Employees() {
                             time_out: rec.clock_out,
                             break_in: rec.break_in,
                             break_out: rec.break_out,
+                            branch_timeIn: rec.clock_in_branch,
+                            branch_timeOut: rec.clock_out_branch,
 
                             hours: Number(rec.total_hrs ?? 0),
                             late: Number(rec.total_hrs_late ?? 0),

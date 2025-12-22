@@ -168,6 +168,8 @@ export default function TimeRecords() {
                 agencyName: record.agency_name,
                 timeIn: record.clock_in,
                 timeOut: record.clock_out,
+                branchTimeIn: record.clock_in_branch,
+                branchTimeOut: record.clock_out_branch,
                 breakIn: record.break_in,
                 breakOut: record.break_out,
                 totalHrs: parseFloat(record.total_hrs || "0"),
@@ -261,12 +263,14 @@ export default function TimeRecords() {
                 <Table className="min-w-full divide-y divide-gray-200">
                     <TableHeader>
                         <TableRow className="bg-muted text-sm">
-                            <TableHead className="px-2 py-4">Branch</TableHead>
                             <TableHead className="px-2 py-4">
                                 Schedule Name
                             </TableHead>
                             <TableHead className="px-2 py-4">Date</TableHead>
                             <TableHead className="px-2 py-4">Day</TableHead>
+                            <TableHead className="px-2 py-4">
+                                Branch Location (In-Out)
+                            </TableHead>
                             <TableHead className="px-2 py-4 text-center">
                                 Time In
                             </TableHead>
@@ -302,15 +306,6 @@ export default function TimeRecords() {
                         {tableData.length ? (
                             tableData.map((row, i) => (
                                 <TableRow key={i} className="hover:bg-muted/10">
-                                    <TableCell className="px-2 py-4">
-                                        {row.branch === "No data" ? (
-                                            <span className="text-red-500">
-                                                No data
-                                            </span>
-                                        ) : (
-                                            row.branch
-                                        )}
-                                    </TableCell>
                                     <TableCell className="px-2 py-4 capitalize">
                                         {row.scheduleName || "No data"}
                                     </TableCell>
@@ -320,6 +315,24 @@ export default function TimeRecords() {
                                     <TableCell className="px-2 py-4 capitalize">
                                         {row.dayName}
                                     </TableCell>
+                                    <TableCell className="px-2 py-4">
+                                        {row.branchTimeIn === "No data" &&
+                                        row.branchTimeOut === "No data" ? (
+                                            <span className="text-red-500">
+                                                No data
+                                            </span>
+                                        ) : (
+                                            <>
+                                                <span>
+                                                    In: {row.branchTimeIn}
+                                                </span>{" "}
+                                                <span className="ml-2">
+                                                    Out: {row.branchTimeOut}
+                                                </span>
+                                            </>
+                                        )}
+                                    </TableCell>
+
                                     <TableCell
                                         className={cn(
                                             "px-2 py-4 text-center",

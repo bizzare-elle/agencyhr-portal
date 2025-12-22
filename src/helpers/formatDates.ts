@@ -19,10 +19,10 @@ export function formatToDateTime(dateString: string | null): string {
     return parsed.isValid() ? parsed.format("LLL") : "Invalid";
 }
 
-export function formatTime(
+export const formatTime = (
     time: string | null,
     workDate?: string | null,
-): string {
+): string => {
     if (!time) return "No data";
 
     const parsed = moment(
@@ -31,7 +31,7 @@ export function formatTime(
     );
 
     return parsed.isValid() ? parsed.format("HH:mm") : "Invalid";
-}
+};
 
 export function formatDuration(hours: number | null | undefined): string {
     if (!hours || hours <= 0) return "0:00";

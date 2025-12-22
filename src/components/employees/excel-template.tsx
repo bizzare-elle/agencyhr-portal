@@ -32,10 +32,10 @@ export const handleExportExcel = async (
     worksheet.addRow([]);
 
     const headers = [
-        "Branch",
         "Schedule",
         "Date",
         "Day",
+        "Branch Location (In-Out)",
         "Time In",
         "Break In",
         "Break Out",
@@ -87,10 +87,16 @@ export const handleExportExcel = async (
         totalOvertime += overtime;
 
         worksheet.addRow([
-            record.branch_name ?? "",
             record.schedule_name ?? "",
             record.cut_off ? moment(record.cut_off).format("MMM DD, YYYY") : "",
             record.cut_off ? moment(record.cut_off).format("dddd") : "",
+            record.clock_in_branch && record.clock_out_branch
+                ? `In: ${record.clock_in_branch} Out: ${record.clock_out_branch}`
+                : record.clock_in_branch
+                  ? `In: ${record.clock_in_branch}`
+                  : record.clock_out_branch
+                    ? `Out: ${record.clock_out_branch}`
+                    : "No Data",
             record.clock_in ? formatTime(record.clock_in) : "No Data",
             record.break_in ? formatTime(record.break_in) : "No Data",
             record.break_out ? formatTime(record.break_out) : "No Data",

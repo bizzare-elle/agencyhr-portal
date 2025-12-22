@@ -23,6 +23,7 @@ interface CustomSelectProps {
     value: string | undefined;
     onChange: (value: string) => void;
     placeholder?: string;
+    disabled?: boolean;
 }
 
 export default function CustomSelect({
@@ -31,6 +32,7 @@ export default function CustomSelect({
     value,
     onChange,
     placeholder = "Select an option...",
+    disabled = false,
 }: CustomSelectProps) {
     const [search, setSearch] = useState("");
 
@@ -42,7 +44,6 @@ export default function CustomSelect({
 
             return Array.isArray(payload) ? payload : [];
         },
-
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
     });
@@ -63,11 +64,7 @@ export default function CustomSelect({
                 </label>
             )}
 
-            <Select
-                value={value}
-                onValueChange={onChange}
-                disabled={isLoading || isError}
-            >
+            <Select value={value} onValueChange={onChange} disabled={disabled}>
                 <SelectTrigger
                     className={cn(
                         "border-input bg-background w-full rounded-md border",

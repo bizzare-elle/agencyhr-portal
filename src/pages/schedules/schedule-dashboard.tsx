@@ -546,13 +546,7 @@ export default function ScheduleDashboard() {
                                                                                 <AlertDialogTrigger
                                                                                     asChild
                                                                                 >
-                                                                                    <Button
-                                                                                        variant="destructive"
-                                                                                        disabled={
-                                                                                            r.status_label ==
-                                                                                            "Approved"
-                                                                                        }
-                                                                                    >
+                                                                                    <Button variant="destructive">
                                                                                         Withdraw
                                                                                     </Button>
                                                                                 </AlertDialogTrigger>

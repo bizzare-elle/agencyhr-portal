@@ -76,9 +76,14 @@ const columns: TableColumn<Employee>[] = [
     {
         name: "Action",
         cell: (row) => (
-            <Button variant="default">
-                <Link to={`/employees/${row.id}`}>View Profile</Link>
-            </Button>
+            <div className="flex flex-col gap-2 p-2">
+                <Button className="btn-sm" variant="secondary">
+                    <Link to={`/employees/${row.id}`}>View Profile</Link>
+                </Button>
+                <Button className="btn-sm" variant="secondary">
+                    <Link to={`/${row.id}`}>View Timesheet</Link>
+                </Button>
+            </div>
         ),
     },
 ];

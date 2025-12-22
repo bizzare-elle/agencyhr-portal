@@ -187,7 +187,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
                                     {rec.time_in
-                                        ? formatTime(rec.time_in)
+                                        ? (rec.time_in)
                                         : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>

@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import CustomSelect from "@/components/custom-select";
 import { cn } from "@/lib/utils";
 import { ParentComponent } from "@/components/parent-container";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { Spinner } from "@/components/ui/spinner";
 import { useNavigate } from "react-router-dom";
@@ -34,10 +34,11 @@ export default function ScheduleForm() {
     const [selectedSchedules, setSelectedSchedules] = useState<{
         [key: string]: string;
     }>({});
-    const [selectedBranch, setSelectedBranch] = useState<string>("");
+    const [globalBranch, setGlobalBranch] = useState<string>("");
+    const [selectedBranches, setSelectedBranches] = useState<{
+        [key: string]: string;
+    }>({});
     const [selectedEmployee, setSeletedEmployee] = useState<string>("");
-
-    const queryClient = useQueryClient();
 
     const dateRows = useMemo(() => {
         if (!date) return [];
@@ -58,14 +59,16 @@ export default function ScheduleForm() {
     }, [date]);
 
     const handleScheduleChange = (day: string, value: string) => {
-        setSelectedSchedules((prev) => ({
-            ...prev,
-            [day]: value,
-        }));
+        setSelectedSchedules((prev) => ({ ...prev, [day]: value }));
+    };
+
+    const getBranchForDate = (day: string) => {
+        return selectedBranches[day] || globalBranch;
     };
 
     const handleDateSelect = (selectedDate?: Date) => {
         if (!selectedDate) return;
+
         const today = startOfDay(new Date());
         const picked = startOfDay(selectedDate);
 
@@ -98,8 +101,9 @@ export default function ScheduleForm() {
         onSuccess: () => {
             toast.success("Schedules saved successfully!");
             setSelectedSchedules({});
+            setSelectedBranches({});
+            setGlobalBranch("");
             setDate(undefined);
-            setSelectedBranch("");
             setSeletedEmployee("");
             navigate(`/schedules/${employeeId}`);
         },
@@ -117,8 +121,8 @@ export default function ScheduleForm() {
             return;
         }
 
-        if (!selectedBranch) {
-            toast.error("Please select a branch.");
+        if (!globalBranch && Object.keys(selectedBranches).length === 0) {
+            toast.error("Please select at least one branch.");
             return;
         }
 
@@ -131,11 +135,11 @@ export default function ScheduleForm() {
             ([day, schedule]) => ({
                 date: format(new Date(day), "yyyy-MM-dd"),
                 schedule_id: schedule,
+                branch_id: getBranchForDate(day),
             }),
         );
 
         const payload = {
-            branch_id: selectedBranch,
             employee_id: selectedEmployee,
             cutoff_date: format(date, "yyyy-MM-dd"),
             schedules: formattedSchedules,
@@ -143,6 +147,9 @@ export default function ScheduleForm() {
 
         saveScheduleMutation.mutate(payload);
     };
+
+    const hasPerScheduleBranch = Object.keys(selectedBranches).length > 0;
+    const isGlobalBranchActive = !!globalBranch && !hasPerScheduleBranch;
 
     return (
         <ParentComponent>
@@ -165,13 +172,14 @@ export default function ScheduleForm() {
                             <CustomSelect
                                 apiUrl="api/v2/get_employees"
                                 value={selectedEmployee}
-                                onChange={(value) => setSeletedEmployee(value)}
+                                onChange={setSeletedEmployee}
                                 placeholder="Select employee..."
                             />
                         </div>
+
                         <div className="w-full sm:w-[280px]">
                             <span className="mb-1 block text-sm font-medium">
-                                Select a cut-off date:
+                                Select cut-off date:
                             </span>
                             <Popover>
                                 <PopoverTrigger asChild>
@@ -184,11 +192,9 @@ export default function ScheduleForm() {
                                         )}
                                     >
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {date ? (
-                                            format(date, "MMMM dd, yyyy")
-                                        ) : (
-                                            <span>Pick cut-off date</span>
-                                        )}
+                                        {date
+                                            ? format(date, "MMMM dd, yyyy")
+                                            : "Pick cut-off date"}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -207,62 +213,101 @@ export default function ScheduleForm() {
                             </Popover>
                         </div>
 
-                        {/* Branch Selector */}
                         <div className="w-full sm:w-[280px]">
                             <span className="mb-1 text-sm font-medium">
-                                Select Branch:
+                                Branch (Apply to all):
                             </span>
                             <CustomSelect
                                 apiUrl="api/v2/get_branch"
-                                value={selectedBranch}
-                                onChange={(value) => setSelectedBranch(value)}
-                                placeholder="Select branch..."
+                                value={globalBranch}
+                                onChange={(value) => {
+                                    setGlobalBranch(value);
+                                    setSelectedBranches({});
+                                }}
+                                placeholder={
+                                    hasPerScheduleBranch
+                                        ? "Disabled (per-date branch selected)"
+                                        : "Select branch..."
+                                }
+                                disabled={hasPerScheduleBranch}
                             />
                         </div>
                     </div>
 
-                    {/* Schedule Table */}
                     {date && (
-                        <div className="border-border overflow-x-auto rounded-lg border">
-                            <table className="w-full border-collapse text-sm">
-                                <thead className="bg-white/50 text-black">
+                        <div className="overflow-x-auto rounded-lg border">
+                            <table className="w-full text-sm">
+                                <thead>
                                     <tr>
                                         <th className="border-b px-4 py-2 text-left">
                                             Date
                                         </th>
                                         <th className="border-b px-4 py-2 text-left">
-                                            Schedule Type
+                                            Schedule
+                                        </th>
+                                        <th className="border-b px-4 py-2 text-left">
+                                            Branch
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {dateRows.map((day) => (
-                                        <tr
-                                            key={day.toISOString()}
-                                            className="hover:bg-muted/30 transition-colors"
-                                        >
-                                            <td className="border-b px-4 py-2 font-medium">
-                                                {format(day, "MMM dd, yyyy")}
-                                            </td>
-                                            <td className="border-b px-4 py-2">
-                                                <CustomSelect
-                                                    apiUrl="/api/v2/get_schedule"
-                                                    value={
-                                                        selectedSchedules[
-                                                            day.toISOString()
-                                                        ] || ""
-                                                    }
-                                                    onChange={(value) =>
-                                                        handleScheduleChange(
-                                                            day.toISOString(),
-                                                            value,
-                                                        )
-                                                    }
-                                                    placeholder="Select schedule..."
-                                                />
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {dateRows.map((day) => {
+                                        const key = day.toISOString();
+                                        return (
+                                            <tr key={key}>
+                                                <td className="border-b px-4 py-2 font-medium">
+                                                    {format(
+                                                        day,
+                                                        "MMM dd, yyyy",
+                                                    )}
+                                                </td>
+                                                <td className="border-b px-4 py-2">
+                                                    <CustomSelect
+                                                        apiUrl="/api/v2/get_schedule"
+                                                        value={
+                                                            selectedSchedules[
+                                                                key
+                                                            ] || ""
+                                                        }
+                                                        onChange={(value) =>
+                                                            handleScheduleChange(
+                                                                key,
+                                                                value,
+                                                            )
+                                                        }
+                                                        placeholder="Select schedule..."
+                                                    />
+                                                </td>
+                                                <td className="border-b px-4 py-2">
+                                                    <CustomSelect
+                                                        apiUrl="api/v2/get_branch"
+                                                        value={
+                                                            selectedBranches[
+                                                                key
+                                                            ] || ""
+                                                        }
+                                                        onChange={(value) => {
+                                                            setSelectedBranches(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    [key]: value,
+                                                                }),
+                                                            );
+                                                            setGlobalBranch("");
+                                                        }}
+                                                        placeholder={
+                                                            isGlobalBranchActive
+                                                                ? "Disabled (global branch selected)"
+                                                                : "Select branch..."
+                                                        }
+                                                        disabled={
+                                                            isGlobalBranchActive
+                                                        }
+                                                    />
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -279,7 +324,7 @@ export default function ScheduleForm() {
                         {saveScheduleMutation.isPending ? (
                             <>
                                 <Spinner className="h-4 w-4" />
-                                <span>Saving...</span>
+                                Saving...
                             </>
                         ) : (
                             "Submit"

@@ -30,7 +30,7 @@ export function formatTime(
         ["YYYY-MM-DD HH:mm:ss", "HH:mm:ss"],
     );
 
-    return parsed.isValid() ? parsed.format("hh:mm A") : "Invalid";
+    return parsed.isValid() ? parsed.format("HH:mm") : "Invalid";
 }
 
 export function formatDuration(hours: number | null | undefined): string {

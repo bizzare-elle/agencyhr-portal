@@ -9,3 +9,4 @@ export const displayHours = (hrs: number) => {
     }
     return hrs.toFixed(2);
 };
+

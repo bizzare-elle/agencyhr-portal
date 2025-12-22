@@ -17,3 +17,5 @@ export function formatMinutesVerbose(minutes: number | string | null): string {
 
     return `${hrs} hr ${mins} min`;
 }
+
+

@@ -6,7 +6,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, XCircle } from "lucide-react";
 import api from "@/lib/axios";
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,11 @@ interface Option {
 interface CustomSelectProps {
     label?: string;
     apiUrl: string;
-    value: string | undefined;
-    onChange: (value: string) => void;
+    value?: string;
+    onChange: (value: string | undefined) => void;
     placeholder?: string;
     disabled?: boolean;
+    allowClear?: boolean;
 }
 
 export default function CustomSelect({
@@ -33,6 +34,7 @@ export default function CustomSelect({
     onChange,
     placeholder = "Select an option...",
     disabled = false,
+    allowClear = true,
 }: CustomSelectProps) {
     const [search, setSearch] = useState("");
 
@@ -41,7 +43,6 @@ export default function CustomSelect({
         queryFn: async () => {
             const res = await api.get(apiUrl);
             const payload = res.data?.data ?? res.data;
-
             return Array.isArray(payload) ? payload : [];
         },
         staleTime: 5 * 60 * 1000,
@@ -49,6 +50,7 @@ export default function CustomSelect({
     });
 
     const options = data ?? [];
+
     const filteredOptions = useMemo(() => {
         if (!search) return options;
         return options.filter((item) =>
@@ -64,7 +66,17 @@ export default function CustomSelect({
                 </label>
             )}
 
-            <Select value={value} onValueChange={onChange} disabled={disabled}>
+            <Select
+                value={value}
+                disabled={disabled}
+                onValueChange={(val) => {
+                    if (val === "__clear__") {
+                        onChange(undefined);
+                    } else {
+                        onChange(val);
+                    }
+                }}
+            >
                 <SelectTrigger
                     className={cn(
                         "border-input bg-background w-full rounded-md border",
@@ -85,6 +97,21 @@ export default function CustomSelect({
                             className="border-input focus-visible:ring-primary/30 h-8 w-full rounded-md border text-sm"
                         />
                     </div>
+
+                    {/* Clear selection – user friendly */}
+                    {allowClear && value && (
+                        <>
+                            <SelectItem
+                                value="__clear__"
+                                className="text-destructive hover:bg-destructive/10 focus:bg-destructive/10 flex items-center gap-2 py-2 text-sm"
+                            >
+                                <XCircle className="h-4 w-4" />
+                                Clear selection
+                            </SelectItem>
+
+                            <div className="border-border my-1 border-t" />
+                        </>
+                    )}
 
                     {isLoading && (
                         <div className="text-muted-foreground flex items-center justify-center p-3 text-sm">

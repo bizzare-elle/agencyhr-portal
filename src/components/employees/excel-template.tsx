@@ -76,7 +76,7 @@ export const handleExportExcel = async (
         const late = parseFloat(record.total_hrs_late || 0);
         const breakLate = parseFloat(record.total_hrs_break_late || 0);
         const undertime = parseFloat(
-            record.undertime_minutes_in_hours || record.undertime_minutes || 0,
+            record.total_undertime_hrs || record.total_undertime_hrs || 0,
         );
         const overtime = parseFloat(record.total_overtime || 0);
 

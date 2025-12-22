@@ -223,7 +223,7 @@ export default function Employees() {
                             late: Number(rec.total_hrs_late ?? 0),
                             overtime: Number(rec.total_overtime ?? 0),
                             late_break: Number(rec.total_hrs_break_late ?? 0),
-                            undertime: Number(rec.undertime_minutes ?? 0),
+                            undertime: Number(rec.total_undertime_hrs ?? 0),
                         });
 
                         return acc;

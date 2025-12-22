@@ -176,7 +176,7 @@ export default function TimeRecords() {
                 totalLate: parseFloat(record.total_hrs_late || "0"),
                 totalBreakLate: parseFloat(record.total_hrs_break_late || "0"),
                 totalOvertime: parseFloat(record.total_overtime || "0"),
-                undertimeMinutes: record.undertime_minutes,
+                undertimeMinutes: parseFloat(record.total_undertime_hrs || "0"),
             };
         });
     }, [records]);
@@ -405,10 +405,15 @@ export default function TimeRecords() {
                                         {row.totalLate}
                                     </TableCell>
 
-                                    <TableCell className="px-2 py-4 text-center">
-                                        {minutesToHours(
-                                            String(row.undertimeMinutes),
+                                    <TableCell
+                                        className={cn(
+                                            "px-2 py-4 text-center",
+                                            Number(row.undertimeMinutes) !==
+                                                0 &&
+                                                "font-semibold text-red-500",
                                         )}
+                                    >
+                                        {row.undertimeMinutes}
                                     </TableCell>
 
                                     <TableCell className="px-2 py-4 text-center">

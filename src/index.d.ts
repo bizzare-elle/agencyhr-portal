@@ -181,6 +181,7 @@ export interface TimeRecord {
     total_hrs: string | null;
     hourly_rate: string | null;
     total_hrs_late: string | null;
+    total_undertime_hrs: string | null;
     undertime: string | null;
     total_hours_worked: string | null;
     ot_no_of_hours: string | null;

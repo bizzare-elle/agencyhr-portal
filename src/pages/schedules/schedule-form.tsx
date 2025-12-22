@@ -315,7 +315,15 @@ export default function ScheduleForm() {
                 </CardContent>
 
                 <CardFooter className="flex justify-end space-x-3">
-                    <Button variant="outline">Cancel</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                        onClick={() => navigate(-1)}
+                    >
+                        Back
+                    </Button>
+
                     <Button
                         onClick={handleSubmit}
                         disabled={saveScheduleMutation.isPending}

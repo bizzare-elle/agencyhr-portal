@@ -32,14 +32,18 @@ export default function ScheduleForm() {
 
     const [date, setDate] = useState<Date>();
     const [selectedSchedules, setSelectedSchedules] = useState<{
-        [key: string]: string;
+        [key: string]: string | undefined;
     }>({});
-    const [globalBranch, setGlobalBranch] = useState<string>("");
+    const [globalBranch, setGlobalBranch] = useState<string | undefined>(
+        undefined,
+    );
     const [selectedBranches, setSelectedBranches] = useState<{
-        [key: string]: string;
+        [key: string]: string | undefined;
     }>({});
-    const [selectedEmployee, setSeletedEmployee] = useState<string>("");
 
+    const [selectedEmployee, setSeletedEmployee] = useState<string | undefined>(
+        undefined,
+    );
     const dateRows = useMemo(() => {
         if (!date) return [];
 
@@ -58,10 +62,9 @@ export default function ScheduleForm() {
         return rows;
     }, [date]);
 
-    const handleScheduleChange = (day: string, value: string) => {
+    const handleScheduleChange = (day: string, value: string | undefined) => {
         setSelectedSchedules((prev) => ({ ...prev, [day]: value }));
     };
-
     const getBranchForDate = (day: string) => {
         return selectedBranches[day] || globalBranch;
     };

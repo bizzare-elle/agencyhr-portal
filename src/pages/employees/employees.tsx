@@ -96,7 +96,10 @@ export default function Employees() {
     const [search, setSearch] = useState<string>("");
     const [cutOffDate, setCutOffDate] = useState<Date | undefined>();
     const [isConsolidating, setIsConsolidating] = useState(false);
-    const [selectedBranch, setSelectedBranch] = useState<string>("");
+    const [selectedBranch, setSelectedBranch] = useState<string | undefined>(
+        undefined,
+    );
+
     const [consolidatedData, setConsolidatedData] = useState<any[]>([]);
     const [hasConsolidated, setHasConsolidated] = useState(false);
 

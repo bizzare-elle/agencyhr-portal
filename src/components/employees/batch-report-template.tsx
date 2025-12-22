@@ -178,7 +178,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                     {rec.branch_timeIn === "No data" &&
                                     rec.branch_timeOut === "No data"
                                         ? "No data"
-                                        : `In: ${rec.branch_timeIn ?? "-"} / Out: ${rec.branch_timeOut ?? "-"}`}
+                                        : `In: ${rec.branch_timeIn ?? "N/A"} / Out: ${rec.branch_timeOut ?? "N/A"}`}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
                                     {rec.time_in
@@ -203,7 +203,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text style={[styles.cell, { flex: 0.6 }]}>
                                     {Number(rec.overtime ?? 0)
                                         ? formatNumber(rec.overtime)
-                                        : "-"}
+                                        : "No Filed"}
                                 </Text>
                                 <Text
                                     style={[

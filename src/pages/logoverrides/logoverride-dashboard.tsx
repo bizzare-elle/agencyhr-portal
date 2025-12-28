@@ -605,7 +605,7 @@ export default function LogoverrideDashboard() {
                                                                     "Approved"
                                                                         ? "bg-green-100 px-3 py-1 text-green-800"
                                                                         : r.status_label ===
-                                                                            "Pending for Approval"
+                                                                            "Pending"
                                                                           ? "bg-yellow-100 px-3 py-1 text-yellow-800"
                                                                           : "bg-red-100 px-3 py-1 text-red-800"
                                                                 }

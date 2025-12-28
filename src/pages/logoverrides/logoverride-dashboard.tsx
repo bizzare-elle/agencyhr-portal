@@ -68,8 +68,23 @@ export interface LogoverrideResponse {
     info: Logoverride[];
     recent_file: Logoverride[];
     employees: Employee[];
+    cutoffs: {
+        current: CutoffGroup;
+        previous: CutoffGroup;
+    };
 }
 
+export interface CutoffGroup {
+    cutoff: string;
+    approved: number;
+    pending: number;
+    disapproved: number;
+}
+
+export interface CutOffResponse {
+    previous: any;
+    current: any;
+}
 export default function LogoverrideDashboard() {
     const navigate = useNavigate();
     const { setToken } = useAuthStore.getState();
@@ -109,11 +124,21 @@ export default function LogoverrideDashboard() {
         queryKey: ["logoverrideDashboard", employeeId],
         queryFn: async () => {
             const response = await api.get<
-                ApiResponse<{ employee: Employee; logoverrides: Logoverride[] }>
+                ApiResponse<{
+                    employee: Employee;
+                    logoverrides: Logoverride[];
+                    cutoffs: CutOffResponse;
+                }>
             >(`/api/v2/logoverrides/${employeeId}`);
 
             const data = response.data.data;
-            return data ?? { employee: {} as Employee, logoverrides: [] };
+            return (
+                data ?? {
+                    employee: {} as Employee,
+                    logoverrides: [],
+                    cutoffs: [],
+                }
+            );
         },
         enabled: !!employeeId,
     });
@@ -121,6 +146,11 @@ export default function LogoverrideDashboard() {
     const { refetch } = logoverrideQuery;
     const logoverrides = logoverrideQuery.data?.logoverrides ?? [];
     const employee = logoverrideQuery.data?.employee;
+
+    const cutoffs = logoverrideQuery.data?.cutoffs ?? {
+        current: { cutoff: "", approved: 0, pending: 0, disapproved: 0 },
+        previous: { cutoff: "", approved: 0, pending: 0, disapproved: 0 },
+    };
 
     const filteredData = useMemo(() => {
         let data = [...logoverrides];
@@ -313,6 +343,92 @@ export default function LogoverrideDashboard() {
                         </Card>
                     </div>
 
+                    <div className="mb-5 grid w-full grid-cols-1 gap-4 px-3 sm:px-0 md:grid-cols-3">
+                        {/* Approved */}
+                        <Card className="rounded-2xl p-4 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                    Total Approved Logoverrides
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm md:text-base">
+                                <div className="flex justify-between">
+                                    <Badge className="w-fit bg-green-100 px-3 py-1 text-green-800">
+                                        Previous Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {cutoffs.previous.approved}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <Badge className="w-fit bg-green-100 px-3 py-1 text-green-800">
+                                        Current Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {cutoffs.current.approved}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Pending */}
+                        <Card className="rounded-2xl p-4 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                                    <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                                    Total Pending Logoverrides
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm md:text-base">
+                                <div className="flex justify-between">
+                                    <Badge className="w-fit bg-yellow-100 px-3 py-1 text-yellow-800">
+                                        Previous Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {cutoffs.previous.pending}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <Badge className="w-fit bg-yellow-100 px-3 py-1 text-yellow-800">
+                                        Current Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {cutoffs.current.pending}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Disapproved */}
+                        <Card className="rounded-2xl p-4 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                                    Total Disapproved Logoverrides
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm md:text-base">
+                                <div className="flex justify-between">
+                                    <Badge className="w-fit bg-red-100 px-3 py-1 text-red-800">
+                                        Previous Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {cutoffs.previous.disapproved}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <Badge className="w-fit bg-red-100 px-3 py-1 text-red-800">
+                                        Current Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {cutoffs.current.disapproved}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
                     {/* Table Section */}
                     <div className="w-full px-3 sm:px-0">
                         <Card className="p-3 sm:p-5">
@@ -488,7 +604,10 @@ export default function LogoverrideDashboard() {
                                                                     r.status_label ===
                                                                     "Approved"
                                                                         ? "bg-green-100 px-3 py-1 text-green-800"
-                                                                        : "bg-yellow-100 px-3 py-1 text-yellow-800"
+                                                                        : r.status_label ===
+                                                                            "Pending for Approval"
+                                                                          ? "bg-yellow-100 px-3 py-1 text-yellow-800"
+                                                                          : "bg-red-100 px-3 py-1 text-red-800"
                                                                 }
                                                             >
                                                                 {r.status_label}
@@ -656,7 +775,7 @@ export default function LogoverrideDashboard() {
                                             ) : (
                                                 <TableRow>
                                                     <TableCell
-                                                        colSpan={5}
+                                                        colSpan={6}
                                                         className="py-5 text-center text-gray-500"
                                                     >
                                                         No records found.

@@ -289,7 +289,7 @@ export default function OvertimeForm() {
                                     <Popover open={open} onOpenChange={setOpen}>
                                         <PopoverTrigger asChild>
                                             <Button
-                                                type="button" // IMPORTANT FIX
+                                                type="button"
                                                 variant="outline"
                                                 className="w-full justify-between font-normal"
                                             >
@@ -437,58 +437,78 @@ export default function OvertimeForm() {
                                 </div>
                             </div>
 
-                            {/* From / To / Overtime Hours */}
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div className="flex flex-col gap-2">
-                                    <Label>From</Label>
-                                    <Input
-                                        {...form.register("startTime")}
-                                        type="time"
-                                        step="60"
-                                    />
-                                    {form.formState.errors.startTime && (
-                                        <p className="text-sm text-red-500">
-                                            {
-                                                form.formState.errors.startTime
-                                                    .message
-                                            }
+                            <div className="space-y-2">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    {/* Start Time */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="startTime">
+                                            Start Time
+                                        </Label>
+                                        <Input
+                                            id="startTime"
+                                            type="time"
+                                            step="60"
+                                            {...form.register("startTime")}
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            When did your overtime start?
                                         </p>
-                                    )}
-                                </div>
+                                        {form.formState.errors.startTime && (
+                                            <p className="text-sm text-red-500">
+                                                {
+                                                    form.formState.errors
+                                                        .startTime.message
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
 
-                                <div className="flex flex-col gap-2">
-                                    <Label>To</Label>
-                                    <Input
-                                        {...form.register("endTime")}
-                                        type="time"
-                                        step="60"
-                                    />
-                                    {form.formState.errors.endTime && (
-                                        <p className="text-sm text-red-500">
-                                            {
-                                                form.formState.errors.endTime
-                                                    .message
-                                            }
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="endTime">
+                                            End Time
+                                        </Label>
+                                        <Input
+                                            id="endTime"
+                                            type="time"
+                                            step="60"
+                                            {...form.register("endTime")}
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            When did your overtime end?
                                         </p>
-                                    )}
-                                </div>
+                                        {form.formState.errors.endTime && (
+                                            <p className="text-sm text-red-500">
+                                                {
+                                                    form.formState.errors
+                                                        .endTime.message
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
 
-                                <div className="flex flex-col gap-2">
-                                    <Label>Overtime Hour/s</Label>
-                                    <Input
-                                        id="totalOt"
-                                        value={totalOt}
-                                        readOnly
-                                        className="bg-muted cursor-not-allowed"
-                                    />
-                                    {form.formState.errors.totalOt && (
-                                        <p className="text-sm text-red-500">
-                                            {
-                                                form.formState.errors.totalOt
-                                                    .message
-                                            }
+                                    {/* Total OT */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="totalOt">
+                                            Total Overtime (hrs)
+                                        </Label>
+                                        <Input
+                                            id="totalOt"
+                                            value={totalOt}
+                                            readOnly
+                                            className="bg-muted text-muted-foreground cursor-not-allowed"
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            Automatically calculated
                                         </p>
-                                    )}
+                                        {form.formState.errors.totalOt && (
+                                            <p className="text-sm text-red-500">
+                                                {
+                                                    form.formState.errors
+                                                        .totalOt.message
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

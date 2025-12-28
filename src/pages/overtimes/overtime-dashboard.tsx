@@ -76,6 +76,7 @@ export interface CutoffGroup {
     cutoff: string;
     approved_hours: number;
     pending_hours: number;
+    disapproved_hours: number;
     items: Overtime[];
 }
 
@@ -321,7 +322,7 @@ export default function OvertimeDashboard() {
                         </Card>
                     </div>
 
-                    <div className="grid w-full grid-cols-1 gap-4 px-3 sm:px-0 md:grid-cols-2">
+                    <div className="grid w-full grid-cols-1 gap-4 px-3 sm:px-0 md:grid-cols-3">
                         {/* Approved Hours */}
                         <Card className="rounded-2xl p-4 shadow-sm">
                             <CardHeader className="pb-2">
@@ -377,6 +378,35 @@ export default function OvertimeDashboard() {
                                     </Badge>
                                     <span className="font-medium">
                                         {current?.pending_hours} hours
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="rounded-2xl p-4 shadow-sm">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                                    Total Disapproved Overtime Hours
+                                </CardTitle>
+                            </CardHeader>
+
+                            <CardContent className="space-y-3 text-sm md:text-base">
+                                <div className="flex w-full items-center justify-between">
+                                    <Badge className="w-fit bg-red-100 px-3 py-1 text-red-800">
+                                        Previous Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {previous?.disapproved_hours} hours
+                                    </span>
+                                </div>
+
+                                <div className="flex w-full items-center justify-between">
+                                    <Badge className="w-fit bg-red-100 px-3 py-1 text-red-800">
+                                        Current Cut-off
+                                    </Badge>
+                                    <span className="font-medium">
+                                        {current?.disapproved_hours} hours
                                     </span>
                                 </div>
                             </CardContent>
@@ -561,17 +591,23 @@ export default function OvertimeDashboard() {
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
                                                             <Badge
-                                                                className={
+                                                                className={cn(
                                                                     r.status ===
-                                                                    "1"
+                                                                        "1"
                                                                         ? "bg-green-100 px-3 py-1 text-green-800"
-                                                                        : "bg-yellow-100 px-3 py-1 text-yellow-800"
-                                                                }
+                                                                        : r.status ===
+                                                                            "0"
+                                                                          ? "bg-yellow-100 px-3 py-1 text-yellow-800"
+                                                                          : "bg-red-100 px-3 py-1 text-red-800",
+                                                                )}
                                                             >
                                                                 {r.status ===
                                                                 "1"
                                                                     ? "Approved"
-                                                                    : "Pending"}
+                                                                    : r.status ===
+                                                                        "2"
+                                                                      ? "Disapproved"
+                                                                      : "Pending"}
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
@@ -627,7 +663,10 @@ export default function OvertimeDashboard() {
                                                                                         r.status ===
                                                                                         "1"
                                                                                             ? "Approved"
-                                                                                            : "Pending",
+                                                                                            : r.status ===
+                                                                                                "2"
+                                                                                              ? "Disapproved"
+                                                                                              : "Pending",
                                                                                 },
                                                                                 {
                                                                                     label: "Date Created",

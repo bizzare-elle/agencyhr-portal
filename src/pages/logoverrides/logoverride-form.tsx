@@ -93,19 +93,17 @@ const { startDate, endDate } = getCutoffRange();
 const schema = z.object({
     branch_id: z.string().min(1, "Select a branch"),
     clockType: z.string().min(1, "Enter clock type"),
-    dateTime: z
-        .string()
-        .min(1, "Enter date and time")
-        .refine(
-            (val) => {
-                const selected = new Date(val);
-                return selected >= startDate && selected <= endDate;
-            },
-            {
-                message:
-                    "Selected date must be within the current cutoff period",
-            },
-        ),
+    dateTime: z.string().min(1, "Enter date and time"),
+    // .refine(
+    //     (val) => {
+    //         const selected = new Date(val);
+    //         return selected >= startDate && selected <= endDate;
+    //     },
+    //     {
+    //         message:
+    //             "Selected date must be within the current cutoff period",
+    //     },
+    // ),
     remarks: z.string().min(1, "Enter remarks"),
     imageReference: z
         .any()
@@ -223,7 +221,7 @@ export default function LogoverrideForm() {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="Clock-In">
-                                                  *          Clock-in
+                                                            * Clock-in
                                                         </SelectItem>
                                                         <SelectItem value="Clock-Out">
                                                             Clock-out
@@ -247,8 +245,8 @@ export default function LogoverrideForm() {
                                         name="dateTime"
                                         label="Date and Time"
                                         control={form.control}
-                                        minDate={startDate}
-                                        maxDate={endDate}
+                                        // minDate={startDate}
+                                        // maxDate={endDate}
                                     />
                                 </div>
                             </div>

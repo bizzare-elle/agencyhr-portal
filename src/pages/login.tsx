@@ -193,14 +193,6 @@ export default function LoginPage() {
                                                 </div>
 
                                                 {/* Forgot password link */}
-                                                <div className="text-left">
-                                                    <a
-                                                        href="https://backoffice.wildflour.com.ph/forgot_email_agency"
-                                                        className="text-sm text-white/80 underline transition hover:text-white"
-                                                    >
-                                                        Forgot password?
-                                                    </a>
-                                                </div>
                                             </div>
 
                                             <FormMessage className="text-red-200" />
@@ -210,7 +202,7 @@ export default function LoginPage() {
 
                                 <Button
                                     type="submit"
-                                    className="mt-2 w-full bg-white font-semibold text-gray-900 hover:bg-white/90"
+                                    className="mt-5 w-full bg-white font-semibold text-gray-900 hover:bg-white/90"
                                     disabled={loginMutation.isPending}
                                 >
                                     {loginMutation.isPending ? (
@@ -235,6 +227,17 @@ export default function LoginPage() {
                             Need support? Click here to submit a ticket
                         </a>
                     </p>
+
+                    <div className="text-center">
+                        <a
+                            href="https://backoffice.wildflour.com.ph/forgot_email_agency"
+                            className="text-m rounded-full font-bold transition hover:bg-yellow-100"
+                        >
+                            <Button className="rounded-full bg-yellow-300 text-yellow-900">
+                                Forgot Email?
+                            </Button>
+                        </a>
+                    </div>
                 </Card>
 
                 <p className="mt-6 text-center text-xs text-white/70">

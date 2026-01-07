@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { format, getDaysInMonth, isBefore, startOfDay } from "date-fns";
 import {
     Card,
@@ -25,6 +25,13 @@ import api from "@/lib/axios";
 import { Spinner } from "@/components/ui/spinner";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/hooks/use-auth";
+import { Employee, Schedule, ApiResponse } from "@/index";
+
+export interface ScheduleResponse {
+    info: Employee[];
+    schedules: Schedule[];
+    recent: Schedule[];
+}
 
 export default function ScheduleForm() {
     const navigate = useNavigate();
@@ -44,6 +51,7 @@ export default function ScheduleForm() {
     const [selectedEmployee, setSeletedEmployee] = useState<string | undefined>(
         undefined,
     );
+
     const dateRows = useMemo(() => {
         if (!date) return [];
 
@@ -74,11 +82,6 @@ export default function ScheduleForm() {
 
         const today = startOfDay(new Date());
         const picked = startOfDay(selectedDate);
-
-        if (isBefore(picked, today)) {
-            toast.error("You cannot select a past date for scheduling.");
-            return;
-        }
 
         setDate(selectedDate);
     };
@@ -151,6 +154,79 @@ export default function ScheduleForm() {
         saveScheduleMutation.mutate(payload);
     };
 
+    const scheduleQuery = useQuery<ScheduleResponse>({
+        queryKey: ["scheduleDashboard", selectedEmployee],
+        queryFn: async () => {
+            const response = await api.get<ApiResponse<ScheduleResponse>>(
+                `/api/v2/get_employee_schedules/${selectedEmployee}`,
+            );
+            return response.data.data ?? { schedules: [] };
+        },
+        enabled: !!selectedEmployee,
+    });
+
+    useEffect(() => {
+        if (!date || !scheduleQuery.data?.schedules?.length) return;
+
+        setSelectedSchedules((prev) => {
+            const next: Record<string, string> = {};
+            let changed = false;
+
+            scheduleQuery.data.schedules.forEach((item) => {
+                const apiDate = format(new Date(item.date), "yyyy-MM-dd");
+
+                const cutoffDay = dateRows.find(
+                    (d) => format(d, "yyyy-MM-dd") === apiDate,
+                );
+
+                if (cutoffDay) {
+                    const key = cutoffDay.toISOString();
+                    const value = String(item.schedule_type);
+
+                    if (prev[key] !== value) {
+                        next[key] = value;
+                        changed = true;
+                    } else {
+                        next[key] = prev[key];
+                    }
+                }
+            });
+
+            return changed ? next : prev;
+        });
+
+        setSelectedBranches((prev) => {
+            const next: Record<string, string> = {};
+            let changed = false;
+
+            scheduleQuery.data.schedules.forEach((item) => {
+                if (!item.branch_id) return;
+
+                const apiDate = format(new Date(item.date), "yyyy-MM-dd");
+
+                const cutoffDay = dateRows.find(
+                    (d) => format(d, "yyyy-MM-dd") === apiDate,
+                );
+
+                if (cutoffDay) {
+                    const key = cutoffDay.toISOString();
+                    const value = String(item.branch_id);
+
+                    if (prev[key] !== value) {
+                        next[key] = value;
+                        changed = true;
+                    } else {
+                        next[key] = prev[key];
+                    }
+                }
+            });
+
+            return changed ? next : prev;
+        });
+    }, [date, scheduleQuery.data, dateRows]);
+
+    console.log(selectedSchedules);
+
     const hasPerScheduleBranch = Object.keys(selectedBranches).length > 0;
     const isGlobalBranchActive = !!globalBranch && !hasPerScheduleBranch;
 
@@ -205,12 +281,6 @@ export default function ScheduleForm() {
                                         mode="single"
                                         selected={date}
                                         onSelect={handleDateSelect}
-                                        disabled={(day) =>
-                                            isBefore(
-                                                startOfDay(day),
-                                                startOfDay(new Date()),
-                                            )
-                                        }
                                     />
                                 </PopoverContent>
                             </Popover>

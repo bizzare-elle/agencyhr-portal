@@ -175,7 +175,7 @@ export default function TimeRecords() {
                 totalHrs: parseFloat(record.total_hrs || "0"),
                 totalLate: parseFloat(record.total_hrs_late || "0"),
                 totalBreakLate: parseFloat(record.total_hrs_break_late || "0"),
-                totalOvertime: parseFloat(record.total_overtime || "0"),
+                totalOvertime: parseFloat(record.total_overtime_hrs || "0"),
                 undertimeMinutes: parseFloat(record.total_undertime_hrs || "0"),
             };
         });

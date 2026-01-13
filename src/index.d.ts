@@ -195,6 +195,7 @@ export interface TimeRecord {
     total_schedule_hours: number | null;
     schedule: string | null;
     totWorkedBill: string | null;
+    total_overtime_hrs: string | null;
     permission: string | null;
     total_worked_billing_hours: string | null;
     total_hrs_break_late: string | null;

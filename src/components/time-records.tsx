@@ -164,7 +164,7 @@ export default function TimeRecords() {
                 branch: record.branch_name || "No data",
                 scheduleName: record.schedule_name,
                 date: moment(record.cut_off).format("YYYY-MM-DD"),
-                dayName: moment(record.cut_off).format("dddd"),
+                dayName: record.cut_off,
                 agencyName: record.agency_name,
                 timeIn: record.clock_in,
                 timeOut: record.clock_out,
@@ -263,11 +263,11 @@ export default function TimeRecords() {
                 <Table className="min-w-full divide-y divide-gray-200">
                     <TableHeader>
                         <TableRow className="bg-muted text-sm">
+                            <TableHead className="px-2 py-4">Date</TableHead>
                             <TableHead className="px-2 py-4">
                                 Schedule Name
                             </TableHead>
-                            <TableHead className="px-2 py-4">Date</TableHead>
-                            <TableHead className="px-2 py-4">Day</TableHead>
+
                             <TableHead className="px-2 py-4">
                                 Branch Location (In-Out)
                             </TableHead>
@@ -307,13 +307,10 @@ export default function TimeRecords() {
                             tableData.map((row, i) => (
                                 <TableRow key={i} className="hover:bg-muted/10">
                                     <TableCell className="px-2 py-4 capitalize">
-                                        {row.scheduleName || "No data"}
-                                    </TableCell>
-                                    <TableCell className="px-2 py-4">
-                                        {moment(row.date).format("LL")}
+                                        {row.dayName}
                                     </TableCell>
                                     <TableCell className="px-2 py-4 capitalize">
-                                        {row.dayName}
+                                        {row.scheduleName || "No data"}
                                     </TableCell>
                                     <TableCell className="px-2 py-4">
                                         {row.branchTimeIn === "No data" &&

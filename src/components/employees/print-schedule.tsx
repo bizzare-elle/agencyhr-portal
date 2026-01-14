@@ -46,108 +46,177 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
             printWindow.document.write(`
             <html>
                 <head>
-                    <title>Time Records - ${employeeName}</title>
+                    <title>Employee Time Records</title>
                     <style>
                         body {
                             font-family: Helvetica, Arial, sans-serif;
-                            padding: 30px;
+                            padding: 32px;
                             font-size: 10px;
                             color: #000;
                         }
-                        h2, h3, h4 {
-                            text-align: left;
-                            margin: 0;
+
+                        .header {
+                            border-bottom: 1px solid #000;
+                            padding-bottom: 6px;
+                            margin-bottom: 12px;
                         }
-                        h2 {
+                        .header h2 {
                             font-size: 14px;
                             font-weight: bold;
-                            margin-bottom: 4px;
+                            margin: 0;
                         }
-                        h3 {
-                            font-size: 12px;
+                        .header h3 {
+                            font-size: 11px;
+                            margin: 2px 0;
                             font-weight: normal;
-                            color: #333;
-                            margin: 2px 0 6px 0;
                         }
-                        h4 {
-                            font-size: 10px;
+                        .header h4 {
+                            font-size: 9px;
                             color: gray;
-                            margin-bottom: 10px;
+                            margin: 2px 0 0 0;
                         }
+
                         table {
                             width: 100%;
                             border-collapse: collapse;
                             margin-top: 10px;
+                            border-left: 1px solid #000;
+                            border-right: 1px solid #000;
                         }
-                        th, td {
-                            border: 1px solid #ccc;
+
+                        th {
+                            background-color: #d9e1f2;
+                            border-top: 1px solid #000;
+                            border-bottom: 1px solid #000;
+                            border-left: 1px solid #000;
                             padding: 4px 6px;
+                            font-size: 9px;
+                            font-weight: bold;
                             text-align: center;
+                        }
+
+                        th:last-child {
+                            border-right: 1px solid #000;
+                        }
+
+                        td {
+                            padding: 3px 6px;
+                            font-size: 9px;
+                            text-align: center;
+                            border-bottom: 0.5px solid #ccc;
+                            border-left: 1px solid #000;
+                        }
+
+                        td:last-child {
+                            border-right: 1px solid #000;
+                        }
+
+                        .totals {
+                            margin-top: 12px;
+                            padding-top: 6px;
+                            border-top: 1px solid #000;
                             font-size: 10px;
                         }
-                        th {
-                            background-color: #f0f0f0;
-                            font-weight: bold;
-                        }
-                        td.late {
-                            color: red;
-                        }
-                        .totals {
-                            margin-top: 15px;
-                            text-align: left;
-                            font-size: 11px;
-                            font-weight: bold;
-                        }
-                        .totals div {
-                            margin-bottom: 2px;
-                        }
+
                         .signature {
                             margin-top: 40px;
-                            display: flex;
-                            justify-content: center;
                             text-align: center;
-                            font-size: 11px;
                         }
                         .signature-line {
-                            margin-top: 40px;
+                            margin: 0 auto;
                             width: 220px;
                             border-top: 1px solid #000;
-                            text-align: center;
-                            padding-top: 5px;
-                            font-size: 10px;
+                            padding-top: 4px;
+                            font-size: 9px;
                         }
-                        @media print {
-                            button { display: none; }
+
+                        .footer {
+                            margin-top: 20px;
+                            text-align: center;
+                            font-size: 9px;
+                            color: red;
                         }
                     </style>
                 </head>
+
                 <body>
-                    <div style="text-align: left; margin-bottom: 10px;">
-                        <h2>${employeeName}</h2>
+                    <div class="header">
+                        <h2>Employee Time Records</h2>
+                        <h3>${employeeName}</h3>
                         <h3>${agencyName || "No Agency"}</h3>
-                        <h4>Cut-off Period: ${
-                            queryFrom && queryTo
-                                ? `${moment(queryFrom).format("MMM D, YYYY")} - ${moment(
-                                      queryTo,
-                                  ).format("MMM D, YYYY")}`
-                                : "No Cut-off Dates"
-                        }</h4>
+                        <h4>
+                            Cut-off Period:
+                            ${
+                                queryFrom && queryTo
+                                    ? `${moment(queryFrom).format("MMM D, YYYY")} - ${moment(
+                                          queryTo,
+                                      ).format("MMM D, YYYY")}`
+                                    : "No Cut-off Dates"
+                            }
+                        </h4>
                     </div>
 
                     ${printContent}
 
                     <div class="totals">
+                        <div>Total Overtime (Hours): ${totalOvertime.toFixed(2)}</div>
                         <div>Total Break Late (Hours): ${totalBreakLate.toFixed(2)}</div>
                         <div>Total Late (Hours): ${totalLate.toFixed(2)}</div>
-                        <div>Total Overtime (Hours): ${totalOvertime.toFixed(2)}</div>
                         <div>Total Undertime (Hours): ${totalUndertime.toFixed(2)}</div>
                         <div>Total Hours Worked: ${totalBillable.toFixed(2)}</div>
                     </div>
 
-                    
-                    <div style="margin-top: 20px; text-align: center; font-size: 10px; color: red;">
+                    <div class="signature">
+                        <div class="signature-line">${employeeName}</div>
+                    </div>
+
+                    <div class="footer">
                         <strong>Disclaimer:</strong> This is not an official document.
                     </div>
+
+                    <!-- No Data / No Filed styling -->
+                   <script>
+                        document.querySelectorAll("tbody tr").forEach(row => {
+                            const cells = row.querySelectorAll("td");
+
+                            // Column indexes (1-based visually, 0-based in JS)
+                            const overtimeIdx = 8;      // OT
+                            const breakLateIdx = 9;     // Break Late
+                            const lateIdx = 10;         // Late
+                            const undertimeIdx = 11;    // Undertime
+
+                            cells.forEach((cell, idx) => {
+                                const text = cell.textContent?.trim().toLowerCase();
+
+                                // Always red for No Data / No Filed / N/A / empty
+                                if (
+                                    !text ||
+                                    text === "no data" ||
+                                    text === "no filed" ||
+                                    text === "n/a"
+                                ) {
+                                    cell.style.color = "red";
+                                    cell.style.fontWeight = "bold";
+                                    return;
+                                }
+
+                                // Red only if numeric value > 0 for specific columns
+                                if (
+                                    idx === overtimeIdx ||
+                                    idx === breakLateIdx ||
+                                    idx === lateIdx ||
+                                    idx === undertimeIdx
+                                ) {
+                                    const value = parseFloat(text);
+                                    if (!isNaN(value) && value > 0) {
+                                        cell.style.color = "red";
+                                        cell.style.fontWeight = "bold";
+                                    }
+                                }
+                            });
+                        });
+                    </script>
+
                 </body>
             </html>
             `);

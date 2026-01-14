@@ -1,11 +1,8 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { format } from "date-fns";
 import moment from "moment";
-import { minutesToHours } from "@/helpers/computeHours";
 import { TimeRecord } from "@/index";
 import { formatTime, formatNumber } from "@/helpers/formatDates";
-import { displayHours } from "@/helpers/computeHours";
-import { cn } from "@/lib/utils";
 
 interface EmployeeData {
     id: string;
@@ -22,39 +19,54 @@ interface ConsolidatedPDFProps {
 }
 
 const styles = StyleSheet.create({
-    page: {
-        padding: 15,
-        fontSize: 8,
-        fontFamily: "Helvetica",
-    },
+    page: { padding: 15, fontSize: 8, fontFamily: "Helvetica" },
     header: {
         marginBottom: 6,
-        borderBottom: "1 solid #000",
-        paddingBottom: 2,
+        borderBottomWidth: 1,
+        borderBottomColor: "#000",
+        paddingBottom: 4,
     },
     title: { fontSize: 12, fontWeight: "bold" },
     subtitle: { fontSize: 8, color: "gray" },
     section: { marginBottom: 6 },
     tableHeader: {
         flexDirection: "row",
-        borderBottom: "1 solid #000",
-        paddingVertical: 2,
+        borderBottomWidth: 1,
+        borderBottomColor: "#000",
         backgroundColor: "#d9e1f2",
+        paddingVertical: 2,
+        alignItems: "center",
     },
     tableRow: {
         flexDirection: "row",
-        borderBottom: "0.5 solid #ccc",
+        borderBottomWidth: 0.5,
+        borderBottomColor: "#ccc",
         paddingVertical: 1,
+        alignItems: "center",
+        justifyContent: "center",
     },
-    cell: { flex: 1, textAlign: "center" },
+    cell: {
+        flex: 1,
+        textAlign: "center",
+        borderLeftWidth: 1,
+        borderLeftColor: "#000",
+        paddingHorizontal: 2,
+    },
+    lastCell: { borderRightWidth: 1, borderRightColor: "#000" },
     totals: {
-        marginTop: 4,
-        borderTop: "1 solid #000",
-        paddingTop: 2,
+        marginTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: "#000",
+        paddingTop: 4,
         fontSize: 8,
     },
     signatureSection: { marginTop: 20, alignItems: "center" },
-    signatureLine: { borderTop: "1 solid #000", width: "40%", marginTop: 20 },
+    signatureLine: {
+        borderTopWidth: 1,
+        borderTopColor: "#000",
+        width: "40%",
+        marginTop: 20,
+    },
     signatureLabel: { fontSize: 7, marginTop: 2 },
     footer: {
         position: "absolute",
@@ -70,9 +82,15 @@ const styles = StyleSheet.create({
 export const ConsolidatedTimeRecordsPDF = ({
     recordsByEmployee,
 }: ConsolidatedPDFProps) => {
-    const displayHours = (hrs: number | null | undefined) => {
-        const h = Number(hrs ?? 0);
-        return h.toFixed(2);
+    const displayHoursFixed = (hrs: number | string | null | undefined) =>
+        Number(hrs ?? 0).toFixed(2);
+
+    const renderCellStyle = (value: number | string | null | undefined) => {
+        const num = Number(value ?? 0);
+        return {
+            color: num > 0 ? "red" : "black",
+            fontWeight: num > 0 ? "bold" : "normal",
+        };
     };
 
     return (
@@ -115,13 +133,9 @@ export const ConsolidatedTimeRecordsPDF = ({
                             <Text>Branch: {emp.branch}</Text>
                             <Text>Agency: {emp.agency_name}</Text>
                         </View>
+
                         {/* Table Header */}
-                        <View
-                            style={[
-                                styles.tableHeader,
-                                { alignItems: "center" },
-                            ]}
-                        >
+                        <View style={styles.tableHeader}>
                             <Text style={[styles.cell, { flex: 1 }]}>Date</Text>
                             <Text style={[styles.cell, { flex: 1 }]}>
                                 Schedule
@@ -151,56 +165,51 @@ export const ConsolidatedTimeRecordsPDF = ({
                             <Text style={[styles.cell, { flex: 0.6 }]}>
                                 Undertime
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                            <Text
+                                style={[
+                                    styles.cell,
+                                    { flex: 0.8 },
+                                    styles.lastCell,
+                                ]}
+                            >
                                 Total Hrs
                             </Text>
                         </View>
 
                         {/* Table Rows */}
                         {emp.time_records.map((rec, i) => (
-                            <View
-                                style={[
-                                    styles.tableRow,
-                                    {
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    },
-                                ]}
-                                key={i}
-                            >
+                            <View style={styles.tableRow} key={i}>
                                 <Text style={[styles.cell, { flex: 1 }]}>
                                     {moment(rec.date).format("LL")}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
-                                    {rec.schedule ?? "No data"}
+                                    {rec.schedule ?? "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 1 }]}>
                                     {rec.branch_timeIn === "No data" &&
                                     rec.branch_timeOut === "No data"
-                                        ? "No data"
+                                        ? "No Data"
                                         : `In: ${rec.branch_timeIn ?? "N/A"} / Out: ${rec.branch_timeOut ?? "N/A"}`}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.time_in
-                                        ? formatTime(rec.time_in)
-                                        : "No Data"}
+                                    {rec.time_in ? rec.time_in : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.break_out
-                                        ? formatTime(rec.break_out)
-                                        : "No Data"}
+                                    {rec.break_out ? rec.break_out : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.break_in
-                                        ? formatTime(rec.break_in)
-                                        : "No Data"}
+                                    {rec.break_in ? rec.break_in : "No Data"}
                                 </Text>
                                 <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.time_out
-                                        ? formatTime(rec.time_out)
-                                        : "No Data"}
+                                    {rec.time_out ? rec.time_out : "No Data"}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 0.6 }]}>
+                                <Text
+                                    style={[
+                                        styles.cell,
+                                        { flex: 0.6 },
+                                        renderCellStyle(rec.overtime),
+                                    ]}
+                                >
                                     {Number(rec.overtime ?? 0)
                                         ? formatNumber(rec.overtime)
                                         : "No Filed"}
@@ -208,41 +217,37 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        {
-                                            flex: 0.6,
-                                            color: Number(rec.late_break ?? 0)
-                                                ? "red"
-                                                : "black",
-                                            fontWeight: Number(
-                                                rec.late_break ?? 0,
-                                            )
-                                                ? "bold"
-                                                : "normal",
-                                        },
+                                        { flex: 0.6 },
+                                        renderCellStyle(rec.late_break),
                                     ]}
                                 >
-                                    {displayHours(rec.late_break)}
+                                    {displayHoursFixed(rec.late_break)}
                                 </Text>
                                 <Text
                                     style={[
                                         styles.cell,
-                                        {
-                                            flex: 0.6,
-                                            color: Number(rec.late ?? 0)
-                                                ? "red"
-                                                : "black",
-                                            fontWeight: Number(rec.late ?? 0)
-                                                ? "bold"
-                                                : "normal",
-                                        },
+                                        { flex: 0.6 },
+                                        renderCellStyle(rec.late),
                                     ]}
                                 >
-                                    {displayHours(Number(rec.late ?? 0))}
+                                    {displayHoursFixed(rec.late)}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 0.6 }]}>
-                                    {displayHours(Number(rec.undertime ?? 0))}
+                                <Text
+                                    style={[
+                                        styles.cell,
+                                        { flex: 0.6 },
+                                        renderCellStyle(rec.undertime),
+                                    ]}
+                                >
+                                    {displayHoursFixed(rec.undertime)}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 0.8 }]}>
+                                <Text
+                                    style={[
+                                        styles.cell,
+                                        { flex: 0.8 },
+                                        styles.lastCell,
+                                    ]}
+                                >
                                     {formatNumber(rec.hours ?? 0)}
                                 </Text>
                             </View>
@@ -255,12 +260,14 @@ export const ConsolidatedTimeRecordsPDF = ({
                             </Text>
                             <Text>
                                 Total Break Late:{" "}
-                                {displayHours(totals.late_break)}
+                                {displayHoursFixed(totals.late_break)}
                             </Text>
-                            <Text>Total Late: {displayHours(totals.late)}</Text>
+                            <Text>
+                                Total Late: {displayHoursFixed(totals.late)}
+                            </Text>
                             <Text>
                                 Total Undertime:{" "}
-                                {displayHours(totals.undertime)}
+                                {displayHoursFixed(totals.undertime)}
                             </Text>
                             <Text>
                                 Total Hours Worked: {formatNumber(totals.hours)}

@@ -43,7 +43,8 @@ export const useAuthStore = create<AuthState>()(
 
             logout: () => {
                 get().clear();
-                console.log("Logged Out.");
+                console.log("Logged out due to inactivity.");
+                window.location.href = "/login";
             },
 
             loadUser: async () => {

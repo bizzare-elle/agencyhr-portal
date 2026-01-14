@@ -20,8 +20,10 @@ import AgencyDashboard from "./pages/agency_dashboard";
 import ScheduleForm from "./pages/schedules/schedule-form";
 import ScheduleDashboard from "./pages/schedules/schedule-dashboard";
 import { ParentComponent } from "./components/parent-container";
+import { useIdleLogout } from "./hooks/use-idle";
 
 export default function App() {
+    useIdleLogout();
     const router = createBrowserRouter([
         {
             path: "/",

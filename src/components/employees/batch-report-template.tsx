@@ -32,25 +32,25 @@ const styles = StyleSheet.create({
 
     tableHeader: {
         flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#d9e1f2",
         borderTopWidth: 1,
         borderBottomWidth: 1,
         borderColor: "#000",
+        backgroundColor: "#d9e1f2",
     },
     tableRow: {
         flexDirection: "row",
-        alignItems: "center",
+        borderBottomWidth: 1,
+        borderColor: "#000",
     },
 
     cell: {
-        borderWidth: 0.5,
+        borderRightWidth: 1,
         borderColor: "#000",
         textAlign: "center",
         paddingVertical: 2,
         paddingHorizontal: 2,
     },
-    lastCell: { borderRightWidth: 0.5, borderRightColor: "#000" },
+    lastCell: { borderRightWidth: 0 }, // no double border on last column
 
     // Column flexes
     flexDate: { flex: 1 },
@@ -101,7 +101,6 @@ const renderCellStyle = (value: string | number | null | undefined) => {
     return {};
 };
 
-// Format time with formatTime, fallback to "No Data"
 const getTimeCell = (time: string | null | undefined) =>
     time ? formatTime(time) : "No Data";
 
@@ -151,39 +150,41 @@ export const ConsolidatedTimeRecordsPDF = ({
 
                         {/* Table Header */}
                         <View style={styles.tableHeader}>
-                            <Text style={[styles.cell, { flex: 1 }]}>Date</Text>
-                            <Text style={[styles.cell, { flex: 1 }]}>
+                            <Text style={[styles.cell, styles.flexDate]}>
+                                Date
+                            </Text>
+                            <Text style={[styles.cell, styles.flexSchedule]}>
                                 Schedule
                             </Text>
-                            <Text style={[styles.cell, { flex: 1 }]}>
+                            <Text style={[styles.cell, styles.flexBranch]}>
                                 Branch In/Out
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                            <Text style={[styles.cell, styles.flexTime]}>
                                 Time In
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                            <Text style={[styles.cell, styles.flexTime]}>
                                 Break Out
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                            <Text style={[styles.cell, styles.flexTime]}>
                                 Break In
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.8 }]}>
+                            <Text style={[styles.cell, styles.flexTime]}>
                                 Time Out
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.6 }]}>OT</Text>
-                            <Text style={[styles.cell, { flex: 0.6 }]}>
+                            <Text style={[styles.cell, styles.flexOT]}>OT</Text>
+                            <Text style={[styles.cell, styles.flexOT]}>
                                 Break Late
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.6 }]}>
+                            <Text style={[styles.cell, styles.flexOT]}>
                                 Late
                             </Text>
-                            <Text style={[styles.cell, { flex: 0.6 }]}>
+                            <Text style={[styles.cell, styles.flexOT]}>
                                 Undertime
                             </Text>
                             <Text
                                 style={[
                                     styles.cell,
-                                    { flex: 0.8 },
+                                    styles.flexTotal,
                                     styles.lastCell,
                                 ]}
                             >
@@ -194,23 +195,23 @@ export const ConsolidatedTimeRecordsPDF = ({
                         {/* Table Rows */}
                         {emp.time_records.map((rec, i) => (
                             <View style={styles.tableRow} key={i}>
-                                <Text style={[styles.cell, { flex: 1 }]}>
+                                <Text style={[styles.cell, styles.flexDate]}>
                                     {moment(rec.date).format("LL")}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 1 }]}>
+                                <Text
+                                    style={[styles.cell, styles.flexSchedule]}
+                                >
                                     {rec.schedule ?? "No Data"}
                                 </Text>
-                                <Text style={[styles.cell, { flex: 1 }]}>
-                                    {rec.branch_timeIn === "No data" &&
-                                    rec.branch_timeOut === "No data"
-                                        ? "No Data"
-                                        : `In: ${rec.branch_timeIn ?? "N/A"} / Out: ${rec.branch_timeOut ?? "N/A"}`}
+                                <Text style={[styles.cell, styles.flexBranch]}>
+                                    {rec.branch_timeIn && rec.branch_timeOut
+                                        ? `In: ${rec.branch_timeIn} / Out: ${rec.branch_timeOut}`
+                                        : "No Data"}
                                 </Text>
-
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.8 },
+                                        styles.flexTime,
                                         renderCellStyle(
                                             getTimeCell(rec.time_in),
                                         ),
@@ -221,7 +222,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.8 },
+                                        styles.flexTime,
                                         renderCellStyle(
                                             getTimeCell(rec.break_out),
                                         ),
@@ -232,7 +233,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.8 },
+                                        styles.flexTime,
                                         renderCellStyle(
                                             getTimeCell(rec.break_in),
                                         ),
@@ -243,7 +244,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.8 },
+                                        styles.flexTime,
                                         renderCellStyle(
                                             getTimeCell(rec.time_out),
                                         ),
@@ -251,14 +252,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 >
                                     {getTimeCell(rec.time_out)}
                                 </Text>
-
-                                <Text
-                                    style={[
-                                        styles.cell,
-                                        { flex: 0.6 },
-                                        renderCellStyle(rec.overtime),
-                                    ]}
-                                >
+                                <Text style={[styles.cell, styles.flexOT]}>
                                     {Number(rec.overtime ?? 0)
                                         ? formatNumber(rec.overtime)
                                         : "No Filed"}
@@ -266,7 +260,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.6 },
+                                        styles.flexOT,
                                         renderCellStyle(rec.late_break),
                                     ]}
                                 >
@@ -275,7 +269,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.6 },
+                                        styles.flexOT,
                                         renderCellStyle(rec.late),
                                     ]}
                                 >
@@ -284,7 +278,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.6 },
+                                        styles.flexOT,
                                         renderCellStyle(rec.undertime),
                                     ]}
                                 >
@@ -293,7 +287,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        { flex: 0.8 },
+                                        styles.flexTotal,
                                         styles.lastCell,
                                     ]}
                                 >

@@ -19,7 +19,7 @@ interface ConsolidatedPDFProps {
 }
 
 const styles = StyleSheet.create({
-    page: { padding: 15, fontSize: 8, fontFamily: "Helvetica" },
+    page: { padding: 10, fontSize: 8, fontFamily: "Helvetica" },
     header: {
         marginBottom: 6,
         borderBottomWidth: 1,
@@ -29,29 +29,37 @@ const styles = StyleSheet.create({
     title: { fontSize: 12, fontWeight: "bold" },
     subtitle: { fontSize: 8, color: "gray" },
     section: { marginBottom: 6 },
+
     tableHeader: {
         flexDirection: "row",
-        borderBottomWidth: 1,
-        borderBottomColor: "#000",
-        backgroundColor: "#d9e1f2",
-        paddingVertical: 2,
         alignItems: "center",
+        backgroundColor: "#d9e1f2",
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: "#000",
     },
     tableRow: {
         flexDirection: "row",
-        borderBottomWidth: 0.5,
-        borderBottomColor: "#ccc",
-        paddingVertical: 1,
         alignItems: "center",
     },
+
     cell: {
-        flex: 1,
-        textAlign: "center",
         borderWidth: 0.5,
         borderColor: "#000",
+        textAlign: "center",
+        paddingVertical: 2,
         paddingHorizontal: 2,
     },
-    lastCell: { borderRightWidth: 1 },
+    lastCell: { borderRightWidth: 0.5, borderRightColor: "#000" },
+
+    // Column flexes
+    flexDate: { flex: 1 },
+    flexSchedule: { flex: 1 },
+    flexBranch: { flex: 1 },
+    flexTime: { flex: 0.8 },
+    flexOT: { flex: 0.6 },
+    flexTotal: { flex: 0.8 },
+
     totals: {
         marginTop: 8,
         borderTopWidth: 1,
@@ -59,6 +67,7 @@ const styles = StyleSheet.create({
         paddingTop: 4,
         fontSize: 8,
     },
+
     signatureSection: { marginTop: 20, alignItems: "center" },
     signatureLine: {
         borderTopWidth: 1,
@@ -67,11 +76,12 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     signatureLabel: { fontSize: 7, marginTop: 2 },
+
     footer: {
         position: "absolute",
         bottom: 10,
-        left: 15,
-        right: 15,
+        left: 10,
+        right: 10,
         fontSize: 6,
         textAlign: "right",
         color: "gray",

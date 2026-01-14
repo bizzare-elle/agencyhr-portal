@@ -33,11 +33,11 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
             }, 0);
         };
 
-        const totalBreakLate = sumColumnByIndex(9);
-        const totalLate = sumColumnByIndex(10);
-        const totalUndertime = sumColumnByIndex(11);
-        const totalOvertime = sumColumnByIndex(8);
-        const totalBillable = sumColumnByIndex(12);
+        const totalBreakLate = sumColumnByIndex(8);
+        const totalLate = sumColumnByIndex(9);
+        const totalUndertime = sumColumnByIndex(10);
+        const totalOvertime = sumColumnByIndex(7);
+        const totalBillable = sumColumnByIndex(11);
 
         const printContent = table.outerHTML;
         const printWindow = window.open("", "_blank");
@@ -180,10 +180,10 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
                             const cells = row.querySelectorAll("td");
 
                             // Column indexes (1-based visually, 0-based in JS)
-                            const overtimeIdx = 8;      // OT
-                            const breakLateIdx = 9;     // Break Late
-                            const lateIdx = 10;         // Late
-                            const undertimeIdx = 11;    // Undertime
+                            const overtimeIdx = 7;      // OT
+                            const breakLateIdx = 8;     // Break Late
+                            const lateIdx = 9;         // Late
+                            const undertimeIdx = 10;    // Undertime
 
                             cells.forEach((cell, idx) => {
                                 const text = cell.textContent?.trim().toLowerCase();

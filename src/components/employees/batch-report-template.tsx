@@ -86,6 +86,9 @@ export const ConsolidatedTimeRecordsPDF = ({
         Number(hrs ?? 0).toFixed(2);
 
     const renderCellStyle = (value: number | string | null | undefined) => {
+        if (value === "No Data" || value === null || value === undefined) {
+            return { color: "red", fontWeight: "bold" };
+        }
         const num = Number(value ?? 0);
         return {
             color: num > 0 ? "red" : "black",
@@ -141,7 +144,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 Schedule
                             </Text>
                             <Text style={[styles.cell, { flex: 1 }]}>
-                                Branch Location In/Out
+                                Branch In/Out
                             </Text>
                             <Text style={[styles.cell, { flex: 0.8 }]}>
                                 Time In
@@ -177,81 +180,112 @@ export const ConsolidatedTimeRecordsPDF = ({
                         </View>
 
                         {/* Table Rows */}
-                        {emp.time_records.map((rec, i) => (
-                            <View style={styles.tableRow} key={i}>
-                                <Text style={[styles.cell, { flex: 1 }]}>
-                                    {moment(rec.date).format("LL")}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 1 }]}>
-                                    {rec.schedule ?? "No Data"}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 1 }]}>
-                                    {rec.branch_timeIn === "No data" &&
-                                    rec.branch_timeOut === "No data"
-                                        ? "No Data"
-                                        : `In: ${rec.branch_timeIn ?? "N/A"} / Out: ${rec.branch_timeOut ?? "N/A"}`}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.time_in ? rec.time_in : "No Data"}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.break_out ? rec.break_out : "No Data"}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.break_in ? rec.break_in : "No Data"}
-                                </Text>
-                                <Text style={[styles.cell, { flex: 0.8 }]}>
-                                    {rec.time_out ? rec.time_out : "No Data"}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.cell,
-                                        { flex: 0.6 },
-                                        renderCellStyle(rec.overtime),
-                                    ]}
-                                >
-                                    {Number(rec.overtime ?? 0)
-                                        ? formatNumber(rec.overtime)
-                                        : "No Filed"}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.cell,
-                                        { flex: 0.6 },
-                                        renderCellStyle(rec.late_break),
-                                    ]}
-                                >
-                                    {displayHoursFixed(rec.late_break)}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.cell,
-                                        { flex: 0.6 },
-                                        renderCellStyle(rec.late),
-                                    ]}
-                                >
-                                    {displayHoursFixed(rec.late)}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.cell,
-                                        { flex: 0.6 },
-                                        renderCellStyle(rec.undertime),
-                                    ]}
-                                >
-                                    {displayHoursFixed(rec.undertime)}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.cell,
-                                        { flex: 0.8 },
-                                        styles.lastCell,
-                                    ]}
-                                >
-                                    {formatNumber(rec.hours ?? 0)}
-                                </Text>
-                            </View>
-                        ))}
+                        {emp.time_records.map((rec, i) => {
+                            const timeIn = rec.time_in ?? "No Data";
+                            const timeOut = rec.time_out ?? "No Data";
+                            const breakIn = rec.break_in ?? "No Data";
+                            const breakOut = rec.break_out ?? "No Data";
+
+                            return (
+                                <View style={styles.tableRow} key={i}>
+                                    <Text style={[styles.cell, { flex: 1 }]}>
+                                        {moment(rec.date).format("LL")}
+                                    </Text>
+                                    <Text style={[styles.cell, { flex: 1 }]}>
+                                        {rec.schedule ?? "No Data"}
+                                    </Text>
+                                    <Text style={[styles.cell, { flex: 1 }]}>
+                                        {rec.branch_timeIn === "No data" &&
+                                        rec.branch_timeOut === "No data"
+                                            ? "No Data"
+                                            : `In: ${rec.branch_timeIn ?? "N/A"} / Out: ${rec.branch_timeOut ?? "N/A"}`}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.8 },
+                                            renderCellStyle(timeIn),
+                                        ]}
+                                    >
+                                        {timeIn}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.8 },
+                                            renderCellStyle(breakOut),
+                                        ]}
+                                    >
+                                        {breakOut}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.8 },
+                                            renderCellStyle(breakIn),
+                                        ]}
+                                    >
+                                        {breakIn}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.8 },
+                                            renderCellStyle(timeOut),
+                                        ]}
+                                    >
+                                        {timeOut}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.6 },
+                                            renderCellStyle(rec.overtime),
+                                        ]}
+                                    >
+                                        {Number(rec.overtime ?? 0)
+                                            ? formatNumber(rec.overtime)
+                                            : "No Filed"}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.6 },
+                                            renderCellStyle(rec.late_break),
+                                        ]}
+                                    >
+                                        {Number(rec.late_break ?? 0).toFixed(2)}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.6 },
+                                            renderCellStyle(rec.late),
+                                        ]}
+                                    >
+                                        {Number(rec.late ?? 0).toFixed(2)}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.6 },
+                                            renderCellStyle(rec.undertime),
+                                        ]}
+                                    >
+                                        {Number(rec.undertime ?? 0).toFixed(2)}
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 0.8 },
+                                            styles.lastCell,
+                                        ]}
+                                    >
+                                        {formatNumber(rec.hours ?? 0)}
+                                    </Text>
+                                </View>
+                            );
+                        })}
 
                         {/* Totals */}
                         <View style={styles.totals}>
@@ -259,15 +293,11 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 Total Overtime: {formatNumber(totals.overtime)}
                             </Text>
                             <Text>
-                                Total Break Late:{" "}
-                                {displayHoursFixed(totals.late_break)}
+                                Total Break Late: {totals.late_break.toFixed(2)}
                             </Text>
+                            <Text>Total Late: {totals.late.toFixed(2)}</Text>
                             <Text>
-                                Total Late: {displayHoursFixed(totals.late)}
-                            </Text>
-                            <Text>
-                                Total Undertime:{" "}
-                                {displayHoursFixed(totals.undertime)}
+                                Total Undertime: {totals.undertime.toFixed(2)}
                             </Text>
                             <Text>
                                 Total Hours Worked: {formatNumber(totals.hours)}

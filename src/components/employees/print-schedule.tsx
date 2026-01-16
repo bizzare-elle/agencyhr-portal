@@ -1,12 +1,16 @@
 import React from "react";
 import moment from "moment";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 
 interface PrintTimeRecordsProps {
     tableId: string;
     employeeName: string;
+    isHrEmployee: boolean;
+    idNumber: string | null;
     agencyName?: string | null;
+    branchName?: string | null;
     queryFrom?: string;
     queryTo?: string;
 }
@@ -15,6 +19,9 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
     tableId,
     employeeName,
     agencyName,
+    idNumber,
+    branchName,
+    isHrEmployee,
     queryFrom,
     queryTo,
 }) => {
@@ -37,10 +44,19 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
         const totalLate = sumColumnByIndex(9);
         const totalUndertime = sumColumnByIndex(10);
         const totalOvertime = sumColumnByIndex(7);
-        const totalBillable = sumColumnByIndex(11);
+        const totalHoursWorked = sumColumnByIndex(11);
+        const totalBillable = sumColumnByIndex(12);
 
         const printContent = table.outerHTML;
         const printWindow = window.open("", "_blank");
+
+        const disclaimerHtml = isHrEmployee
+            ? `
+                <div class="footer">
+                    <strong>Disclaimer:</strong> This is not an official document.
+                </div>
+            `
+            : "";
 
         if (printWindow) {
             printWindow.document.write(`
@@ -50,15 +66,17 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
                     <style>
                         body {
                             font-family: Helvetica, Arial, sans-serif;
-                            padding: 32px;
+                            padding: 10px;
                             font-size: 10px;
                             color: #000;
                         }
-
                         .header {
-                            border-bottom: 1px solid #000;
                             padding-bottom: 6px;
-                            margin-bottom: 12px;
+                            margin-bottom: 5px;
+                        }
+                        .header-divider {
+                            border-bottom: 1px solid #000;
+                            margin: 6px 0 10px 0;
                         }
                         .header h2 {
                             font-size: 14px;
@@ -80,8 +98,7 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
                             width: 100%;
                             border-collapse: collapse;
                             margin-top: 10px;
-                            border-left: 1px solid #000;
-                            border-right: 1px solid #000;
+                           
                         }
 
                         th {
@@ -142,18 +159,15 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
                 <body>
                     <div class="header">
                         <h2>Employee Time Records</h2>
-                        <h3>${employeeName}</h3>
-                        <h3>${agencyName || "No Agency"}</h3>
-                        <h4>
-                            Cut-off Period:
-                            ${
-                                queryFrom && queryTo
-                                    ? `${moment(queryFrom).format("MMM D, YYYY")} - ${moment(
-                                          queryTo,
-                                      ).format("MMM D, YYYY")}`
-                                    : "No Cut-off Dates"
-                            }
-                        </h4>
+                        <h4>Generated: ${format(new Date(), "PPpp")} </h4>
+
+                        <div class="header-divider"></div>
+                    
+                        <h3>Name: ${employeeName}</h3>
+                        <h3>ID Number: ${idNumber || "N/A"}</h3>
+                        <h3>Branch: ${branchName}</h3>
+                        <h3>Agency: ${agencyName || "No Agency"}</h3>
+
                     </div>
 
                     ${printContent}
@@ -163,59 +177,63 @@ export const PrintTimeRecords: React.FC<PrintTimeRecordsProps> = ({
                         <div>Total Break Late (Hours): ${totalBreakLate.toFixed(2)}</div>
                         <div>Total Late (Hours): ${totalLate.toFixed(2)}</div>
                         <div>Total Undertime (Hours): ${totalUndertime.toFixed(2)}</div>
-                        <div>Total Hours Worked: ${totalBillable.toFixed(2)}</div>
+                        <div>Total Hours Worked: ${totalHoursWorked.toFixed(2)}</div>
+                        <div>Total Billable Hours: ${totalBillable.toFixed(2)}</div>
                     </div>
 
                     <div class="signature">
                         <div class="signature-line">${employeeName}</div>
                     </div>
 
-                    <div class="footer">
-                        <strong>Disclaimer:</strong> This is not an official document.
-                    </div>
+                   ${disclaimerHtml}
 
-                    <!-- No Data / No Filed styling -->
-                   <script>
-                        document.querySelectorAll("tbody tr").forEach(row => {
-                            const cells = row.querySelectorAll("td");
+                  <script>
+                    document.querySelectorAll("tbody tr").forEach(row => {
+                        const cells = row.querySelectorAll("td");
 
-                            // Column indexes (1-based visually, 0-based in JS)
-                            const overtimeIdx = 7;      // OT
-                            const breakLateIdx = 8;     // Break Late
-                            const lateIdx = 9;         // Late
-                            const undertimeIdx = 10;    // Undertime
+                        const overtimeIdx = 7;      // OT
+                        const breakLateIdx = 8;     // Break Late
+                        const lateIdx = 9;          // Late
+                        const undertimeIdx = 10;    // Undertime
 
-                            cells.forEach((cell, idx) => {
-                                const text = cell.textContent?.trim().toLowerCase();
+                        cells.forEach((cell, idx) => {
+                            const text = cell.textContent?.trim().toLowerCase();
 
-                                // Always red for No Data / No Filed / N/A / empty
-                                if (
+                            // ---- 1. Missing data styling ----
+                            // Apply ONLY to non-overtime columns
+                            if (
+                                idx !== overtimeIdx &&
+                                (
                                     !text ||
                                     text === "no data" ||
                                     text === "no filed" ||
                                     text === "n/a"
-                                ) {
+                                )
+                            ) {
+                                cell.style.color = "red";
+                                cell.style.fontWeight = "bold";
+                                return;
+                            }
+
+                            // ---- 2. Penalty columns only ----
+                            if (
+                                idx === breakLateIdx ||
+                                idx === lateIdx ||
+                                idx === undertimeIdx
+                            ) {
+                                const value = parseFloat(text);
+                                if (!isNaN(value) && value > 0) {
                                     cell.style.color = "red";
                                     cell.style.fontWeight = "bold";
-                                    return;
                                 }
+                            }
 
-                                // Red only if numeric value > 0 for specific columns
-                                if (
-                                    idx === overtimeIdx ||
-                                    idx === breakLateIdx ||
-                                    idx === lateIdx ||
-                                    idx === undertimeIdx
-                                ) {
-                                    const value = parseFloat(text);
-                                    if (!isNaN(value) && value > 0) {
-                                        cell.style.color = "red";
-                                        cell.style.fontWeight = "bold";
-                                    }
-                                }
-                            });
+                            // ---- 3. Overtime is ALWAYS neutral ----
+                            // No styling applied even if > 0
                         });
-                    </script>
+                    });
+                </script>
+
 
                 </body>
             </html>

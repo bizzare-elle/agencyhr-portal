@@ -158,6 +158,18 @@ export default function TimeRecords() {
         return "No Agency";
     }, [records]);
 
+    const branchName = useMemo(() => {
+        if (records.length > 0) return records[0]?.branch_name || "No Agency";
+        return "No Branch";
+    }, [records]);
+
+    const idNumber = useMemo(() => {
+        if (records.length > 0) return records[0]?.id_number || "No Agency";
+        return "No Branch";
+    }, [records]);
+
+    console.log(records);
+
     const tableData = useMemo(() => {
         return records.map((record) => {
             return {
@@ -166,12 +178,15 @@ export default function TimeRecords() {
                 date: moment(record.cut_off).format("YYYY-MM-DD"),
                 dayName: record.cut_off,
                 agencyName: record.agency_name,
+                branchName: record.branch_name,
+                idNumber: record.id_number,
                 timeIn: record.clock_in,
                 timeOut: record.clock_out,
                 branchTimeIn: record.clock_in_branch,
                 branchTimeOut: record.clock_out_branch,
                 breakIn: record.break_in,
                 breakOut: record.break_out,
+                totalHrsWorked: parseFloat(record.total_hours_worked || "0"),
                 totalHrs: parseFloat(record.total_hrs || "0"),
                 totalLate: parseFloat(record.total_hrs_late || "0"),
                 totalBreakLate: parseFloat(record.total_hrs_break_late || "0"),
@@ -233,6 +248,9 @@ export default function TimeRecords() {
 
                         <PrintTimeRecords
                             tableId="time-records-table"
+                            idNumber={idNumber}
+                            isHrEmployee={isHrEmployee}
+                            branchName={branchName || "No Branch"}
                             employeeName={employeeName as string}
                             agencyName={agencyName || "No Agency"}
                             queryFrom={queryFrom}
@@ -265,11 +283,11 @@ export default function TimeRecords() {
                         <TableRow className="bg-muted text-sm">
                             <TableHead className="px-2 py-4">Date</TableHead>
                             <TableHead className="px-2 py-4">
-                                Schedule Name
+                                Schedule
                             </TableHead>
 
                             <TableHead className="px-2 py-4">
-                                Branch Location (In-Out)
+                                Branch (In-Out)
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
                                 Time In
@@ -295,9 +313,11 @@ export default function TimeRecords() {
                             <TableHead className="px-2 py-4 text-center">
                                 Undertime (hrs)
                             </TableHead>
-
                             <TableHead className="px-2 py-4 text-center">
-                                Total Hours
+                                Total Hours Worked
+                            </TableHead>
+                            <TableHead className="px-2 py-4 text-center">
+                                Total Billable Hours
                             </TableHead>
                         </TableRow>
                     </TableHeader>
@@ -411,6 +431,12 @@ export default function TimeRecords() {
                                         )}
                                     >
                                         {row.undertimeMinutes}
+                                    </TableCell>
+
+                                    <TableCell className="px-2 py-4 text-center">
+                                        {formatNumber(
+                                            String(row.totalHrsWorked),
+                                        )}
                                     </TableCell>
 
                                     <TableCell className="px-2 py-4 text-center">

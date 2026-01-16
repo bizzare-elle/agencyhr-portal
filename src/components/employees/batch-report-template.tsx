@@ -50,9 +50,8 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         paddingHorizontal: 2,
     },
-    lastCell: { borderRightWidth: 0 }, // no double border on last column
+    lastCell: { borderRightWidth: 0 },
 
-    // Column flexes
     flexDate: { flex: 1 },
     flexSchedule: { flex: 1 },
     flexBranch: { flex: 1 },
@@ -88,16 +87,29 @@ const styles = StyleSheet.create({
     },
 });
 
-// Format hours safely
-const displayHoursFixed = (hrs: number | string | null | undefined) =>
-    Number(hrs ?? 0).toFixed(2);
+const displayHoursFixed = (hrs: number | string | null | undefined) => {
+    if (hrs === null || hrs === undefined || Number(hrs) === 0) {
+        return "0";
+    }
 
-// Render cell style: red if No Data or >0 for numeric
+    return Number(hrs).toFixed(2);
+};
+
 const renderCellStyle = (value: string | number | null | undefined) => {
-    if (!value || value === "No Data")
+    if (
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        value === "No Data"
+    ) {
         return { color: "red", fontWeight: "bold" };
-    if (!isNaN(Number(value)) && Number(value) > 0)
+    }
+
+    const num = Number(value);
+    if (!isNaN(num) && num > 0) {
         return { color: "red", fontWeight: "bold" };
+    }
+
     return {};
 };
 
@@ -117,9 +129,11 @@ export const ConsolidatedTimeRecordsPDF = ({
                         acc.overtime += Number(rec.overtime ?? 0);
                         acc.undertime += Number(rec.undertime ?? 0);
                         acc.hours += Number(rec.hours ?? 0);
+                        acc.hoursWorked += Number(rec.hoursWorked ?? 0);
                         return acc;
                     },
                     {
+                        hoursWorked: 0,
                         late_break: 0,
                         late: 0,
                         overtime: 0,
@@ -188,7 +202,16 @@ export const ConsolidatedTimeRecordsPDF = ({
                                     styles.lastCell,
                                 ]}
                             >
-                                Total Hrs
+                                Total Hours Worked
+                            </Text>
+                            <Text
+                                style={[
+                                    styles.cell,
+                                    styles.flexTotal,
+                                    styles.lastCell,
+                                ]}
+                            >
+                                Total Billable Hours
                             </Text>
                         </View>
 
@@ -196,7 +219,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                         {emp.time_records.map((rec, i) => (
                             <View style={styles.tableRow} key={i}>
                                 <Text style={[styles.cell, styles.flexDate]}>
-                                    {moment(rec.date).format("LL")}
+                                    {rec.date}
                                 </Text>
                                 <Text
                                     style={[styles.cell, styles.flexSchedule]}
@@ -291,6 +314,15 @@ export const ConsolidatedTimeRecordsPDF = ({
                                         styles.lastCell,
                                     ]}
                                 >
+                                    {formatNumber(rec.hoursWorked ?? 0)}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.cell,
+                                        styles.flexTotal,
+                                        styles.lastCell,
+                                    ]}
+                                >
                                     {formatNumber(rec.hours ?? 0)}
                                 </Text>
                             </View>
@@ -313,7 +345,12 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 {displayHoursFixed(totals.undertime)}
                             </Text>
                             <Text>
-                                Total Hours Worked: {formatNumber(totals.hours)}
+                                Total Hours Worked:{" "}
+                                {formatNumber(totals.hoursWorked)}
+                            </Text>
+                            <Text>
+                                Total Billable Hours:{" "}
+                                {formatNumber(totals.hours)}
                             </Text>
                         </View>
 

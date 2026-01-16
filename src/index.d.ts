@@ -176,6 +176,7 @@ export interface TimeRecord {
     Break_Out: string | null;
     late: string | null;
     overtime: string | null;
+    hoursWorked: string | null;
     hours: string | null;
     clock_out: string | null;
     total_hrs: string | null;
@@ -211,6 +212,7 @@ export interface TimeRecord {
         break_out: string | null;
         branch_timeIn: string | null;
         branch_timeOut: string | null;
+        hoursWorked: number;
         hours: number;
         late: number;
         late_break: number;

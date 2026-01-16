@@ -62,7 +62,7 @@ export default function LoginPage() {
                 if (!token) return;
 
                 setToken(token);
-                const user = await loadUser();
+                const user = await loadUser(token);
 
                 if (user?.id) {
                     toast.success("Login successful!");
@@ -241,7 +241,7 @@ export default function LoginPage() {
                 </Card>
 
                 <p className="mt-6 text-center text-xs text-white/70">
-                    © {new Date().getFullYear()} Wildflour Hospitality Group
+                    © {new Date().getFullYear()}
                 </p>
             </motion.div>
         </div>

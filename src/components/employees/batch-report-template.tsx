@@ -50,13 +50,13 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         paddingHorizontal: 2,
     },
-    lastCell: { borderRightWidth: 0 },
 
     flexDate: { flex: 1 },
     flexSchedule: { flex: 1 },
     flexBranch: { flex: 1 },
     flexTime: { flex: 0.8 },
     flexOT: { flex: 0.6 },
+    flexTotalWorked: { flex: 0.8 },
     flexTotal: { flex: 0.8 },
 
     totals: {
@@ -195,22 +195,10 @@ export const ConsolidatedTimeRecordsPDF = ({
                             <Text style={[styles.cell, styles.flexOT]}>
                                 Undertime
                             </Text>
-                            <Text
-                                style={[
-                                    styles.cell,
-                                    styles.flexTotal,
-                                    styles.lastCell,
-                                ]}
-                            >
+                            <Text style={[styles.cell, styles.flexTotalWorked]}>
                                 Total Hours Worked
                             </Text>
-                            <Text
-                                style={[
-                                    styles.cell,
-                                    styles.flexTotal,
-                                    styles.lastCell,
-                                ]}
-                            >
+                            <Text style={[styles.cell, styles.flexTotal]}>
                                 Total Billable Hours
                             </Text>
                         </View>
@@ -310,19 +298,12 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 <Text
                                     style={[
                                         styles.cell,
-                                        styles.flexTotal,
-                                        styles.lastCell,
+                                        styles.flexTotalWorked,
                                     ]}
                                 >
                                     {formatNumber(rec.hoursWorked ?? 0)}
                                 </Text>
-                                <Text
-                                    style={[
-                                        styles.cell,
-                                        styles.flexTotal,
-                                        styles.lastCell,
-                                    ]}
-                                >
+                                <Text style={[styles.cell, styles.flexTotal]}>
                                     {formatNumber(rec.hours ?? 0)}
                                 </Text>
                             </View>

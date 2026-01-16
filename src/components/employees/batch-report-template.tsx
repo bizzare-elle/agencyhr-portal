@@ -51,6 +51,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 2,
     },
 
+    firstCell: {
+        borderLeftWidth: 1,
+        borderLeftColor: "#000",
+        // You can also include the common cell styles
+        borderRightWidth: 1,
+        borderColor: "#000",
+        textAlign: "center",
+        paddingVertical: 2,
+        paddingHorizontal: 2,
+    },
+
     flexDate: { flex: 1 },
     flexSchedule: { flex: 1 },
     flexBranch: { flex: 1 },
@@ -164,7 +175,13 @@ export const ConsolidatedTimeRecordsPDF = ({
 
                         {/* Table Header */}
                         <View style={styles.tableHeader}>
-                            <Text style={[styles.cell, styles.flexDate]}>
+                            <Text
+                                style={[
+                                    styles.cell,
+                                    styles.firstCell,
+                                    styles.flexDate,
+                                ]}
+                            >
                                 Date
                             </Text>
                             <Text style={[styles.cell, styles.flexSchedule]}>
@@ -206,7 +223,13 @@ export const ConsolidatedTimeRecordsPDF = ({
                         {/* Table Rows */}
                         {emp.time_records.map((rec, i) => (
                             <View style={styles.tableRow} key={i}>
-                                <Text style={[styles.cell, styles.flexDate]}>
+                                <Text
+                                    style={[
+                                        styles.cell,
+                                        styles.firstCell,
+                                        styles.flexDate,
+                                    ]}
+                                >
                                     {rec.date}
                                 </Text>
                                 <Text

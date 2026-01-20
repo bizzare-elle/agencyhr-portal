@@ -165,7 +165,10 @@ const columns: TableColumn<TimeLog>[] = [
 
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem className="font-medium text-red-600">
+                                    <DropdownMenuItem
+                                        className="font-medium text-red-600"
+                                        onSelect={(e) => e.preventDefault()}
+                                    >
                                         Withdraw Log
                                     </DropdownMenuItem>
                                 </AlertDialogTrigger>

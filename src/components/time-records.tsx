@@ -273,7 +273,6 @@ export default function TimeRecords() {
 
             {(isLoading || isFetching) && <FullPageLoader />}
 
-            {/* Table */}
             <div
                 id="time-records-table"
                 className="bg-card overflow-x-auto rounded-md border shadow-sm"

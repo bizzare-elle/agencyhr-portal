@@ -59,20 +59,27 @@ export default function LoginPage() {
         loginMutation.mutate(values, {
             onSuccess: async (response) => {
                 const token = response?.data?.token;
-                if (!token) return;
+                if (!token) {
+                    toast.error("Invalid login response.");
+                    return;
+                }
 
                 setToken(token);
-                const user = await loadUser(token);
 
-                if (user?.id) {
-                    toast.success("Login successful!");
-                    if (user.role === "agency_coordinator") {
-                        navigate(`/dashboard/${user.agency_id}`);
-                    } else {
-                        navigate(`/employees/${user.id}`);
-                    }
-                } else {
+                await loadUser(token);
+
+                const user = useAuthStore.getState().user;
+                if (!user?.id) {
                     toast.error("Failed to load user info.");
+                    return;
+                }
+
+                toast.success("Login successful!");
+
+                if (user.role === "agency_coordinator") {
+                    navigate(`/dashboard/${user.agency_id}`, { replace: true });
+                } else {
+                    navigate(`/employees/${user.id}`, { replace: true });
                 }
             },
             onError: (err: any) => {

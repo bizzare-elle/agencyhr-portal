@@ -51,52 +51,28 @@ const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const schema = z.object({
     branch_id: z.string().min(1, { message: "Select a branch" }),
 
-    date: z.date({
-        error: () => ({ message: "Date is required" }),
-    }),
-    // .refine(
-    //     (val) => {
-    //         const selected = new Date(val);
-    //         selected.setHours(0, 0, 0, 0);
+    date: z
+        .date({
+            error: () => ({ message: "Date is required" }),
+        })
+        .refine(
+            (val) => {
+                const selected = new Date(val);
+                selected.setHours(0, 0, 0, 0);
 
-    //         const today = new Date();
-    //         today.setHours(0, 0, 0, 0);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
-    //         const year = today.getFullYear();
-    //         const month = today.getMonth();
-    //         const day = today.getDate();
+                const twoDaysAgo = new Date(today);
+                twoDaysAgo.setDate(today.getDate() - 2);
 
-    //         if (day === 1) {
-    //             const lastMonthDate = new Date(year, month, 0);
-    //             const prevMonth = lastMonthDate.getMonth();
-    //             const prevYear = lastMonthDate.getFullYear();
-    //             const lastDayPrevMonth = lastMonthDate.getDate();
+                return selected >= twoDaysAgo && selected <= today;
+            },
+            {
+                message: "You can only select a date within the last 2 days.",
+            },
+        ),
 
-    //             const cutoffStart = new Date(prevYear, prevMonth, 16);
-    //             const cutoffEnd = new Date(
-    //                 prevYear,
-    //                 prevMonth,
-    //                 lastDayPrevMonth,
-    //             );
-
-    //             return selected >= cutoffStart && selected <= cutoffEnd;
-    //         }
-
-    //         if (day === 16) {
-    //             const cutoffStart = new Date(year, month, 1);
-    //             const cutoffEnd = new Date(year, month, 15);
-    //             return selected >= cutoffStart && selected <= cutoffEnd;
-    //         }
-
-    //         const twoDaysAgo = new Date(today);
-    //         twoDaysAgo.setDate(today.getDate() - 2);
-
-    //         return selected >= twoDaysAgo && selected <= today;
-    //     },
-    //     {
-    //         message: "You can only select a valid date for filing.",
-    //     },
-    // ),
     startTime: z
         .string()
         .regex(timeRegex, { message: "Start time is required (HH:mm)" }),
@@ -323,98 +299,9 @@ export default function OvertimeForm() {
                                                     }
                                                     setOpen(false);
                                                 }}
-                                                // disabled={[
-                                                //     {
-                                                //         after: new Date(
-                                                //             new Date().getFullYear(),
-                                                //             new Date().getMonth(),
-                                                //             15,
-                                                //         ),
-                                                //         before: new Date(
-                                                //             new Date().getFullYear(),
-                                                //             new Date().getMonth(),
-                                                //             1,
-                                                //         ),
-                                                //     },
-                                                // ]}
-                                            />
-                                            {/* 
-                                            <Calendar
-                                                mode="single"
-                                                selected={form.watch("date")}
-                                                onSelect={(date) => {
-                                                    if (date) {
-                                                        form.setValue(
-                                                            "date",
-                                                            date,
-                                                            {
-                                                                shouldValidate: true,
-                                                            },
-                                                        );
-                                                    }
-                                                    setOpen(false);
-                                                }}
-                                                disabled={(() => {
+                                                disabled={(date) => {
                                                     const today = new Date();
                                                     today.setHours(0, 0, 0, 0);
-
-                                                    const year =
-                                                        today.getFullYear();
-                                                    const month =
-                                                        today.getMonth();
-                                                    const day = today.getDate();
-
-                                                    let allowStart: Date;
-                                                    let allowEnd: Date;
-
-                                                    if (day === 1) {
-                                                        const lastDayPrevMonth =
-                                                            new Date(
-                                                                year,
-                                                                month,
-                                                                0,
-                                                            ).getDate();
-                                                        const prevMonth =
-                                                            month - 1;
-
-                                                        allowStart = new Date(
-                                                            year,
-                                                            prevMonth,
-                                                            16,
-                                                        );
-                                                        allowEnd = new Date(
-                                                            year,
-                                                            prevMonth,
-                                                            lastDayPrevMonth,
-                                                        );
-
-                                                        return [
-                                                            {
-                                                                before: allowStart,
-                                                            },
-                                                            { after: allowEnd },
-                                                        ];
-                                                    }
-
-                                                    if (day === 16) {
-                                                        allowStart = new Date(
-                                                            year,
-                                                            month,
-                                                            1,
-                                                        );
-                                                        allowEnd = new Date(
-                                                            year,
-                                                            month,
-                                                            15,
-                                                        );
-
-                                                        return [
-                                                            {
-                                                                before: allowStart,
-                                                            },
-                                                            { after: allowEnd },
-                                                        ];
-                                                    }
 
                                                     const twoDaysAgo = new Date(
                                                         today,
@@ -423,15 +310,23 @@ export default function OvertimeForm() {
                                                         today.getDate() - 2,
                                                     );
 
-                                                    allowStart = twoDaysAgo;
-                                                    allowEnd = today;
+                                                    const checkDate = new Date(
+                                                        date,
+                                                    );
+                                                    checkDate.setHours(
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                    );
 
-                                                    return [
-                                                        { before: allowStart },
-                                                        { after: allowEnd },
-                                                    ];
-                                                })()}
-                                            /> */}
+                                                    return (
+                                                        checkDate <
+                                                            twoDaysAgo ||
+                                                        checkDate > today
+                                                    );
+                                                }}
+                                            />
                                         </PopoverContent>
                                     </Popover>
                                 </div>

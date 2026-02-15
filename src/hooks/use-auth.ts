@@ -15,8 +15,9 @@ interface User {
 interface AuthState {
     token: string | null;
     user: User | null;
+    isHydrated: boolean;
     setToken: (token: string) => void;
-    getToken: () => string;
+    getToken: () => string | null;
     clear: () => void;
     logout: () => void;
     loadUser: (tokenOverride?: string) => Promise<User | null>;
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             token: null,
             user: null,
+            isHydrated: false,
 
             setToken: (token: string) => {
                 set({ token });
@@ -34,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
                     `Bearer ${token}`;
             },
 
-            getToken: () => get().token as string,
+            getToken: () => get().token,
 
             clear: () => {
                 set({ token: null, user: null });
@@ -52,7 +54,11 @@ export const useAuthStore = create<AuthState>()(
                 if (!token) return null;
 
                 try {
+                    api.defaults.headers.common["Authorization"] =
+                        `Bearer ${token}`;
+
                     const res = await api.get("/api/v2/auth/me");
+
                     if (res.data?.data) {
                         set({ user: res.data.data });
                         return res.data.data;
@@ -76,6 +82,15 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: "auth",
+            onRehydrateStorage: () => (state) => {
+                if (state?.token) {
+                    api.defaults.headers.common["Authorization"] =
+                        `Bearer ${state.token}`;
+                }
+                if (state) {
+                    state.isHydrated = true;
+                }
+            },
         },
     ),
 );

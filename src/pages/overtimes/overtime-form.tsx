@@ -51,27 +51,26 @@ const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const schema = z.object({
     branch_id: z.string().min(1, { message: "Select a branch" }),
 
-    date: z
-        .date({
-            error: () => ({ message: "Date is required" }),
-        })
-        .refine(
-            (val) => {
-                const selected = new Date(val);
-                selected.setHours(0, 0, 0, 0);
+    date: z.date({
+        error: () => ({ message: "Date is required" }),
+    }),
+    // .refine(
+    //     (val) => {
+    //         const selected = new Date(val);
+    //         selected.setHours(0, 0, 0, 0);
 
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+    //         const today = new Date();
+    //         today.setHours(0, 0, 0, 0);
 
-                const twoDaysAgo = new Date(today);
-                twoDaysAgo.setDate(today.getDate() - 2);
+    //         const twoDaysAgo = new Date(today);
+    //         twoDaysAgo.setDate(today.getDate() - 2);
 
-                return selected >= twoDaysAgo && selected <= today;
-            },
-            {
-                message: "You can only select a date within the last 2 days.",
-            },
-        ),
+    //         return selected >= twoDaysAgo && selected <= today;
+    //     },
+    //     {
+    //         message: "You can only select a date within the last 2 days.",
+    //     },
+    // ),
 
     startTime: z
         .string()
@@ -284,7 +283,7 @@ export default function OvertimeForm() {
                                             className="w-auto p-0"
                                             align="start"
                                         >
-                                            <Calendar
+                                            {/* <Calendar
                                                 mode="single"
                                                 selected={form.watch("date")}
                                                 onSelect={(date) => {
@@ -325,6 +324,64 @@ export default function OvertimeForm() {
                                                             twoDaysAgo ||
                                                         checkDate > today
                                                     );
+                                                }}
+                                            /> */}
+
+                                            <Calendar
+                                                mode="single"
+                                                selected={form.watch("date")}
+                                                onSelect={(date) => {
+                                                    if (date) {
+                                                        form.setValue(
+                                                            "date",
+                                                            date,
+                                                            {
+                                                                shouldValidate: true,
+                                                            },
+                                                        );
+                                                    }
+                                                    setOpen(false);
+                                                }}
+                                                disabled={(date) => {
+                                                    const today = new Date();
+                                                    today.setHours(0, 0, 0, 0);
+
+                                                    const currentDay =
+                                                        today.getDate();
+                                                    const currentMonth =
+                                                        today.getMonth();
+                                                    const currentYear =
+                                                        today.getFullYear();
+
+                                                    const checkDate = new Date(
+                                                        date,
+                                                    );
+                                                    checkDate.setHours(
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                    );
+
+                                                    if (
+                                                        checkDate.getMonth() !==
+                                                            currentMonth ||
+                                                        checkDate.getFullYear() !==
+                                                            currentYear
+                                                    ) {
+                                                        return true;
+                                                    }
+
+                                                    const day =
+                                                        checkDate.getDate();
+
+                                                    if (currentDay <= 15) {
+                                                        return (
+                                                            day < 1 || day > 15
+                                                        );
+                                                    } else {
+                                                        return day < 16;
+                                                    }
                                                 }}
                                             />
                                         </PopoverContent>

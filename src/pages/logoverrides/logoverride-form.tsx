@@ -267,25 +267,74 @@ export default function LogoverrideForm() {
                                         control={form.control}
                                         minDate={(() => {
                                             const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+
                                             const year = today.getFullYear();
                                             const month = today.getMonth();
                                             const day = today.getDate();
 
-                                            if (day <= 10) {
-                                                return new Date(
+                                            let currentCutoffStart: Date;
+                                            let previousCutoffStart: Date;
+
+                                            if (day <= 15) {
+                                                // Current: 1–15
+                                                currentCutoffStart = new Date(
+                                                    year,
+                                                    month,
+                                                    1,
+                                                );
+                                                previousCutoffStart = new Date(
                                                     year,
                                                     month - 1,
                                                     16,
                                                 );
+                                            } else {
+                                                // Current: 16–end
+                                                currentCutoffStart = new Date(
+                                                    year,
+                                                    month,
+                                                    16,
+                                                );
+                                                previousCutoffStart = new Date(
+                                                    year,
+                                                    month,
+                                                    1,
+                                                );
                                             }
 
-                                            if (day <= 25) {
-                                                return new Date(year, month, 1);
-                                            }
+                                            const graceLimit = new Date(
+                                                currentCutoffStart,
+                                            );
+                                            graceLimit.setDate(
+                                                graceLimit.getDate() + 10,
+                                            );
 
-                                            return new Date(year, month, 16);
+                                            return today <= graceLimit
+                                                ? previousCutoffStart
+                                                : currentCutoffStart;
                                         })()}
-                                        maxDate={new Date()}
+                                        maxDate={(() => {
+                                            const today = new Date();
+                                            const year = today.getFullYear();
+                                            const month = today.getMonth();
+                                            const day = today.getDate();
+
+                                            if (day <= 15) {
+                                                // End of first cutoff
+                                                return new Date(
+                                                    year,
+                                                    month,
+                                                    15,
+                                                );
+                                            } else {
+                                                // End of second cutoff (last day of month)
+                                                return new Date(
+                                                    year,
+                                                    month + 1,
+                                                    0,
+                                                );
+                                            }
+                                        })()}
                                     />
                                 </div>
                             </div>

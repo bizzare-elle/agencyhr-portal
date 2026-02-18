@@ -59,27 +59,20 @@ export default function LoginPage() {
         loginMutation.mutate(values, {
             onSuccess: async (response) => {
                 const token = response?.data?.token;
-                if (!token) {
-                    toast.error("Invalid login response.");
-                    return;
-                }
+                if (!token) return;
 
                 setToken(token);
+                const user = await loadUser();
 
-                await loadUser(token);
-
-                const user = useAuthStore.getState().user;
-                if (!user?.id) {
-                    toast.error("Failed to load user info.");
-                    return;
-                }
-
-                toast.success("Login successful!");
-
-                if (user.role === "agency_coordinator") {
-                    navigate(`/dashboard/${user.agency_id}`, { replace: true });
+                if (user?.id) {
+                    toast.success("Login successful!");
+                    if (user.role === "agency_coordinator") {
+                        navigate(`/dashboard/${user.agency_id}`);
+                    } else {
+                        navigate(`/employees/${user.id}`);
+                    }
                 } else {
-                    navigate(`/employees/${user.id}`, { replace: true });
+                    toast.error("Failed to load user info.");
                 }
             },
             onError: (err: any) => {
@@ -246,10 +239,6 @@ export default function LoginPage() {
                         </a>
                     </div>
                 </Card>
-
-                <p className="mt-6 text-center text-xs text-white/70">
-                    © {new Date().getFullYear()}
-                </p>
             </motion.div>
         </div>
     );

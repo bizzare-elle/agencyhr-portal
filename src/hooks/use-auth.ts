@@ -15,12 +15,11 @@ interface User {
 interface AuthState {
     token: string | null;
     user: User | null;
-    isHydrated: boolean;
     setToken: (token: string) => void;
-    getToken: () => string | null;
+    getToken: () => string;
     clear: () => void;
     logout: () => void;
-    loadUser: (tokenOverride?: string) => Promise<User | null>;
+    loadUser: () => Promise<User | null>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,7 +27,6 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             token: null,
             user: null,
-            isHydrated: false,
 
             setToken: (token: string) => {
                 set({ token });
@@ -36,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
                     `Bearer ${token}`;
             },
 
-            getToken: () => get().token,
+            getToken: () => get().token as string,
 
             clear: () => {
                 set({ token: null, user: null });
@@ -49,16 +47,12 @@ export const useAuthStore = create<AuthState>()(
                 window.location.href = "/login";
             },
 
-            loadUser: async (tokenOverride?: string) => {
-                const token = tokenOverride || get().token;
+            loadUser: async () => {
+                const token = get().token;
                 if (!token) return null;
 
                 try {
-                    api.defaults.headers.common["Authorization"] =
-                        `Bearer ${token}`;
-
                     const res = await api.get("/api/v2/auth/me");
-
                     if (res.data?.data) {
                         set({ user: res.data.data });
                         return res.data.data;
@@ -82,15 +76,6 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: "auth",
-            onRehydrateStorage: () => (state) => {
-                if (state?.token) {
-                    api.defaults.headers.common["Authorization"] =
-                        `Bearer ${state.token}`;
-                }
-                if (state) {
-                    state.isHydrated = true;
-                }
-            },
         },
     ),
 );

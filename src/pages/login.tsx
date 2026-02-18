@@ -62,7 +62,7 @@ export default function LoginPage() {
                 if (!token) return;
 
                 setToken(token);
-                const user = await loadUser();
+                const user = await loadUser(token);
 
                 if (user?.id) {
                     toast.success("Login successful!");

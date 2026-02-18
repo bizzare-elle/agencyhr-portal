@@ -19,7 +19,7 @@ interface AuthState {
     getToken: () => string;
     clear: () => void;
     logout: () => void;
-    loadUser: () => Promise<User | null>;
+    loadUser: (tokenOverride?: string) => Promise<User | null>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -47,8 +47,8 @@ export const useAuthStore = create<AuthState>()(
                 window.location.href = "/login";
             },
 
-            loadUser: async () => {
-                const token = get().token;
+            loadUser: async (tokenOverride?: string) => {
+                const token = tokenOverride || get().token;
                 if (!token) return null;
 
                 try {

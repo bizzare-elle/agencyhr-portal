@@ -342,47 +342,47 @@ export default function OvertimeForm() {
                                                     }
                                                     setOpen(false);
                                                 }}
-                                                disabled={(date) => {
-                                                    const today = new Date();
-                                                    today.setHours(0, 0, 0, 0);
+                                                // disabled={(date) => {
+                                                //     const today = new Date();
+                                                //     today.setHours(0, 0, 0, 0);
 
-                                                    const currentDay =
-                                                        today.getDate();
-                                                    const currentMonth =
-                                                        today.getMonth();
-                                                    const currentYear =
-                                                        today.getFullYear();
+                                                //     const currentDay =
+                                                //         today.getDate();
+                                                //     const currentMonth =
+                                                //         today.getMonth();
+                                                //     const currentYear =
+                                                //         today.getFullYear();
 
-                                                    const checkDate = new Date(
-                                                        date,
-                                                    );
-                                                    checkDate.setHours(
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                    );
+                                                //     const checkDate = new Date(
+                                                //         date,
+                                                //     );
+                                                //     checkDate.setHours(
+                                                //         0,
+                                                //         0,
+                                                //         0,
+                                                //         0,
+                                                //     );
 
-                                                    if (
-                                                        checkDate.getMonth() !==
-                                                            currentMonth ||
-                                                        checkDate.getFullYear() !==
-                                                            currentYear
-                                                    ) {
-                                                        return true;
-                                                    }
+                                                //     if (
+                                                //         checkDate.getMonth() !==
+                                                //             currentMonth ||
+                                                //         checkDate.getFullYear() !==
+                                                //             currentYear
+                                                //     ) {
+                                                //         return true;
+                                                //     }
 
-                                                    const day =
-                                                        checkDate.getDate();
+                                                //     const day =
+                                                //         checkDate.getDate();
 
-                                                    if (currentDay <= 15) {
-                                                        return (
-                                                            day < 1 || day > 15
-                                                        );
-                                                    } else {
-                                                        return day < 16;
-                                                    }
-                                                }}
+                                                //     if (currentDay <= 15) {
+                                                //         return (
+                                                //             day < 1 || day > 15
+                                                //         );
+                                                //     } else {
+                                                //         return day < 16;
+                                                //     }
+                                                // }}
                                             />
                                         </PopoverContent>
                                     </Popover>

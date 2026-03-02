@@ -260,7 +260,8 @@ export default function TimeRecords() {
                         <Button
                             size="sm"
                             onClick={handleConsolidate}
-                            disabled={isConsolidating}
+                            // disabled={isConsolidating}
+                            disabled
                             className="w-full bg-yellow-500 sm:w-auto"
                         >
                             {isConsolidating

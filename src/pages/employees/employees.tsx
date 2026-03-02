@@ -133,121 +133,121 @@ export default function Employees() {
         placeholderData: (previousData) => previousData,
     });
 
-    // const handleConsolidate = async () => {
-    //     if (!cutOffDate) {
-    //         toast.error("Please select a cut off date");
-    //         return;
-    //     }
+    const handleConsolidate = async () => {
+        if (!cutOffDate) {
+            toast.error("Please select a cut off date");
+            return;
+        }
 
-    //     setIsConsolidating(true);
-    //     setHasConsolidated(false);
+        setIsConsolidating(true);
+        setHasConsolidated(false);
 
-    //     try {
-    //         const agency_id = meQuery.data?.agency_id;
-    //         const branch_id = selectedBranch;
-    //         const employee_id = null;
+        try {
+            const agency_id = meQuery.data?.agency_id;
+            const branch_id = selectedBranch;
+            const employee_id = null;
 
-    //         const { data: consolidateData } = await api.post(
-    //             "/api/v2/time-records/consolidate",
-    //             {
-    //                 cut_off_date: format(cutOffDate, "yyyy-MM-dd"),
-    //                 branch_id,
-    //                 employee_id,
-    //                 agency_id,
-    //             },
-    //         );
+            const { data: consolidateData } = await api.post(
+                "/api/v2/time-records/consolidate",
+                {
+                    cut_off_date: format(cutOffDate, "yyyy-MM-dd"),
+                    branch_id,
+                    employee_id,
+                    agency_id,
+                },
+            );
 
-    //         const employee_ids: number[] = Array.isArray(
-    //             consolidateData.employees_processed?.employee_ids,
-    //         )
-    //             ? consolidateData.employees_processed.employee_ids.map(Number)
-    //             : [];
+            const employee_ids: number[] = Array.isArray(
+                consolidateData.employees_processed?.employee_ids,
+            )
+                ? consolidateData.employees_processed.employee_ids.map(Number)
+                : [];
 
-    //         const day = cutOffDate.getDate();
-    //         const month = cutOffDate.getMonth() + 1;
-    //         const year = cutOffDate.getFullYear();
-    //         const lastDay = new Date(year, month, 0).getDate();
+            const day = cutOffDate.getDate();
+            const month = cutOffDate.getMonth() + 1;
+            const year = cutOffDate.getFullYear();
+            const lastDay = new Date(year, month, 0).getDate();
 
-    //         const date_from =
-    //             day > 15 ? `${year}-${month}-16` : `${year}-${month}-01`;
-    //         const date_to =
-    //             day > 15
-    //                 ? `${year}-${month}-${lastDay}`
-    //                 : `${year}-${month}-15`;
+            const date_from =
+                day > 15 ? `${year}-${month}-16` : `${year}-${month}-01`;
+            const date_to =
+                day > 15
+                    ? `${year}-${month}-${lastDay}`
+                    : `${year}-${month}-15`;
 
-    //         const allRecordsResponses = await Promise.all(
-    //             employee_ids.map((empId) =>
-    //                 api
-    //                     .get<
-    //                         ApiResponse<{ time_records: TimeRecord[] }>
-    //                     >(`/api/v2/time-records/${empId}?from=${date_from}&to=${date_to}`)
-    //                     .then((res) => res.data.data.time_records || []),
-    //             ),
-    //         );
+            const allRecordsResponses = await Promise.all(
+                employee_ids.map((empId) =>
+                    api
+                        .get<
+                            ApiResponse<{ time_records: TimeRecord[] }>
+                        >(`/api/v2/time-records/${empId}?from=${date_from}&to=${date_to}`)
+                        .then((res) => res.data.data.time_records || []),
+                ),
+            );
 
-    //         const allRecords: TimeRecord[] = allRecordsResponses.flat();
+            const allRecords: TimeRecord[] = allRecordsResponses.flat();
 
-    //         if (!allRecords.length) {
-    //             toast.info(
-    //                 "No time records found for the selected cutoff period.",
-    //             );
-    //             setConsolidatedData([]);
-    //             setHasConsolidated(true);
-    //             return;
-    //         }
+            if (!allRecords.length) {
+                toast.info(
+                    "No time records found for the selected cutoff period.",
+                );
+                setConsolidatedData([]);
+                setHasConsolidated(true);
+                return;
+            }
 
-    //         const groupedByEmployee: Record<number, GroupedEmployee> =
-    //             allRecords.reduce(
-    //                 (acc, rec) => {
-    //                     const empId = rec.employee_id as number;
+            const groupedByEmployee: Record<number, GroupedEmployee> =
+                allRecords.reduce(
+                    (acc, rec) => {
+                        const empId = rec.employee_id as number;
 
-    //                     if (!acc[empId]) {
-    //                         acc[empId] = {
-    //                             id: empId,
-    //                             employee_name: rec.employee_name,
-    //                             id_number: rec.id_number,
-    //                             branch: rec.branch_name,
-    //                             employment_status: rec.employment_status,
-    //                             agency_name: rec.agency_name,
-    //                             time_records: [],
-    //                         };
-    //                     }
+                        if (!acc[empId]) {
+                            acc[empId] = {
+                                id: empId,
+                                employee_name: rec.employee_name,
+                                id_number: rec.id_number,
+                                branch: rec.branch_name,
+                                employment_status: rec.employment_status,
+                                agency_name: rec.agency_name,
+                                time_records: [],
+                            };
+                        }
 
-    //                     acc[empId].time_records.push({
-    //                         date: rec.cut_off,
-    //                         schedule: rec.schedule_name,
-    //                         time_in: rec.clock_in,
-    //                         time_out: rec.clock_out,
-    //                         break_in: rec.break_in,
-    //                         break_out: rec.break_out,
-    //                         branch_timeIn: rec.clock_in_branch,
-    //                         branch_timeOut: rec.clock_out_branch,
+                        acc[empId].time_records.push({
+                            date: rec.cut_off,
+                            schedule: rec.schedule_name,
+                            time_in: rec.clock_in,
+                            time_out: rec.clock_out,
+                            break_in: rec.break_in,
+                            break_out: rec.break_out,
+                            branch_timeIn: rec.clock_in_branch,
+                            branch_timeOut: rec.clock_out_branch,
 
-    //                         hoursWorked: Number(rec.total_hours_worked ?? 0),
-    //                         hours: Number(rec.total_hrs ?? 0),
-    //                         late: Number(rec.total_hrs_late ?? 0),
-    //                         overtime: Number(rec.total_overtime_hrs ?? 0),
-    //                         late_break: Number(rec.total_hrs_break_late ?? 0),
-    //                         undertime: Number(rec.total_undertime_hrs ?? 0),
-    //                     });
+                            hoursWorked: Number(rec.total_hours_worked ?? 0),
+                            hours: Number(rec.total_hrs ?? 0),
+                            late: Number(rec.total_hrs_late ?? 0),
+                            overtime: Number(rec.total_overtime_hrs ?? 0),
+                            late_break: Number(rec.total_hrs_break_late ?? 0),
+                            undertime: Number(rec.total_undertime_hrs ?? 0),
+                        });
 
-    //                     return acc;
-    //                 },
-    //                 {} as Record<number, GroupedEmployee>,
-    //             );
+                        return acc;
+                    },
+                    {} as Record<number, GroupedEmployee>,
+                );
 
-    //         setConsolidatedData(Object.values(groupedByEmployee));
-    //         toast.success(
-    //             "Consolidation and time record fetch successfully completed!",
-    //         );
-    //     } catch (error: any) {
-    //         console.error(error);
-    //         toast.error("Consolidation Failed!");
-    //     } finally {
-    //         setIsConsolidating(false);
-    //         setHasConsolidated(true);
-    //     }
-    // };
+            setConsolidatedData(Object.values(groupedByEmployee));
+            toast.success(
+                "Consolidation and time record fetch successfully completed!",
+            );
+        } catch (error: any) {
+            console.error(error);
+            toast.error("Consolidation Failed!");
+        } finally {
+            setIsConsolidating(false);
+            setHasConsolidated(true);
+        }
+    };
 
     const handleFetchTimeRecords = async () => {
         if (!cutOffDate || !selectedBranch) {
@@ -397,7 +397,7 @@ export default function Employees() {
             </div>
 
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                {/* Search Input */}
+                {/* Search */}
                 <div className="w-full md:w-auto">
                     <Input
                         type="text"
@@ -407,7 +407,7 @@ export default function Employees() {
                     />
                 </div>
 
-                {/* Filters & PDF Download */}
+                {/* Controls */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end md:justify-end md:gap-3">
                     {/* Date Picker */}
                     <Popover>
@@ -417,27 +417,21 @@ export default function Employees() {
                                 className="w-full justify-start text-left font-normal sm:w-[180px]"
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {cutOffDate ? (
-                                    format(cutOffDate, "MMM d, yyyy")
-                                ) : (
-                                    <span>Pick date</span>
-                                )}
+                                {cutOffDate
+                                    ? format(cutOffDate, "MMM d, yyyy")
+                                    : "Pick date"}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
                             <Calendar
                                 mode="single"
                                 selected={cutOffDate}
-                                onSelect={(date) => {
-                                    if (
-                                        date instanceof Date &&
-                                        !isNaN(date.getTime())
-                                    ) {
-                                        setCutOffDate(date);
-                                    } else {
-                                        setCutOffDate(undefined);
-                                    }
-                                }}
+                                onSelect={(date) =>
+                                    date instanceof Date &&
+                                    !isNaN(date.getTime())
+                                        ? setCutOffDate(date)
+                                        : setCutOffDate(undefined)
+                                }
                                 initialFocus
                             />
                         </PopoverContent>
@@ -453,20 +447,30 @@ export default function Employees() {
                         />
                     </div>
 
-                    {/* Fetch Data Button */}
-                    <Button
-                        className="w-full bg-yellow-500 sm:w-auto"
-                        onClick={handleFetchTimeRecords}
+                    {/* 🔵 CONSOLIDATE BUTTON */}
+                    {/* <Button
+                        className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto"
+                        onClick={handleConsolidate}
                         disabled={
-                            isConsolidating || !cutOffDate || !selectedBranch
+                            !cutOffDate || !selectedBranch || isConsolidating
                         }
                     >
-                        {isConsolidating
-                            ? "Generating Timesheet..."
-                            : "Generate Timesheet"}
+                        {isConsolidating ? "Consolidating..." : "Consolidate"}
+                    </Button> */}
+
+                    {/* 🟢 GENERATE PREVIEW BUTTON */}
+                    <Button
+                        className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+                        onClick={handleFetchTimeRecords}
+                        disabled={
+                            !cutOffDate || !selectedBranch || isConsolidating
+                        }
+                    >
+                        Generate Timesheet
                     </Button>
 
-                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    {/* 🖨 PRINT / DOWNLOAD */}
+                    {consolidatedData && consolidatedData.length > 0 ? (
                         <PDFDownloadLink
                             document={
                                 <ConsolidatedTimeRecordsPDF
@@ -482,30 +486,23 @@ export default function Employees() {
                         >
                             {({ loading }) => (
                                 <Button
-                                    variant={loading ? "secondary" : "default"}
-                                    className={`flex w-full items-center justify-center gap-2 sm:w-auto ${
-                                        !consolidatedData ||
-                                        consolidatedData.length === 0
-                                            ? "cursor-not-allowed opacity-50"
-                                            : ""
-                                    }`}
-                                    disabled={
-                                        !consolidatedData ||
-                                        consolidatedData.length === 0 ||
-                                        loading
-                                    }
+                                    className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                                    disabled={loading}
                                 >
                                     <FileDown className="h-4 w-4" />
-                                    {loading
-                                        ? "Preparing PDF..."
-                                        : !consolidatedData ||
-                                            consolidatedData.length === 0
-                                          ? "No Records"
-                                          : "Download PDF"}
+                                    {loading ? "Preparing PDF..." : "Download"}
                                 </Button>
                             )}
                         </PDFDownloadLink>
-                    </div>
+                    ) : (
+                        <Button
+                            disabled
+                            className="w-full cursor-not-allowed opacity-50 sm:w-auto"
+                        >
+                            <FileDown className="mr-2 h-4 w-4" />
+                            No Records
+                        </Button>
+                    )}
                 </div>
             </div>
 

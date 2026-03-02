@@ -239,7 +239,7 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 </Text>
                                 <Text style={[styles.cell, styles.flexBranch]}>
                                     {rec.branch_timeIn && rec.branch_timeOut
-                                        ? `In: ${rec.branch_timeIn} / Out: ${rec.branch_timeOut}`
+                                        ? `${rec.branch_timeIn} /${rec.branch_timeOut}`
                                         : "No Data"}
                                 </Text>
                                 <Text

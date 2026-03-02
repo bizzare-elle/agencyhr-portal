@@ -326,7 +326,8 @@ export default function Employees() {
 
                     <Button
                         onClick={handleConsolidate}
-                        disabled={isConsolidating}
+                        // disabled={isConsolidating}
+                        disabled
                         className={`w-full sm:w-auto ${
                             isConsolidating ? "" : "bg-yellow-500"
                         }`}

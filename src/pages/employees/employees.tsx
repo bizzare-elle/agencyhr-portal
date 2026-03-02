@@ -462,8 +462,8 @@ export default function Employees() {
                         }
                     >
                         {isConsolidating
-                            ? "Getting Employee Records..."
-                            : "Get Employee Records"}
+                            ? "Generating Timesheet..."
+                            : "Generate Timesheet"}
                     </Button>
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">

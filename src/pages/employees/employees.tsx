@@ -26,6 +26,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { TimeRecord } from "@/index";
 import { Link } from "react-router-dom";
 import { exportConsolidatedToExcel } from "@/components/employees/excel-report-template";
+import { array, object } from "zod";
 
 interface EmployeeTimeRecord {
     date: string;
@@ -157,11 +158,14 @@ export default function Employees() {
                 },
             );
 
-            const employee_ids: number[] = Array.isArray(
-                consolidateData.employees_processed?.employee_ids,
-            )
-                ? consolidateData.employees_processed.employee_ids.map(Number)
-                : [];
+            // const employee_ids: number[] = Array.isArray(
+            //     consolidateData.employees_processed?.employee_ids,
+            // )
+            //     ? consolidateData.employees_processed.employee_ids
+            //     : [];
+
+            const employee_ids =
+                consolidateData.employees_processed?.employee_ids ?? [];
 
             const day = cutOffDate.getDate();
             const month = cutOffDate.getMonth() + 1;
@@ -175,8 +179,14 @@ export default function Employees() {
                     ? `${year}-${month}-${lastDay}`
                     : `${year}-${month}-15`;
 
+            const employeeIds = Object.entries(employee_ids).map(
+                (val) => val[0],
+            );
+
+            console.log(employeeIds);
+
             const allRecordsResponses = await Promise.all(
-                employee_ids.map((empId) =>
+                employeeIds.map((empId: any) =>
                     api
                         .get<
                             ApiResponse<{ time_records: TimeRecord[] }>
@@ -447,8 +457,7 @@ export default function Employees() {
                         />
                     </div>
 
-                    {/* 🔵 CONSOLIDATE BUTTON */}
-                    {/* <Button
+                    <Button
                         className="w-full bg-blue-600 text-white hover:bg-blue-700 sm:w-auto"
                         onClick={handleConsolidate}
                         disabled={
@@ -456,10 +465,9 @@ export default function Employees() {
                         }
                     >
                         {isConsolidating ? "Consolidating..." : "Consolidate"}
-                    </Button> */}
+                    </Button>
 
-                    {/* 🟢 GENERATE PREVIEW BUTTON */}
-                    <Button
+                    {/* <Button
                         className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
                         onClick={handleFetchTimeRecords}
                         disabled={
@@ -467,9 +475,8 @@ export default function Employees() {
                         }
                     >
                         Generate Timesheet
-                    </Button>
+                    </Button> */}
 
-                    {/* 🖨 PRINT / DOWNLOAD */}
                     {consolidatedData && consolidatedData.length > 0 ? (
                         <PDFDownloadLink
                             document={
@@ -490,7 +497,9 @@ export default function Employees() {
                                     disabled={loading}
                                 >
                                     <FileDown className="h-4 w-4" />
-                                    {loading ? "Preparing PDF..." : "Download"}
+                                    {loading
+                                        ? "Preparing PDF..."
+                                        : "Download Timesheet"}
                                 </Button>
                             )}
                         </PDFDownloadLink>

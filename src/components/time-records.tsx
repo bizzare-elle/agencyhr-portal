@@ -151,6 +151,7 @@ export default function TimeRecords() {
             setIsConsolidating(false);
         }
     };
+
     const records = data?.time_records ?? [];
 
     const agencyName = useMemo(() => {
@@ -167,8 +168,6 @@ export default function TimeRecords() {
         if (records.length > 0) return records[0]?.id_number || "No Agency";
         return "No Branch";
     }, [records]);
-
-    console.log(records);
 
     const tableData = useMemo(() => {
         return records.map((record) => {
@@ -261,7 +260,7 @@ export default function TimeRecords() {
                             size="sm"
                             onClick={handleConsolidate}
                             // disabled={isConsolidating}
-                            disabled
+                            disabled={isHrEmployee}
                             className="w-full bg-yellow-500 sm:w-auto"
                         >
                             {isConsolidating
@@ -287,7 +286,7 @@ export default function TimeRecords() {
                             </TableHead>
 
                             <TableHead className="px-2 py-4">
-                                Branch (In-Out)
+                                Branch Name
                             </TableHead>
                             <TableHead className="px-2 py-4 text-center">
                                 Time In
@@ -340,11 +339,10 @@ export default function TimeRecords() {
                                             </span>
                                         ) : (
                                             <>
-                                                <span>
-                                                    In: {row.branchTimeIn}
-                                                </span>{" "}
-                                                <span className="ml-2">
-                                                    Out: {row.branchTimeOut}
+                                                <span>{row.branchTimeIn}</span>
+                                                {" - "}
+                                                <span className="ml-1">
+                                                    {row.branchTimeOut}
                                                 </span>
                                             </>
                                         )}

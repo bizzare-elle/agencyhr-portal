@@ -158,6 +158,8 @@ export default function Employees() {
                 },
             );
 
+            console.log(consolidateData.employees_processed?.employee_ids);
+
             // const employee_ids: number[] = Array.isArray(
             //     consolidateData.employees_processed?.employee_ids,
             // )
@@ -182,8 +184,6 @@ export default function Employees() {
             const employeeIds = Object.entries(employee_ids).map(
                 (val) => val[0],
             );
-
-            console.log(employeeIds);
 
             const allRecordsResponses = await Promise.all(
                 employeeIds.map((empId: any) =>

@@ -377,8 +377,10 @@ export default function LogoverrideForm() {
                                                         <SelectItem value="System Maintenance">
                                                             System Maintenance
                                                         </SelectItem>
-                                                        <SelectItem value="Off-site">
-                                                            Off-site
+                                                        <SelectItem value="Offset">
+                                                            Offset (For
+                                                            Corporate Office
+                                                            Only)
                                                         </SelectItem>
                                                         <SelectItem value="No Internet Connection">
                                                             No Internet

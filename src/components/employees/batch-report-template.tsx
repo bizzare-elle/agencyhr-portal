@@ -146,7 +146,6 @@ export const ConsolidatedTimeRecordsPDF = ({
                     (acc, rec) => {
                         acc.late_break += Number(rec.late_break ?? 0);
                         acc.late += Number(rec.late ?? 0);
-                        acc.overtime += Number(rec.overtime ?? 0);
                         acc.undertime += Number(rec.undertime ?? 0);
                         acc.hours += Number(rec.hours ?? 0);
                         acc.hoursWorked += Number(rec.hoursWorked ?? 0);
@@ -156,7 +155,6 @@ export const ConsolidatedTimeRecordsPDF = ({
                         hoursWorked: 0,
                         late_break: 0,
                         late: 0,
-                        overtime: 0,
                         undertime: 0,
                         hours: 0,
                     },
@@ -377,7 +375,6 @@ export const ConsolidatedTimeRecordsPDF = ({
                                 { flexDirection: "row", flexWrap: "wrap" },
                             ]}
                         >
-                            {/* Manhour Breakdown (30% width) */}
                             <View style={{ width: "30%", marginRight: 10 }}>
                                 <View style={styles.tableHeader}>
                                     <Text
@@ -432,24 +429,6 @@ export const ConsolidatedTimeRecordsPDF = ({
                                         );
                                     },
                                 )}
-                                <View style={styles.tableRow}>
-                                    <Text
-                                        style={[
-                                            styles.firstCell,
-                                            { flex: 1, fontSize: 7 },
-                                        ]}
-                                    >
-                                        Overtime
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.cell,
-                                            { flex: 1, fontSize: 7 },
-                                        ]}
-                                    >
-                                        {String(formatNumber(totals.overtime))}
-                                    </Text>
-                                </View>
                                 <View style={styles.tableRow}>
                                     <Text
                                         style={[

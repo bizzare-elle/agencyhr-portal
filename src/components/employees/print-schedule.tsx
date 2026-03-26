@@ -131,10 +131,6 @@ export const PrintTimeRecords: React.FC<
               .join("")}
         </tbody>
             <tr>
-                <td style="border:1px solid #000; padding:4px;">Total Overtime</td>
-                <td style="border:1px solid #000; padding:4px;">${totalOvertime.toFixed(2)}</td>
-            </tr>
-            <tr>
                 <td style="border:1px solid #000; padding:4px;">Total Break Late</td>
                 <td style="border:1px solid #000; padding:4px;">${totalBreakLate.toFixed(2)}</td>
             </tr>

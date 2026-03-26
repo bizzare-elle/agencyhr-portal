@@ -242,11 +242,18 @@ export default function ScheduleDashboard() {
                             <span className="text-2xl font-bold">
                                 No filed schedule found.
                             </span>
-                            <Link to={`/schedules/form/${employeeId}`}>
-                                <Button className="w-full sm:w-auto">
-                                    File Schedule
-                                </Button>
-                            </Link>
+                            <div className="flex justify-center gap-2">
+                                <Link to={`/schedules/form/${employeeId}`}>
+                                    <Button className="w-full sm:w-auto">
+                                        Upload Schedule
+                                    </Button>
+                                </Link>
+                                <Link to={`/schedules/upload/${employeeId}`}>
+                                    <Button className="w-full sm:w-auto">
+                                        Upload Schedule By Batch
+                                    </Button>
+                                </Link>
+                            </div>
                         </div>
                     </Card>
                 </div>

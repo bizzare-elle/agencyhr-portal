@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronDownIcon } from "lucide-react";
-
 import api from "@/lib/axios";
 import { TextField } from "@/components/text-field";
 import { ImageUploader } from "@/components/image-dropzone";

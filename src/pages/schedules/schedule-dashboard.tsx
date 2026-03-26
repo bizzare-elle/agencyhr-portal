@@ -278,12 +278,24 @@ export default function ScheduleDashboard() {
                                 </div>
                             </div>
 
-                            <div className="w-full sm:w-auto">
-                                <Link to={`/schedules/form/${employeeId}`}>
-                                    <Button className="w-full text-sm sm:w-auto sm:text-base">
-                                        Request Schedule
-                                    </Button>
-                                </Link>
+                            <div className="flex gap-2">
+                                {" "}
+                                <div className="w-full sm:w-auto">
+                                    <Link to={`/schedules/form/${employeeId}`}>
+                                        <Button className="w-full text-sm sm:w-auto sm:text-base">
+                                            File Employee Schedule
+                                        </Button>
+                                    </Link>
+                                </div>
+                                <div className="w-full sm:w-auto">
+                                    <Link
+                                        to={`/schedules/upload/${employeeId}`}
+                                    >
+                                        <Button className="w-full text-sm sm:w-auto sm:text-base">
+                                            Upload Schedule By Batch
+                                        </Button>
+                                    </Link>
+                                </div>
                             </div>
                         </Card>
                     </div>

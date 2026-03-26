@@ -38,14 +38,15 @@ export interface Overtime {
     branch_id: string;
     branch_name: string;
     date: string;
+    reason_disapproval: string;
     no_of_hours: string;
     image: string;
     remarks: string;
     status: string;
     created_by: string;
     created_at: string;
-    updated_by: string | null;
-    updated_at: string | null;
+    updated_by: string;
+    updated_at: string;
     deleted_by: string | null;
     deleted_at: string | null;
 }
@@ -174,7 +175,9 @@ export interface TimeRecord {
     break_out: string | null;
     Break_In: string | null;
     Break_Out: string | null;
+    manhour_conversion: string | null;
     late: string | null;
+    manhourArray: string | null;
     overtime: string | null;
     hoursWorked: string | null;
     hours: string | null;

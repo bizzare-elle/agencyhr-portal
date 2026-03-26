@@ -21,6 +21,7 @@ import ScheduleForm from "./pages/schedules/schedule-form";
 import ScheduleDashboard from "./pages/schedules/schedule-dashboard";
 import { ParentComponent } from "./components/parent-container";
 import { useIdleLogout } from "./hooks/use-idle";
+import ScheduleUpload from "./pages/schedules/schedules-upload";
 
 export default function App() {
     useIdleLogout();
@@ -123,6 +124,11 @@ export default function App() {
                             path: "form/:id",
                             element: <ScheduleForm />,
                             handle: { title: "Schedule Form" },
+                        },
+                        {
+                            path: "upload/:id",
+                            element: <ScheduleUpload />,
+                            handle: { title: "Schedule Upload" },
                         },
                     ],
                 },

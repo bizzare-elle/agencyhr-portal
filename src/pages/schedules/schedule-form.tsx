@@ -235,10 +235,10 @@ export default function ScheduleForm() {
             <Card className="w-full shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-semibold">
-                        Request Schedule
+                        File Employee Schedule
                     </CardTitle>
                     <CardDescription>
-                        File for schedule request per cut-off period
+                        Plot for schedule request per cut-off period
                     </CardDescription>
                 </CardHeader>
 

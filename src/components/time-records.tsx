@@ -160,20 +160,66 @@ export default function TimeRecords() {
     }, [records]);
 
     const branchName = useMemo(() => {
-        if (records.length > 0) return records[0]?.branch_name || "No Agency";
+        if (records.length > 0) return records[0]?.branch_name || "No Branch";
         return "No Branch";
     }, [records]);
 
     const idNumber = useMemo(() => {
-        if (records.length > 0) return records[0]?.id_number || "No Agency";
+        if (records.length > 0) return records[0]?.id_number || "No ID Number";
         return "No Branch";
     }, [records]);
 
+    // const tableData = useMemo(() => {
+    //     return records.map((record) => {
+    //         return {
+    //             branch: record.branch_name || "No data",
+    //             scheduleName: record.schedule_name,
+    //             date: moment(record.cut_off).format("YYYY-MM-DD"),
+    //             dayName: record.cut_off,
+    //             agencyName: record.agency_name,
+    //             branchName: record.branch_name,
+    //             idNumber: record.id_number,
+    //             timeIn: record.clock_in,
+    //             timeOut: record.clock_out,
+    //             branchTimeIn: record.clock_in_branch,
+    //             branchTimeOut: record.clock_out_branch,
+    //             breakIn: record.break_in,
+    //             breakOut: record.break_out,
+    //             totalHrsWorked: parseFloat(record.total_hours_worked || "0"),
+    //             totalHrs: parseFloat(record.total_hrs || "0"),
+    //             totalLate: parseFloat(record.total_hrs_late || "0"),
+    //             totalBreakLate: parseFloat(record.total_hrs_break_late || "0"),
+    //             totalOvertime: parseFloat(record.total_overtime_hrs || "0"),
+    //             undertimeMinutes: parseFloat(record.total_undertime_hrs || "0"),
+    //         };
+    //     });
+    // }, [records]);
+
     const tableData = useMemo(() => {
         return records.map((record) => {
+            let manhourArray: { category: string; hours: number }[] = [];
+
+            try {
+                const manhours =
+                    typeof record.manhour_conversion === "string"
+                        ? JSON.parse(record.manhour_conversion)
+                        : record.manhour_conversion;
+
+                if (manhours) {
+                    manhourArray = Object.entries(manhours)
+                        .filter(([_, value]) => Number(value) > 0)
+                        .map(([category, value]) => ({
+                            category,
+                            hours: Number(value),
+                        }));
+                }
+            } catch {
+                manhourArray = [];
+            }
+
             return {
                 branch: record.branch_name || "No data",
-                scheduleName: record.schedule_name,
+                scheduleName: record.schedule_type,
                 date: moment(record.cut_off).format("YYYY-MM-DD"),
                 dayName: record.cut_off,
                 agencyName: record.agency_name,
@@ -191,6 +237,8 @@ export default function TimeRecords() {
                 totalBreakLate: parseFloat(record.total_hrs_break_late || "0"),
                 totalOvertime: parseFloat(record.total_overtime_hrs || "0"),
                 undertimeMinutes: parseFloat(record.total_undertime_hrs || "0"),
+
+                manhourArray,
             };
         });
     }, [records]);
@@ -254,6 +302,7 @@ export default function TimeRecords() {
                             agencyName={agencyName || "No Agency"}
                             queryFrom={queryFrom}
                             queryTo={queryTo}
+                            records={records}
                         />
 
                         <Button

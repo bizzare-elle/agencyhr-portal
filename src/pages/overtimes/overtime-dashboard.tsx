@@ -677,6 +677,30 @@ export default function OvertimeDashboard() {
                                                                                         "MMM d, yyyy hh:mm a",
                                                                                     ),
                                                                                 },
+                                                                                ...(r.status ===
+                                                                                "2"
+                                                                                    ? [
+                                                                                          {
+                                                                                              label: "Disapproval Remarks",
+                                                                                              value: r.reason_disapproval,
+                                                                                          },
+                                                                                      ]
+                                                                                    : []),
+
+                                                                                ...(r.status ===
+                                                                                "2"
+                                                                                    ? [
+                                                                                          {
+                                                                                              label: "Date Updated",
+                                                                                              value: safeFormat(
+                                                                                                  new Date(
+                                                                                                      r.updated_at,
+                                                                                                  ),
+                                                                                                  "MMM d, yyyy hh:mm a",
+                                                                                              ),
+                                                                                          },
+                                                                                      ]
+                                                                                    : []),
                                                                             ].map(
                                                                                 (
                                                                                     item,

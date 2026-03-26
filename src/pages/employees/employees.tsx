@@ -30,7 +30,7 @@ import { array, object } from "zod";
 
 interface EmployeeTimeRecord {
     date: string;
-    schedule: string;
+    schedule: string | null;
     time_in: string | null;
     time_out: string | null;
     break_in: string | null;
@@ -43,6 +43,7 @@ interface EmployeeTimeRecord {
     overtime: number;
     undertime: number;
     late_break: number;
+    manhourArray: { category: string; hours: number }[];
 }
 
 interface GroupedEmployee {
@@ -53,6 +54,30 @@ interface GroupedEmployee {
     employment_status: string;
     agency_name: string;
     time_records: EmployeeTimeRecord[];
+}
+
+function parseManhours(manhour_conversion: any) {
+    let manhourArray: { category: string; hours: number }[] = [];
+
+    try {
+        const manhours =
+            typeof manhour_conversion === "string"
+                ? JSON.parse(manhour_conversion)
+                : manhour_conversion;
+
+        if (manhours) {
+            manhourArray = Object.entries(manhours)
+                .filter(([_, value]) => Number(value) > 0)
+                .map(([category, value]) => ({
+                    category,
+                    hours: Number(value),
+                }));
+        }
+    } catch {
+        manhourArray = [];
+    }
+
+    return manhourArray;
 }
 
 const columns: TableColumn<Employee>[] = [
@@ -225,7 +250,7 @@ export default function Employees() {
 
                         acc[empId].time_records.push({
                             date: rec.cut_off,
-                            schedule: rec.schedule_name,
+                            schedule: rec.schedule_type,
                             time_in: rec.clock_in,
                             time_out: rec.clock_out,
                             break_in: rec.break_in,
@@ -239,6 +264,8 @@ export default function Employees() {
                             overtime: Number(rec.total_overtime_hrs ?? 0),
                             late_break: Number(rec.total_hrs_break_late ?? 0),
                             undertime: Number(rec.total_undertime_hrs ?? 0),
+
+                            manhourArray: parseManhours(rec.manhour_conversion),
                         });
 
                         return acc;
@@ -342,7 +369,7 @@ export default function Employees() {
 
                         acc[empId].time_records.push({
                             date: rec.cut_off,
-                            schedule: rec.schedule_name,
+                            schedule: rec.schedule_type,
                             time_in: rec.clock_in,
                             time_out: rec.clock_out,
                             break_in: rec.break_in,
@@ -356,6 +383,8 @@ export default function Employees() {
                             overtime: Number(rec.total_overtime_hrs ?? 0),
                             late_break: Number(rec.total_hrs_break_late ?? 0),
                             undertime: Number(rec.total_undertime_hrs ?? 0),
+
+                            manhourArray: parseManhours(rec.manhour_conversion),
                         });
 
                         return acc;

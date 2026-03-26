@@ -98,7 +98,9 @@ const schema = z.object({
         .min(1, "Enter date and time")
         .refine(
             (val) => {
+                if (!val) return false;
                 const selected = new Date(val);
+                if (isNaN(selected.getTime())) return false;
                 selected.setSeconds(0, 0);
 
                 const today = new Date();
@@ -123,7 +125,6 @@ const schema = z.object({
                     "Filing is only allowed within 10 days after the cutoff period.",
             },
         ),
-
     remarks: z.string().min(1, "Enter remarks"),
     imageReference: z
         .any()

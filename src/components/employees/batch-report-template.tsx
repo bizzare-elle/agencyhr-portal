@@ -162,6 +162,22 @@ export const ConsolidatedTimeRecordsPDF = ({
                     },
                 );
 
+                const manhourTotals = safeTimeRecords.reduce(
+                    (acc: Record<string, number>, rec: any) => {
+                        const arr = Array.isArray(rec.manhourArray)
+                            ? rec.manhourArray
+                            : [];
+
+                        arr.forEach((mh: any) => {
+                            acc[mh.category] =
+                                (acc[mh.category] || 0) + Number(mh.hours || 0);
+                        });
+
+                        return acc;
+                    },
+                    {},
+                );
+
                 return (
                     <Page key={emp.id ?? idx} size="A4" style={styles.page}>
                         {/* Header */}
@@ -355,30 +371,178 @@ export const ConsolidatedTimeRecordsPDF = ({
                         ))}
 
                         {/* Totals */}
-                        <View style={styles.totals}>
-                            <Text>
-                                Total Overtime:{" "}
-                                {String(formatNumber(totals.overtime))}
-                            </Text>
-                            <Text>
-                                Total Break Late:{" "}
-                                {displayHoursFixed(totals.late_break)}
-                            </Text>
-                            <Text>
-                                Total Late: {displayHoursFixed(totals.late)}
-                            </Text>
-                            <Text>
-                                Total Undertime:{" "}
-                                {displayHoursFixed(totals.undertime)}
-                            </Text>
-                            <Text>
-                                Total Hours Worked:{" "}
-                                {String(formatNumber(totals.hoursWorked))}
-                            </Text>
-                            <Text>
-                                Total Billable Hours:{" "}
-                                {String(formatNumber(totals.hours))}
-                            </Text>
+                        <View
+                            style={[
+                                styles.totals,
+                                { flexDirection: "row", flexWrap: "wrap" },
+                            ]}
+                        >
+                            {/* Manhour Breakdown (30% width) */}
+                            <View style={{ width: "30%", marginRight: 10 }}>
+                                <View style={styles.tableHeader}>
+                                    <Text
+                                        style={[
+                                            styles.firstCell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Timekeeping Attendance Summary
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Total Hours
+                                    </Text>
+                                </View>
+                                {Object.entries(manhourTotals).map(
+                                    ([cat, hrs]) => {
+                                        if (!hrs || Number(hrs) <= 0)
+                                            return null; // skip 0 hours
+                                        return (
+                                            <View
+                                                style={styles.tableRow}
+                                                key={cat}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.firstCell,
+                                                        {
+                                                            flex: 1,
+                                                            fontSize: 7,
+                                                        },
+                                                    ]}
+                                                >
+                                                    {cat}
+                                                </Text>
+                                                <Text
+                                                    style={[
+                                                        styles.cell,
+                                                        {
+                                                            flex: 1,
+                                                            fontSize: 7,
+                                                        },
+                                                    ]}
+                                                >
+                                                    {displayHoursFixed(hrs)}
+                                                </Text>
+                                            </View>
+                                        );
+                                    },
+                                )}
+                                <View style={styles.tableRow}>
+                                    <Text
+                                        style={[
+                                            styles.firstCell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Overtime
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        {String(formatNumber(totals.overtime))}
+                                    </Text>
+                                </View>
+                                <View style={styles.tableRow}>
+                                    <Text
+                                        style={[
+                                            styles.firstCell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Break Late
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        {displayHoursFixed(totals.late_break)}
+                                    </Text>
+                                </View>
+                                <View style={styles.tableRow}>
+                                    <Text
+                                        style={[
+                                            styles.firstCell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Late
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        {displayHoursFixed(totals.late)}
+                                    </Text>
+                                </View>
+                                <View style={styles.tableRow}>
+                                    <Text
+                                        style={[
+                                            styles.firstCell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Undertime
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        {displayHoursFixed(totals.undertime)}
+                                    </Text>
+                                </View>
+                                <View style={styles.tableRow}>
+                                    <Text
+                                        style={[
+                                            styles.firstCell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Hours Worked
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        {String(
+                                            formatNumber(totals.hoursWorked),
+                                        )}
+                                    </Text>
+                                </View>
+                                <View style={styles.tableRow}>
+                                    <Text
+                                        style={[
+                                            styles.firstCell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        Billable Hours
+                                    </Text>
+                                    <Text
+                                        style={[
+                                            styles.cell,
+                                            { flex: 1, fontSize: 7 },
+                                        ]}
+                                    >
+                                        {String(formatNumber(totals.hours))}
+                                    </Text>
+                                </View>
+                            </View>
                         </View>
 
                         {/* Signature */}

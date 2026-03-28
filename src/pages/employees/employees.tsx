@@ -206,9 +206,7 @@ export default function Employees() {
                     ? `${year}-${month}-${lastDay}`
                     : `${year}-${month}-15`;
 
-            const employeeIds = Object.entries(employee_ids).map(
-                (val) => val[0],
-            );
+            const employeeIds = Array.isArray(employee_ids) ? employee_ids : [];
 
             const allRecordsResponses = await Promise.all(
                 employeeIds.map((empId: any) =>

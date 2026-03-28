@@ -1,5 +1,5 @@
 import * as React from "react";
-import { NavLink, useParams } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
     IconDashboard,
     IconFileTime,
@@ -18,13 +18,27 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useAuthStore } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { ApiResponse } from "..";
 
-const navMainItems = (userId?: string, role?: string, agency_id?: string) => {
-    const items = [];
+type NavItem = {
+    title: string;
+    url: string;
+    icon: React.ElementType;
+};
+
+const navMainItems = (
+    userId?: string,
+    role?: string,
+    agency_id?: string,
+    job_level?: string,
+): NavItem[] => {
+    const items: NavItem[] = [];
+
+    const hasScheduleAccess =
+        job_level === "Level 5: Supervisory" ||
+        job_level === "Level 6: Managerial";
 
     if (role === "hr_employee") {
         items.push(
@@ -48,13 +62,18 @@ const navMainItems = (userId?: string, role?: string, agency_id?: string) => {
                 url: `/overtime/${userId ?? ""}`,
                 icon: Timer,
             },
-            //     {
-            //         title: "Schedule",
-            //         url: `/schedules/${userId ?? ""}`,
-            //         icon: IconCalendarCheck,
-            //     },
         );
-    } else if (role === "agency_coordinator") {
+
+        // if (hasScheduleAccess) {
+        //     items.push({
+        //         title: "Schedule",
+        //         url: `/schedules/${userId ?? ""}`,
+        //         icon: IconCalendarCheck,
+        //     });
+        // }
+    }
+
+    if (role === "agency_coordinator") {
         items.push(
             {
                 title: "Dashboard",
@@ -78,8 +97,6 @@ const navMainItems = (userId?: string, role?: string, agency_id?: string) => {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { setToken } = useAuthStore.getState();
-
     const { data: me, isLoading } = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
@@ -91,11 +108,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     role: string;
                     avatar?: string;
                     agency_id: string;
+                    job_level: string;
                 }>
             >(`/api/v2/auth/me`);
+
             return response.data.data;
         },
     });
+
+    const menuItems = navMainItems(
+        me?.id,
+        me?.role,
+        me?.agency_id,
+        me?.job_level,
+    );
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>
@@ -119,8 +145,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
             <SidebarContent className="mt-10">
                 {!isLoading &&
-                    me &&
-                    navMainItems(me.id, me.role, me.agency_id).map((item) => (
+                    menuItems.map((item) => (
                         <SidebarMenu key={item.title}>
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>

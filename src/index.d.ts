@@ -176,11 +176,11 @@ export interface TimeRecord {
     Break_In: string | null;
     Break_Out: string | null;
     manhour_conversion: string | null;
-    late: string | null;
+    late: number | null;
     manhourArray: string | null;
-    overtime: string | null;
-    hoursWorked: string | null;
-    hours: string | null;
+    overtime: number | null;
+    hoursWorked: number | null;
+    hours: number | null;
     clock_out: string | null;
     total_hrs: string | null;
     hourly_rate: string | null;
@@ -221,5 +221,32 @@ export interface TimeRecord {
         late_break: number;
         overtime: number;
         undertime: number;
+    }[];
+    manhourArray: { category: string; hours: number }[];
+}
+
+export interface GroupedEmployee {
+    id: string;
+    employee_name: string;
+    id_number: string;
+    branch: string;
+    agency_name: string;
+    employment_status: string;
+    time_records: {
+        date: string;
+        schedule: string | null;
+        time_in: string | null;
+        time_out: string | null;
+        break_in: string | null;
+        break_out: string | null;
+        branch_timeIn: string | null;
+        branch_timeOut: string | null;
+        hoursWorked: number;
+        hours: number;
+        late: number;
+        overtime: number;
+        undertime: number;
+        late_break: number;
+        manhourArray: { category: string; hours: number }[];
     }[];
 }

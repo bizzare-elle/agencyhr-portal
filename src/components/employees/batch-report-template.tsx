@@ -2,19 +2,10 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { format } from "date-fns";
 import { TimeRecord } from "@/index";
 import { formatTime, formatNumber } from "@/helpers/formatDates";
-
-interface EmployeeData {
-    id: string;
-    employee_name: string;
-    id_number: string;
-    branch: string;
-    agency_name: string;
-    employment_status: string;
-    time_records: TimeRecord[];
-}
+import { GroupedEmployee } from "@/index";
 
 interface ConsolidatedPDFProps {
-    recordsByEmployee: EmployeeData[];
+    recordsByEmployee: GroupedEmployee[];
 }
 
 const styles = StyleSheet.create({

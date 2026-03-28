@@ -206,9 +206,13 @@ export default function Employees() {
                     ? `${year}-${month}-${lastDay}`
                     : `${year}-${month}-15`;
 
-            const employeeIds = Object.entries(employee_ids).map(
-                (val) => val[0],
-            );
+            const employeeIds = Array.isArray(employee_ids)
+                ? employee_ids.map((id) => Number(id))
+                : typeof employee_ids === "object" && employee_ids !== null
+                  ? Object.values(employee_ids).map((id) => Number(id))
+                  : [];
+
+            console.log(employeeIds);
 
             const allRecordsResponses = await Promise.all(
                 employeeIds.map((empId: any) =>
@@ -495,16 +499,6 @@ export default function Employees() {
                     >
                         {isConsolidating ? "Consolidating..." : "Consolidate"}
                     </Button>
-
-                    {/* <Button
-                        className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
-                        onClick={handleFetchTimeRecords}
-                        disabled={
-                            !cutOffDate || !selectedBranch || isConsolidating
-                        }
-                    >
-                        Generate Timesheet
-                    </Button> */}
 
                     {consolidatedData && consolidatedData.length > 0 ? (
                         <PDFDownloadLink

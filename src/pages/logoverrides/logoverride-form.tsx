@@ -99,30 +99,32 @@ const schema = z.object({
         .refine(
             (val) => {
                 if (!val) return false;
+
                 const selected = new Date(val);
                 if (isNaN(selected.getTime())) return false;
-                selected.setSeconds(0, 0);
 
                 const today = new Date();
-                today.setHours(23, 59, 59, 999);
 
-                const year = selected.getFullYear();
-                const month = selected.getMonth();
-                const day = selected.getDate();
+                const year = today.getFullYear();
+                const month = today.getMonth();
+                const day = today.getDate();
 
+                let periodStart: Date;
                 let graceEnd: Date;
 
-                if (day >= 1 && day <= 15) {
+                if (day >= 1 && day <= 25) {
+                    periodStart = new Date(year, month, 1);
                     graceEnd = new Date(year, month, 25, 23, 59, 59, 999);
                 } else {
+                    periodStart = new Date(year, month, 16);
                     graceEnd = new Date(year, month + 1, 10, 23, 59, 59, 999);
                 }
 
-                return today <= graceEnd;
+                return selected >= periodStart && selected <= graceEnd;
             },
             {
                 message:
-                    "Filing is only allowed within 10 days after the cutoff period.",
+                    "Selected time falls outside the current cutoff period.",
             },
         ),
     remarks: z.string().min(1, "Enter remarks"),
@@ -268,51 +270,19 @@ export default function LogoverrideForm() {
                                         control={form.control}
                                         minDate={(() => {
                                             const today = new Date();
-                                            today.setHours(0, 0, 0, 0);
-
                                             const year = today.getFullYear();
                                             const month = today.getMonth();
                                             const day = today.getDate();
 
-                                            let currentCutoffStart: Date;
-                                            let previousCutoffStart: Date;
-
-                                            if (day <= 15) {
-                                                // Current: 1–15
-                                                currentCutoffStart = new Date(
-                                                    year,
-                                                    month,
-                                                    1,
-                                                );
-                                                previousCutoffStart = new Date(
-                                                    year,
-                                                    month - 1,
-                                                    16,
-                                                );
+                                            if (day >= 1 && day <= 25) {
+                                                return new Date(year, month, 1);
                                             } else {
-                                                // Current: 16–end
-                                                currentCutoffStart = new Date(
+                                                return new Date(
                                                     year,
                                                     month,
                                                     16,
-                                                );
-                                                previousCutoffStart = new Date(
-                                                    year,
-                                                    month,
-                                                    1,
                                                 );
                                             }
-
-                                            const graceLimit = new Date(
-                                                currentCutoffStart,
-                                            );
-                                            graceLimit.setDate(
-                                                graceLimit.getDate() + 10,
-                                            );
-
-                                            return today <= graceLimit
-                                                ? previousCutoffStart
-                                                : currentCutoffStart;
                                         })()}
                                         maxDate={(() => {
                                             const today = new Date();
@@ -320,19 +290,25 @@ export default function LogoverrideForm() {
                                             const month = today.getMonth();
                                             const day = today.getDate();
 
-                                            if (day <= 15) {
-                                                // End of first cutoff
+                                            if (day >= 1 && day <= 25) {
                                                 return new Date(
                                                     year,
                                                     month,
-                                                    15,
+                                                    25,
+                                                    23,
+                                                    59,
+                                                    59,
+                                                    999,
                                                 );
                                             } else {
-                                                // End of second cutoff (last day of month)
                                                 return new Date(
                                                     year,
                                                     month + 1,
-                                                    0,
+                                                    10,
+                                                    23,
+                                                    59,
+                                                    59,
+                                                    999,
                                                 );
                                             }
                                         })()}

@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -104,27 +103,32 @@ const schema = z.object({
                 if (isNaN(selected.getTime())) return false;
 
                 const today = new Date();
-
                 const year = today.getFullYear();
                 const month = today.getMonth();
                 const day = today.getDate();
 
                 let periodStart: Date;
-                let graceEnd: Date;
+                let periodEnd: Date;
 
-                if (day >= 1 && day <= 25) {
+                if (day <= 10) {
+                    // Mar 16 – Apr 15
+                    periodStart = new Date(year, month - 1, 16);
+                    periodEnd = new Date(year, month, 15, 23, 59, 59, 999);
+                } else if (day <= 25) {
+                    // Apr 1 – Apr 15
                     periodStart = new Date(year, month, 1);
-                    graceEnd = new Date(year, month, 25, 23, 59, 59, 999);
+                    periodEnd = new Date(year, month, 15, 23, 59, 59, 999);
                 } else {
+                    // Apr 16 – Apr 30
                     periodStart = new Date(year, month, 16);
-                    graceEnd = new Date(year, month + 1, 10, 23, 59, 59, 999);
+                    periodEnd = new Date(year, month + 1, 10, 23, 59, 59, 999);
                 }
 
-                return selected >= periodStart && selected <= graceEnd;
+                return selected >= periodStart && selected <= periodEnd;
             },
             {
                 message:
-                    "Selected time falls outside the current cutoff period.",
+                    "Selected time falls outside the allowed cutoff period.",
             },
         ),
     remarks: z.string().min(1, "Enter remarks"),
@@ -274,7 +278,14 @@ export default function LogoverrideForm() {
                                             const month = today.getMonth();
                                             const day = today.getDate();
 
-                                            if (day >= 1 && day <= 25) {
+                                            if (day <= 10) {
+                                                // include previous cutoff
+                                                return new Date(
+                                                    year,
+                                                    month - 1,
+                                                    16,
+                                                );
+                                            } else if (day <= 25) {
                                                 return new Date(year, month, 1);
                                             } else {
                                                 return new Date(
@@ -290,11 +301,22 @@ export default function LogoverrideForm() {
                                             const month = today.getMonth();
                                             const day = today.getDate();
 
-                                            if (day >= 1 && day <= 25) {
+                                            if (day <= 10) {
+                                                // allow Apr 1–15 cutoff also
                                                 return new Date(
                                                     year,
                                                     month,
-                                                    25,
+                                                    15,
+                                                    23,
+                                                    59,
+                                                    59,
+                                                    999,
+                                                );
+                                            } else if (day <= 25) {
+                                                return new Date(
+                                                    year,
+                                                    month,
+                                                    15,
                                                     23,
                                                     59,
                                                     59,

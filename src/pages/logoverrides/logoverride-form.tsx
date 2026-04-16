@@ -36,58 +36,86 @@ import {
 import api from "@/lib/axios";
 import { useAuthStore } from "@/hooks/use-auth";
 import { ParentComponent } from "@/components/parent-container";
+import { useMemo } from "react";
 
-const getCutoffRange = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+// const getCutoffRange = () => {
+//     const now = new Date();
+//     const year = now.getFullYear();
+//     const month = now.getMonth();
 
-    const lastDay = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
+//     const lastDay = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
 
-    const c1Start = new Date(year, month, 1);
-    const c1End = new Date(year, month, 15, 23, 59, 59);
-    const c1Allow = new Date(year, month, 16, 23, 59, 59);
+//     const c1Start = new Date(year, month, 1);
+//     const c1End = new Date(year, month, 15, 23, 59, 59);
+//     const c1Allow = new Date(year, month, 16, 23, 59, 59);
 
-    const c2Start = new Date(year, month, 16);
-    const c2End = new Date(year, month, lastDay(year, month), 23, 59, 59);
-    const c2Allow = new Date(year, month + 1, 1, 23, 59, 59);
+//     const c2Start = new Date(year, month, 16);
+//     const c2End = new Date(year, month, lastDay(year, month), 23, 59, 59);
+//     const c2Allow = new Date(year, month + 1, 1, 23, 59, 59);
 
-    const pm = month - 1 < 0 ? 11 : month - 1;
-    const py = month - 1 < 0 ? year - 1 : year;
+//     const pm = month - 1 < 0 ? 11 : month - 1;
+//     const py = month - 1 < 0 ? year - 1 : year;
 
-    const p2Start = new Date(py, pm, 16);
-    const p2End = new Date(py, pm, lastDay(py, pm), 23, 59, 59);
-    const p2Allow = new Date(year, month, 1, 23, 59, 59);
+//     const p2Start = new Date(py, pm, 16);
+//     const p2End = new Date(py, pm, lastDay(py, pm), 23, 59, 59);
+//     const p2Allow = new Date(year, month, 1, 23, 59, 59);
 
-    if (now <= p2Allow) {
+//     if (now <= p2Allow) {
+//         return {
+//             startDate: p2Start,
+//             endDate: c1End,
+//         };
+//     }
+
+//     if (now <= c1Allow) {
+//         return {
+//             startDate: c1Start,
+//             endDate: c1End,
+//         };
+//     }
+
+//     if (now <= c2Allow) {
+//         return {
+//             startDate: c2Start,
+//             endDate: c2End,
+//         };
+//     }
+
+//     const next = new Date(year, month + 1, 1);
+//     return {
+//         startDate: new Date(next.getFullYear(), next.getMonth(), 1),
+//         endDate: new Date(next.getFullYear(), next.getMonth(), 15, 23, 59, 59),
+//     };
+// };
+
+function getPayrollDateRange(today = new Date()) {
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
+
+    const eod = (y: number, m: number, d: number) =>
+        new Date(y, m, d, 23, 59, 59, 999);
+
+    const lastDayOfMonth = (y: number, m: number) =>
+        new Date(y, m + 1, 0).getDate();
+
+    if (day <= 15) {
         return {
-            startDate: p2Start,
-            endDate: c1End,
+            minDate: new Date(year, month, 1),
+            maxDate: eod(year, month, 15),
+        };
+    } else if (day <= 25) {
+        return {
+            minDate: new Date(year, month, 1),
+            maxDate: eod(year, month, lastDayOfMonth(year, month)),
+        };
+    } else {
+        return {
+            minDate: new Date(year, month, 16),
+            maxDate: eod(year, month, lastDayOfMonth(year, month)),
         };
     }
-
-    if (now <= c1Allow) {
-        return {
-            startDate: c1Start,
-            endDate: c1End,
-        };
-    }
-
-    if (now <= c2Allow) {
-        return {
-            startDate: c2Start,
-            endDate: c2End,
-        };
-    }
-
-    const next = new Date(year, month + 1, 1);
-    return {
-        startDate: new Date(next.getFullYear(), next.getMonth(), 1),
-        endDate: new Date(next.getFullYear(), next.getMonth(), 15, 23, 59, 59),
-    };
-};
-
-const { startDate, endDate } = getCutoffRange();
+}
 
 const schema = z.object({
     branch_id: z.string().min(1, "Select a branch"),
@@ -151,6 +179,7 @@ type FormValues = z.infer<typeof schema>;
 export default function LogoverrideForm() {
     const navigate = useNavigate();
     const { setToken } = useAuthStore.getState();
+    const { minDate, maxDate } = useMemo(() => getPayrollDateRange(), []);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
@@ -272,68 +301,8 @@ export default function LogoverrideForm() {
                                         name="dateTime"
                                         label="Date and Time"
                                         control={form.control}
-                                        minDate={(() => {
-                                            const today = new Date();
-                                            const year = today.getFullYear();
-                                            const month = today.getMonth();
-                                            const day = today.getDate();
-
-                                            if (day <= 10) {
-                                                // include previous cutoff
-                                                return new Date(
-                                                    year,
-                                                    month - 1,
-                                                    16,
-                                                );
-                                            } else if (day <= 25) {
-                                                return new Date(year, month, 1);
-                                            } else {
-                                                return new Date(
-                                                    year,
-                                                    month,
-                                                    16,
-                                                );
-                                            }
-                                        })()}
-                                        maxDate={(() => {
-                                            const today = new Date();
-                                            const year = today.getFullYear();
-                                            const month = today.getMonth();
-                                            const day = today.getDate();
-
-                                            if (day <= 10) {
-                                                // allow Apr 1–15 cutoff also
-                                                return new Date(
-                                                    year,
-                                                    month,
-                                                    15,
-                                                    23,
-                                                    59,
-                                                    59,
-                                                    999,
-                                                );
-                                            } else if (day <= 25) {
-                                                return new Date(
-                                                    year,
-                                                    month,
-                                                    15,
-                                                    23,
-                                                    59,
-                                                    59,
-                                                    999,
-                                                );
-                                            } else {
-                                                return new Date(
-                                                    year,
-                                                    month + 1,
-                                                    10,
-                                                    23,
-                                                    59,
-                                                    59,
-                                                    999,
-                                                );
-                                            }
-                                        })()}
+                                        minDate={minDate}
+                                        maxDate={maxDate}
                                     />
                                 </div>
                             </div>

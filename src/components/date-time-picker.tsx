@@ -28,6 +28,7 @@ interface DateTimeFieldProps {
     control: any;
     minDate?: Date;
     maxDate?: Date;
+    isDateAllowed?: (date: Date) => boolean;
 }
 
 export function DateTimeField({
@@ -36,6 +37,7 @@ export function DateTimeField({
     control,
     minDate,
     maxDate,
+    isDateAllowed,
 }: DateTimeFieldProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const hours = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -138,15 +140,21 @@ export function DateTimeField({
                                             mode="single"
                                             selected={date}
                                             onSelect={handleDateSelect}
+                                            // disabled={(date) => {
+                                            //     if (!date) return false;
+                                            //     const beforeMin = minDate
+                                            //         ? isBefore(date, minDate)
+                                            //         : false;
+                                            //     const afterMax = maxDate
+                                            //         ? isAfter(date, maxDate)
+                                            //         : false;
+                                            //     return beforeMin || afterMax;
+                                            // }}
                                             disabled={(date) => {
-                                                if (!date) return false;
-                                                const beforeMin = minDate
-                                                    ? isBefore(date, minDate)
-                                                    : false;
-                                                const afterMax = maxDate
-                                                    ? isAfter(date, maxDate)
-                                                    : false;
-                                                return beforeMin || afterMax;
+                                                if (!isDateAllowed)
+                                                    return false;
+
+                                                return !isDateAllowed(date);
                                             }}
                                         />
                                         <div className="flex flex-col divide-y sm:h-[300px] sm:flex-row sm:divide-x sm:divide-y-0">

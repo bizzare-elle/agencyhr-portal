@@ -99,23 +99,67 @@ function getPayrollDateRange(today = new Date()) {
     const lastDayOfMonth = (y: number, m: number) =>
         new Date(y, m + 1, 0).getDate();
 
-    if (day <= 15) {
-        return {
+    const lastDay = lastDayOfMonth(year, month);
+
+    const ranges: { minDate: Date; maxDate: Date }[] = [];
+
+    // --- CASE 1: May 1–10 (grace for previous cutoff)
+    if (day <= 10) {
+        // Previous cutoff: Apr 16–30
+        const prev = new Date(year, month - 1, 1);
+        const py = prev.getFullYear();
+        const pm = prev.getMonth();
+        const prevLastDay = lastDayOfMonth(py, pm);
+
+        ranges.push({
+            minDate: new Date(py, pm, 16),
+            maxDate: eod(py, pm, prevLastDay),
+        });
+
+        // Current first cutoff: May 1–15
+        ranges.push({
             minDate: new Date(year, month, 1),
             maxDate: eod(year, month, 15),
-        };
-    } else if (day <= 25) {
-        return {
-            minDate: new Date(year, month, 1),
-            maxDate: eod(year, month, lastDayOfMonth(year, month)),
-        };
-    } else {
-        return {
-            minDate: new Date(year, month, 16),
-            maxDate: eod(year, month, lastDayOfMonth(year, month)),
-        };
+        });
+
+        return ranges;
     }
+
+    // --- CASE 2: May 11–25
+    if (day <= 25) {
+        // First cutoff
+        ranges.push({
+            minDate: new Date(year, month, 1),
+            maxDate: eod(year, month, 15),
+        });
+
+        // Second cutoff
+        ranges.push({
+            minDate: new Date(year, month, 16),
+            maxDate: eod(year, month, lastDay),
+        });
+
+        return ranges;
+    }
+
+    // --- CASE 3: May 26–end
+    ranges.push({
+        minDate: new Date(year, month, 16),
+        maxDate: eod(year, month, lastDay),
+    });
+
+    return ranges;
 }
+
+const isDateAllowed = (date: Date) => {
+    const ranges = getPayrollDateRange(new Date());
+
+    return ranges.some(
+        ({ minDate, maxDate }) =>
+            date.getTime() >= minDate.getTime() &&
+            date.getTime() <= maxDate.getTime(),
+    );
+};
 
 const schema = z.object({
     branch_id: z.string().min(1, "Select a branch"),
@@ -130,9 +174,12 @@ const schema = z.object({
                 const selected = new Date(val);
                 if (isNaN(selected.getTime())) return false;
 
-                const { minDate, maxDate } = getPayrollDateRange(new Date());
+                const ranges = getPayrollDateRange(new Date());
 
-                return selected >= minDate && selected <= maxDate;
+                return ranges.some(
+                    ({ minDate, maxDate }) =>
+                        selected >= minDate && selected <= maxDate,
+                );
             },
             {
                 message:
@@ -159,7 +206,6 @@ type FormValues = z.infer<typeof schema>;
 export default function LogoverrideForm() {
     const navigate = useNavigate();
     const { setToken } = useAuthStore.getState();
-    const { minDate, maxDate } = useMemo(() => getPayrollDateRange(), []);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
@@ -281,8 +327,33 @@ export default function LogoverrideForm() {
                                         name="dateTime"
                                         label="Date and Time"
                                         control={form.control}
-                                        minDate={minDate}
-                                        maxDate={maxDate}
+                                        isDateAllowed={(date: any) => {
+                                            if (!date) return false;
+
+                                            // 🔥 normalize (handles dayjs, moment, Date)
+                                            const d =
+                                                date instanceof Date
+                                                    ? date
+                                                    : typeof date.toDate ===
+                                                        "function"
+                                                      ? date.toDate()
+                                                      : new Date(date);
+
+                                            if (isNaN(d.getTime()))
+                                                return false;
+
+                                            const ranges = getPayrollDateRange(
+                                                new Date(),
+                                            );
+
+                                            return ranges.some(
+                                                ({ minDate, maxDate }) =>
+                                                    d.getTime() >=
+                                                        minDate.getTime() &&
+                                                    d.getTime() <=
+                                                        maxDate.getTime(),
+                                            );
+                                        }}
                                     />
                                 </div>
                             </div>

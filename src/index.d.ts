@@ -38,6 +38,8 @@ export interface Overtime {
     branch_id: string;
     branch_name: string;
     date: string;
+    start_time: string | null;
+    end_time: string | null;
     reason_disapproval: string;
     no_of_hours: string;
     image: string;

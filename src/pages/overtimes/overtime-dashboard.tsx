@@ -548,6 +548,12 @@ export default function OvertimeDashboard() {
                                                     Branch
                                                 </TableHead>
                                                 <TableHead className="px-3 py-4 text-center">
+                                                    Start Time
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
+                                                    End Time
+                                                </TableHead>
+                                                <TableHead className="px-3 py-4 text-center">
                                                     Number of Hour/s
                                                 </TableHead>
                                                 <TableHead className="px-3 py-4 text-center">
@@ -583,6 +589,14 @@ export default function OvertimeDashboard() {
                                                                 "N/A"}
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
+                                                            {r.start_time ||
+                                                                "N/A"}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center">
+                                                            {r.end_time ||
+                                                                "N/A"}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-4 text-center">
                                                             {r.no_of_hours ||
                                                                 "N/A"}
                                                         </TableCell>
@@ -611,6 +625,21 @@ export default function OvertimeDashboard() {
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                            {(r.status === "0" || r.status === "2") && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        navigate(
+                                                                            `/overtime/edit/${r.edit_id ?? r.id}`,
+                                                                            { state: { overtime: r } },
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Edit
+                                                                </Button>
+                                                            )}
                                                             <Dialog>
                                                                 <DialogTrigger
                                                                     asChild
@@ -644,6 +673,14 @@ export default function OvertimeDashboard() {
                                                                                     value: safeFormat(
                                                                                         r.date,
                                                                                     ),
+                                                                                },
+                                                                                {
+                                                                                    label: "Start Time",
+                                                                                    value: r.start_time,
+                                                                                },
+                                                                                {
+                                                                                    label: "End Time",
+                                                                                    value: r.end_time,
                                                                                 },
                                                                                 {
                                                                                     label: "Remarks",
@@ -735,6 +772,20 @@ export default function OvertimeDashboard() {
                                                                                 </Button>
                                                                             </DialogClose>
 
+                                                                            {(r.status === "0" || r.status === "2") && (
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    onClick={() =>
+                                                                                        navigate(
+                                                                                            `/overtime/edit/${r.edit_id ?? r.id}`,
+                                                                                            { state: { overtime: r } },
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    Edit
+                                                                                </Button>
+                                                                            )}
+
                                                                             <AlertDialog>
                                                                                 <AlertDialogTrigger
                                                                                     asChild
@@ -792,13 +843,14 @@ export default function OvertimeDashboard() {
                                                                     </Card>
                                                                 </DialogContent>
                                                             </Dialog>
+                                                            </div>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))
                                             ) : (
                                                 <TableRow>
                                                     <TableCell
-                                                        colSpan={5}
+                                                        colSpan={8}
                                                         className="py-5 text-center text-gray-500"
                                                     >
                                                         No records found.

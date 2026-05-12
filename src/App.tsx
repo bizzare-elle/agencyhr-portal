@@ -110,6 +110,11 @@ export default function App() {
                             element: <OvertimeForm />,
                             handle: { title: "Overtime Form" },
                         },
+                        {
+                            path: "edit/:overtimeId",
+                            element: <OvertimeForm />,
+                            handle: { title: "Edit Overtime" },
+                        },
                     ],
                 },
                 {

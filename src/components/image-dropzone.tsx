@@ -15,19 +15,24 @@ interface ImageUploaderProps {
     field: ControllerRenderProps<any>;
     fieldState: any;
     label: string;
+    existingImageUrl?: string;
 }
 
 export function ImageUploader({
     field,
     fieldState,
     label,
+    existingImageUrl,
 }: ImageUploaderProps) {
-    const [preview, setPreview] = React.useState<string | null>(null);
+    // Seed preview from existing URL (edit mode) or null (create mode)
+    const [preview, setPreview] = React.useState<string | null>(
+        existingImageUrl ?? null,
+    );
 
     // Clear preview if field value is cleared externally
     React.useEffect(() => {
-        if (!field.value) setPreview(null);
-    }, [field.value]);
+        if (!field.value && !existingImageUrl) setPreview(null);
+    }, [field.value, existingImageUrl]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;

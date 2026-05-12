@@ -2,7 +2,7 @@ import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronDownIcon } from "lucide-react";
@@ -44,12 +44,23 @@ import {
 } from "@/components/ui/select";
 import { useAuthStore } from "@/hooks/use-auth";
 import { ParentComponent } from "@/components/parent-container";
+import { Overtime } from "@/index";
 
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const schema = z.object({
-    branch_id: z.string().min(1, { message: "Select a branch" }),
+const imageValidator = z
+    .instanceof(File, { message: "Image is required" })
+    .refine((file) => file.size <= 20 * 1024 * 1024, {
+        message: "File must be less than 20MB",
+    })
+    .refine(
+        (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
+        { message: "Only JPEG, PNG, or WebP files are allowed" },
+    );
 
+// Create: date restricted to last 2 days, image required
+const createSchema = z.object({
+    branch_id: z.string().min(1, { message: "Select a branch" }),
     date: z
         .date({
             error: () => ({ message: "Date is required" }),
@@ -58,20 +69,14 @@ const schema = z.object({
             (val) => {
                 const selected = new Date(val);
                 selected.setHours(0, 0, 0, 0);
-
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-
                 const twoDaysAgo = new Date(today);
                 twoDaysAgo.setDate(today.getDate() - 2);
-
                 return selected >= twoDaysAgo && selected <= today;
             },
-            {
-                message: "You can only select a date within the last 2 days.",
-            },
+            { message: "You can only select a date within the last 2 days." },
         ),
-
     startTime: z
         .string()
         .regex(timeRegex, { message: "Start time is required (HH:mm)" }),
@@ -80,19 +85,35 @@ const schema = z.object({
         .regex(timeRegex, { message: "End time is required (HH:mm)" }),
     totalOt: z.string().min(1, { message: "Overtime hours cannot be empty" }),
     remarks: z.string().min(1, { message: "Remarks are required" }),
-    imageReference: z
-        .instanceof(File, { message: "Image is required" })
-        .refine((file) => file.size <= 20 * 1024 * 1024, {
-            message: "File must be less than 20MB",
-        })
-        .refine(
-            (file) =>
-                ["image/jpeg", "image/png", "image/webp"].includes(file.type),
-            { message: "Only JPEG, PNG, or WebP files are allowed" },
-        ),
+    imageReference: imageValidator,
 });
 
-type FormValues = z.infer<typeof schema>;
+// Edit: date is pre-filled and read-only (no range restriction), image optional
+const editSchema = z.object({
+    branch_id: z.string().min(1, { message: "Select a branch" }),
+    date: z.date({
+        error: () => ({ message: "Date is required" }),
+    }),
+    startTime: z
+        .string()
+        .regex(timeRegex, { message: "Start time is required (HH:mm)" }),
+    endTime: z
+        .string()
+        .regex(timeRegex, { message: "End time is required (HH:mm)" }),
+    totalOt: z.string().min(1, { message: "Overtime hours cannot be empty" }),
+    remarks: z.string().min(1, { message: "Remarks are required" }),
+    imageReference: imageValidator.optional(),
+});
+
+type FormValues = {
+    branch_id: string;
+    date: Date;
+    startTime: string;
+    endTime: string;
+    totalOt: string;
+    remarks: string;
+    imageReference?: File;
+};
 
 function calculateOtHours(start: string, end: string): string {
     if (!start || !end) return "";
@@ -107,12 +128,33 @@ function calculateOtHours(start: string, end: string): string {
 
 export default function OvertimeForm() {
     const navigate = useNavigate();
-    const { setToken } = useAuthStore.getState();
+    const { overtimeId } = useParams<{ overtimeId?: string }>();
+    const location = useLocation();
+
+    // Edit mode when the route supplies an overtimeId param
+    const isEdit = !!overtimeId;
+    const existingOvertime: Overtime | undefined = location.state?.overtime;
+
     const [open, setOpen] = React.useState(false);
 
+    // Parse existing date without timezone shift (YYYY-MM-DD strings)
+    const existingDate = React.useMemo(() => {
+        if (!existingOvertime?.date) return undefined;
+        const parts = existingOvertime.date.split("-").map(Number);
+        if (parts.length !== 3) return undefined;
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }, [existingOvertime]);
+
     const form = useForm<FormValues>({
-        resolver: zodResolver(schema),
-        defaultValues: { remarks: "", branch_id: "" },
+        resolver: zodResolver(isEdit ? editSchema : createSchema) as any,
+        defaultValues: {
+            remarks: existingOvertime?.remarks ?? "",
+            branch_id: existingOvertime?.branch_id ?? "",
+            date: existingDate,
+            startTime: "",
+            endTime: "",
+            totalOt: "",
+        },
     });
 
     const { data: me } = useQuery({
@@ -153,7 +195,7 @@ export default function OvertimeForm() {
                 d.getMonth() + 1,
             ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-            const fields = {
+            const fields: Record<string, string> = {
                 branch_id: values.branch_id,
                 date: formattedDate,
                 startTime: values.startTime,
@@ -170,11 +212,14 @@ export default function OvertimeForm() {
                 formData.append("imageReference", values.imageReference);
             }
 
-            const response = await api.post(
-                `/api/v2/overtime/${employeeId}`,
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } },
-            );
+            // Edit: POST to update endpoint; Create: POST to create endpoint
+            const url = isEdit
+                ? `/api/v2/overtime/update/${overtimeId}`
+                : `/api/v2/overtime/${employeeId}`;
+
+            const response = await api.post(url, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
 
             return response.data;
         },
@@ -188,7 +233,11 @@ export default function OvertimeForm() {
 
         overtimeMutation.mutate(data, {
             onSuccess: () => {
-                toast.success("Success! Your overtime has been filed!");
+                toast.success(
+                    isEdit
+                        ? "Overtime updated successfully!"
+                        : "Success! Your overtime has been filed!",
+                );
                 navigate(`/overtime/${me?.id}`);
             },
             onError: (err: any) => {
@@ -213,9 +262,13 @@ export default function OvertimeForm() {
         <div className="mx-auto w-full max-w-[800px] px-4 py-6 sm:px-6 md:px-10">
             <Card className="w-full">
                 <CardHeader>
-                    <CardTitle className="text-2xl">Overtime</CardTitle>
+                    <CardTitle className="text-2xl">
+                        {isEdit ? "Edit Overtime" : "Overtime"}
+                    </CardTitle>
                     <CardDescription>
-                        Enter your information to file your overtime.
+                        {isEdit
+                            ? "Update your overtime details below."
+                            : "Enter your information to file your overtime."}
                     </CardDescription>
                 </CardHeader>
 
@@ -261,131 +314,106 @@ export default function OvertimeForm() {
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="date">Date</Label>
 
-                                    <Popover open={open} onOpenChange={setOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                className="w-full justify-between font-normal"
-                                            >
-                                                {form.watch("date")
-                                                    ? form
-                                                          .watch("date")
-                                                          .toLocaleDateString(
-                                                              "en-CA",
-                                                          )
-                                                    : "Select date"}
-                                                <ChevronDownIcon className="h-4 w-4 opacity-70" />
-                                            </Button>
-                                        </PopoverTrigger>
-
-                                        <PopoverContent
-                                            className="w-auto p-0"
-                                            align="start"
+                                    {isEdit ? (
+                                        // Read-only in edit mode — date of original filing cannot be changed
+                                        <Input
+                                            id="date"
+                                            value={
+                                                existingDate
+                                                    ? existingDate.toLocaleDateString(
+                                                          "en-CA",
+                                                      )
+                                                    : ""
+                                            }
+                                            readOnly
+                                            className="bg-muted text-muted-foreground cursor-not-allowed"
+                                        />
+                                    ) : (
+                                        <Popover
+                                            open={open}
+                                            onOpenChange={setOpen}
                                         >
-                                            <Calendar
-                                                mode="single"
-                                                selected={form.watch("date")}
-                                                onSelect={(date) => {
-                                                    if (date) {
-                                                        form.setValue(
-                                                            "date",
-                                                            date,
-                                                            {
-                                                                shouldValidate: true,
-                                                            },
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className="w-full justify-between font-normal"
+                                                >
+                                                    {form.watch("date")
+                                                        ? form
+                                                              .watch("date")
+                                                              .toLocaleDateString(
+                                                                  "en-CA",
+                                                              )
+                                                        : "Select date"}
+                                                    <ChevronDownIcon className="h-4 w-4 opacity-70" />
+                                                </Button>
+                                            </PopoverTrigger>
+
+                                            <PopoverContent
+                                                className="w-auto p-0"
+                                                align="start"
+                                            >
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={form.watch(
+                                                        "date",
+                                                    )}
+                                                    onSelect={(date) => {
+                                                        if (date) {
+                                                            form.setValue(
+                                                                "date",
+                                                                date,
+                                                                {
+                                                                    shouldValidate: true,
+                                                                },
+                                                            );
+                                                        }
+                                                        setOpen(false);
+                                                    }}
+                                                    disabled={(date) => {
+                                                        const today =
+                                                            new Date();
+                                                        today.setHours(
+                                                            0,
+                                                            0,
+                                                            0,
+                                                            0,
                                                         );
-                                                    }
-                                                    setOpen(false);
-                                                }}
-                                                disabled={(date) => {
-                                                    const today = new Date();
-                                                    today.setHours(0, 0, 0, 0);
 
-                                                    const twoDaysAgo = new Date(
-                                                        today,
-                                                    );
-                                                    twoDaysAgo.setDate(
-                                                        today.getDate() - 2,
-                                                    );
-
-                                                    const checkDate = new Date(
-                                                        date,
-                                                    );
-                                                    checkDate.setHours(
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                    );
-
-                                                    return (
-                                                        checkDate <
-                                                            twoDaysAgo ||
-                                                        checkDate > today
-                                                    );
-                                                }}
-                                            />
-
-                                            {/* <Calendar
-                                                mode="single"
-                                                selected={form.watch("date")}
-                                                onSelect={(date) => {
-                                                    if (date) {
-                                                        form.setValue(
-                                                            "date",
-                                                            date,
-                                                            {
-                                                                shouldValidate: true,
-                                                            },
+                                                        const twoDaysAgo =
+                                                            new Date(today);
+                                                        twoDaysAgo.setDate(
+                                                            today.getDate() - 2,
                                                         );
-                                                    }
-                                                    setOpen(false);
-                                                }}
-                                                disabled={(date) => {
-                                                    const today = new Date();
-                                                    today.setHours(0, 0, 0, 0);
 
-                                                    const currentDay =
-                                                        today.getDate();
-                                                    const currentMonth =
-                                                        today.getMonth();
-                                                    const currentYear =
-                                                        today.getFullYear();
+                                                        const checkDate =
+                                                            new Date(date);
+                                                        checkDate.setHours(
+                                                            0,
+                                                            0,
+                                                            0,
+                                                            0,
+                                                        );
 
-                                                    const checkDate = new Date(
-                                                        date,
-                                                    );
-                                                    checkDate.setHours(
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                    );
-
-                                                    if (
-                                                        checkDate.getMonth() !==
-                                                            currentMonth ||
-                                                        checkDate.getFullYear() !==
-                                                            currentYear
-                                                    ) {
-                                                        return true;
-                                                    }
-
-                                                    const day =
-                                                        checkDate.getDate();
-
-                                                    if (currentDay <= 15) {
                                                         return (
-                                                            day < 1 || day > 15
+                                                            checkDate <
+                                                                twoDaysAgo ||
+                                                            checkDate > today
                                                         );
-                                                    } else {
-                                                        return day < 16;
-                                                    }
-                                                }}
-                                            /> */}
-                                        </PopoverContent>
-                                    </Popover>
+                                                    }}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                    {form.formState.errors.date && (
+                                        <p className="text-sm text-red-500">
+                                            {
+                                                form.formState.errors.date
+                                                    .message as string
+                                            }
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -477,7 +505,16 @@ export default function OvertimeForm() {
                                     <ImageUploader
                                         field={field}
                                         fieldState={fieldState}
-                                        label="Upload an Image"
+                                        label={
+                                            isEdit
+                                                ? "Upload Image (optional — replaces existing)"
+                                                : "Upload an Image"
+                                        }
+                                        existingImageUrl={
+                                            isEdit
+                                                ? existingOvertime?.image
+                                                : undefined
+                                        }
                                     />
                                 )}
                             />
@@ -501,8 +538,14 @@ export default function OvertimeForm() {
                                 {overtimeMutation.isPending ? (
                                     <>
                                         <Spinner className="h-4 w-4" />
-                                        <span>Submitting...</span>
+                                        <span>
+                                            {isEdit
+                                                ? "Updating..."
+                                                : "Submitting..."}
+                                        </span>
                                     </>
+                                ) : isEdit ? (
+                                    "Update"
                                 ) : (
                                     "Submit"
                                 )}

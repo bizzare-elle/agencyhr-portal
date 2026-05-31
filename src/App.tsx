@@ -22,10 +22,13 @@ import ScheduleDashboard from "./pages/schedules/schedule-dashboard";
 import { ParentComponent } from "./components/parent-container";
 import { useIdleLogout } from "./hooks/use-idle";
 import ScheduleUpload from "./pages/schedules/schedules-upload";
+import FormsHub from "./pages/forms/forms-hub";
+import EicfForm from "./pages/forms/eicf-form";
+import MrfForm from "./pages/forms/mrf-form";
+import FormsSubmissions from "./pages/forms/forms-submissions";
+import FormsValidation from "./pages/forms/forms-validation";
 
-export default function App() {
-    useIdleLogout();
-    const router = createBrowserRouter([
+const router = createBrowserRouter([
         {
             path: "/",
             loader: async () => redirect("/login"),
@@ -118,6 +121,36 @@ export default function App() {
                     ],
                 },
                 {
+                    path: "/forms",
+                    children: [
+                        {
+                            path: ":id",
+                            element: <FormsHub />,
+                            handle: { title: "Forms" },
+                        },
+                        {
+                            path: "eicf/:id",
+                            element: <EicfForm />,
+                            handle: { title: "EICF" },
+                        },
+                        {
+                            path: "mrf/:id",
+                            element: <MrfForm />,
+                            handle: { title: "MRF" },
+                        },
+                        {
+                            path: "submissions/:id",
+                            element: <FormsSubmissions />,
+                            handle: { title: "EICF Submissions" },
+                        },
+                        {
+                            path: "validation/:id",
+                            element: <FormsValidation />,
+                            handle: { title: "EICF Validation" },
+                        },
+                    ],
+                },
+                {
                     path: "/schedules",
                     children: [
                         {
@@ -154,7 +187,9 @@ export default function App() {
                 </ParentComponent>
             ),
         },
-    ]);
+]);
 
+export default function App() {
+    useIdleLogout();
     return <RouterProvider router={router} />;
 }

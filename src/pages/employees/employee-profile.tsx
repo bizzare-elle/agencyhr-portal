@@ -110,9 +110,9 @@ export default function EmployeeProfile() {
 
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-4 sm:p-6">
-            <div className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-6 text-white shadow-md sm:flex-row sm:justify-between">
+            <div className="flex flex-col items-center gap-4 rounded-xl border p-6 shadow-sm sm:flex-row sm:justify-between">
                 <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/20 text-2xl font-bold text-yellow-400">
                         {employee.firstname.charAt(0) +
                             employee.lastname.charAt(0)}
                     </div>
@@ -120,7 +120,7 @@ export default function EmployeeProfile() {
                         <h1 className="text-2xl font-bold tracking-wide sm:text-3xl">
                             {employee.name}
                         </h1>
-                        <p className="text-xs opacity-90 sm:text-sm">
+                        <p className="text-xs text-muted-foreground sm:text-sm">
                             ID: {employee.id_number} • {employee.branch_name} •{" "}
                             {employee.agency_name}
                         </p>

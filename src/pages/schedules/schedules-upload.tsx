@@ -16,7 +16,14 @@ import ScheduleUploadFile, {
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import * as XLSX from "xlsx";
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
+import {
+    ChevronDownIcon,
+    ChevronUpIcon,
+    CheckCircle2,
+    AlertCircle,
+    SkipForward,
+    Save,
+} from "lucide-react";
 
 export default function ScheduleUpload() {
     const { data: me } = useQuery({
@@ -38,50 +45,69 @@ export default function ScheduleUpload() {
         if (!result) return null;
 
         return (
-            <div className="mt-4 space-y-3 rounded-lg border bg-yellow-50 p-4 text-sm">
-                <p className="text-lg font-semibold">{result.message}</p>
-                <div className="flex flex-wrap gap-4">
-                    <span className="rounded-md bg-green-100 px-2 py-1 text-green-800">
-                        Inserted: {result.saved}
-                    </span>
-                    <span className="rounded-md bg-blue-100 px-2 py-1 text-blue-800">
-                        Updated: {result.updated}
-                    </span>
-                    {result.skipped.length > 0 && (
-                        <span
-                            className="cursor-pointer rounded-md bg-yellow-100 px-2 py-1 text-yellow-800"
-                            onClick={() => setShowSkipped(!showSkipped)}
-                        >
-                            Skipped: {result.skipped.length}{" "}
-                            {showSkipped ? (
-                                <ChevronUpIcon className="inline h-4 w-4" />
-                            ) : (
-                                <ChevronDownIcon className="inline h-4 w-4" />
-                            )}
-                        </span>
-                    )}
-                    {result.errors.length > 0 && (
-                        <span
-                            className="cursor-pointer rounded-md bg-red-100 px-2 py-1 text-red-800"
-                            onClick={() => setShowErrors(!showErrors)}
-                        >
-                            Errors: {result.errors.length}{" "}
-                            {showErrors ? (
-                                <ChevronUpIcon className="inline h-4 w-4" />
-                            ) : (
-                                <ChevronDownIcon className="inline h-4 w-4" />
-                            )}
-                        </span>
-                    )}
+            <div className="mt-6 rounded-xl border border-zinc-700 bg-zinc-800 p-5">
+                <p className="mb-4 text-base font-semibold text-zinc-100">
+                    {result.message}
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-3 py-2">
+                        <Save className="h-4 w-4 text-green-400" />
+                        <div>
+                            <p className="text-xs text-green-400">Inserted</p>
+                            <p className="text-lg font-bold text-green-300">{result.saved}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg bg-blue-500/10 px-3 py-2">
+                        <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                        <div>
+                            <p className="text-xs text-blue-400">Updated</p>
+                            <p className="text-lg font-bold text-blue-300">{result.updated}</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowSkipped(!showSkipped)}
+                        className="flex items-center gap-2 rounded-lg bg-yellow-500/10 px-3 py-2 text-left transition hover:bg-yellow-500/20"
+                    >
+                        <SkipForward className="h-4 w-4 text-yellow-400" />
+                        <div className="flex-1">
+                            <p className="text-xs text-yellow-400">Skipped</p>
+                            <p className="text-lg font-bold text-yellow-300">{result.skipped.length}</p>
+                        </div>
+                        {result.skipped.length > 0 && (
+                            showSkipped
+                                ? <ChevronUpIcon className="h-4 w-4 text-yellow-400" />
+                                : <ChevronDownIcon className="h-4 w-4 text-yellow-400" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setShowErrors(!showErrors)}
+                        className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-left transition hover:bg-red-500/20"
+                    >
+                        <AlertCircle className="h-4 w-4 text-red-400" />
+                        <div className="flex-1">
+                            <p className="text-xs text-red-400">Errors</p>
+                            <p className="text-lg font-bold text-red-300">{result.errors.length}</p>
+                        </div>
+                        {result.errors.length > 0 && (
+                            showErrors
+                                ? <ChevronUpIcon className="h-4 w-4 text-red-400" />
+                                : <ChevronDownIcon className="h-4 w-4 text-red-400" />
+                        )}
+                    </button>
                 </div>
 
                 {showSkipped && result.skipped.length > 0 && (
-                    <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2">
-                        <ul className="ml-5 list-disc text-yellow-800">
+                    <div className="mt-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-yellow-400">
+                            Skipped Records
+                        </p>
+                        <ul className="space-y-1 text-sm text-yellow-300">
                             {result.skipped.map((s, i) => (
-                                <li key={i}>
-                                    Line {s.line} - Employee {s.employee_id} on{" "}
-                                    {s.date}: {s.reason}
+                                <li key={i} className="flex gap-2">
+                                    <span className="shrink-0 font-medium">Line {s.line}</span>
+                                    <span className="text-yellow-500">—</span>
+                                    <span>Employee {s.employee_id} on {s.date}: {s.reason}</span>
                                 </li>
                             ))}
                         </ul>
@@ -89,15 +115,19 @@ export default function ScheduleUpload() {
                 )}
 
                 {showErrors && result.errors.length > 0 && (
-                    <div className="mt-2 rounded border border-red-200 bg-red-50 p-2">
-                        <ul className="ml-5 list-disc text-red-600">
+                    <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-400">
+                            Error Records
+                        </p>
+                        <ul className="space-y-1 text-sm text-red-300">
                             {result.errors.map((e, i) => (
-                                <li key={i}>
-                                    Line {e.line} -{" "}
-                                    {e.employee_id
-                                        ? `Employee ${e.employee_id}`
-                                        : ""}{" "}
-                                    {e.date ? `on ${e.date}` : ""}: {e.reason}
+                                <li key={i} className="flex gap-2">
+                                    <span className="shrink-0 font-medium">Line {e.line}</span>
+                                    <span className="text-red-500">—</span>
+                                    <span>
+                                        {e.employee_id ? `Employee ${e.employee_id}` : ""}
+                                        {e.date ? ` on ${e.date}` : ""}: {e.reason}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
@@ -126,305 +156,194 @@ export default function ScheduleUpload() {
                     </div>
                 </CardHeader>
 
-                <CardContent className="mt-5 flex justify-around">
-                    <div className="flex flex-col items-center gap-6 rounded-lg border border-gray-200 pr-6 pl-4 sm:p-6">
-                        <div className="w-full sm:max-w-md">
-                            {employeeId && (
-                                <ScheduleUploadFile
-                                    coordinatorId={employeeId}
-                                    onUpload={async (file: File) => {
-                                        let employees: any[] = [];
+                <CardContent>
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        {/* Left: Upload + Search */}
+                        <div className="space-y-5">
+                            <div>
+                                <h3 className="mb-3 text-sm font-semibold text-zinc-300">
+                                    Upload File
+                                </h3>
+                                {employeeId && (
+                                    <ScheduleUploadFile
+                                        coordinatorId={employeeId}
+                                        onUpload={async (file: File) => {
+                                            let employees: any[] = [];
 
-                                        if (file.name.endsWith(".csv")) {
-                                            const text = await file.text();
-                                            const lines = text
-                                                .split("\n")
-                                                .map((line) => line.split(","));
-                                            const header = lines[0];
-                                            employees = lines
-                                                .slice(1)
-                                                .map((cols) => ({
-                                                    employee_id: parseInt(
-                                                        cols[0],
-                                                    ),
-                                                    schedules: cols
-                                                        .slice(3)
-                                                        .map((sched, i) => ({
-                                                            date: header[i + 3],
-                                                            schedule_id:
-                                                                parseInt(
-                                                                    sched ||
-                                                                        "0",
-                                                                ),
-                                                        })),
-                                                }));
-                                        } else if (
-                                            file.name.endsWith(".xlsx")
-                                        ) {
-                                            const data =
-                                                await file.arrayBuffer();
-                                            const workbook = XLSX.read(data, {
-                                                type: "array",
-                                            });
-                                            const sheetName =
-                                                workbook.SheetNames[0];
-                                            const sheet =
-                                                workbook.Sheets[sheetName];
-                                            const json: any[] =
-                                                XLSX.utils.sheet_to_json(
-                                                    sheet,
-                                                    { header: 1 },
-                                                );
-                                            const header = json[0] as string[];
-                                            employees = json
-                                                .slice(1)
-                                                .map((row) => ({
-                                                    employee_id: parseInt(
-                                                        row[0],
-                                                    ),
-                                                    schedules: row
-                                                        .slice(3)
-                                                        .map(
-                                                            (
-                                                                sched: any,
-                                                                i: any,
-                                                            ) => ({
-                                                                date: header[
-                                                                    i + 3
-                                                                ],
-                                                                schedule_id:
-                                                                    parseInt(
-                                                                        sched ||
-                                                                            "0",
-                                                                    ),
-                                                            }),
-                                                        ),
-                                                }));
-                                        }
+                                            if (file.name.endsWith(".csv")) {
+                                                const text = await file.text();
+                                                const lines = text
+                                                    .split("\n")
+                                                    .map((line) => line.split(","));
+                                                const header = lines[0];
+                                                employees = lines
+                                                    .slice(1)
+                                                    .map((cols) => ({
+                                                        employee_id: parseInt(cols[0]),
+                                                        schedules: cols
+                                                            .slice(3)
+                                                            .map((sched, i) => ({
+                                                                date: header[i + 3],
+                                                                schedule_id: parseInt(sched || "0"),
+                                                            })),
+                                                    }));
+                                            } else if (file.name.endsWith(".xlsx")) {
+                                                const data = await file.arrayBuffer();
+                                                const workbook = XLSX.read(data, { type: "array" });
+                                                const sheetName = workbook.SheetNames[0];
+                                                const sheet = workbook.Sheets[sheetName];
+                                                const json: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                                                const header = json[0] as string[];
+                                                employees = json
+                                                    .slice(1)
+                                                    .map((row) => ({
+                                                        employee_id: parseInt(row[0]),
+                                                        schedules: row
+                                                            .slice(3)
+                                                            .map((sched: any, i: any) => ({
+                                                                date: header[i + 3],
+                                                                schedule_id: parseInt(sched || "0"),
+                                                            })),
+                                                    }));
+                                            }
 
-                                        const response = await fetch(
-                                            `/api/v2/upload_batch/${employeeId}`,
-                                            {
-                                                method: "POST",
-                                                headers: {
-                                                    "Content-Type":
-                                                        "application/json",
+                                            const response = await fetch(
+                                                `/api/v2/upload_batch/${employeeId}`,
+                                                {
+                                                    method: "POST",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ employees }),
                                                 },
-                                                body: JSON.stringify({
-                                                    employees,
-                                                }),
-                                            },
-                                        );
-
-                                        const data = await response.json();
-                                        setBatchResult(data);
-                                        if (!response.ok)
-                                            throw new Error(
-                                                data.message ||
-                                                    "Upload failed.",
                                             );
-                                        return data;
-                                    }}
-                                />
-                            )}
-                        </div>
-                        <div className="w-full sm:max-w-md">
-                            <CustomSearch
-                                label="Search Employee"
-                                apiUrl="api/v2/get_employees"
-                                value={employee}
-                                onChange={setEmployee}
-                                placeholder="Search Employee Name or ID..."
-                            />
-                        </div>
 
-                        <div className="w-full sm:max-w-md">
-                            <ScheduleSearchField
-                                label="Search Schedule"
-                                apiUrl="api/v2/get_schedule"
-                                value={schedule}
-                                onChange={setSchedule}
-                                placeholder="Search Schedule..."
-                            />
-                        </div>
-                    </div>
-
-                    {/* Guide Section */}
-                    <div className="space-y-4 rounded-lg border border-gray-200 p-4 sm:p-6">
-                        <h3 className="text-md font-semibold text-yellow-500">
-                            Guide: Import CSV to Upload Employee Schedule
-                        </h3>
-                        <p>
-                            This guide explains how to upload employee schedules
-                            using the import file. The system supports insert
-                            and update of schedule dates.
-                        </p>
-
-                        <div className="space-y-2">
-                            <h4 className="font-semibold text-yellow-500">
-                                1. Accepted File Type
-                            </h4>
-                            <ul className="list-inside list-disc">
-                                <li>Only .CSV and .XLSX files are supported</li>
-                                <li>
-                                    Excel 2003 format (.xls – old version) is
-                                    NOT allowed
-                                </li>
-                                <li>
-                                    Uploading an unsupported file type will
-                                    cause the import to fail
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div className="space-y-2">
-                            <h4 className="font-semibold text-yellow-500">
-                                2. Required File Structure
-                            </h4>
-                            <p>
-                                The file must follow the exact format below. Do
-                                not rename or rearrange columns.
-                            </p>
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-[500px] border border-gray-300 text-left">
-                                    <thead className="bg-muted-foreground/20">
-                                        <tr>
-                                            <th className="border px-2 py-1">
-                                                Column
-                                            </th>
-                                            <th className="border px-2 py-1">
-                                                Description
-                                            </th>
-                                            <th className="border px-2 py-1">
-                                                Example
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td className="border px-2 py-1">
-                                                A
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Employee ID (required)
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                10235
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="border px-2 py-1">
-                                                B
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Employee Name (optional /
-                                                reference only)
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Juan Dela Cruz
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="border px-2 py-1">
-                                                C
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Department / Notes (optional)
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Kitchen
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="border px-2 py-1">
-                                                D onward
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Date columns (schedule will be
-                                                applied here)
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                2025-01-01, 2025-01-02
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                            const data = await response.json();
+                                            setBatchResult(data);
+                                            if (!response.ok)
+                                                throw new Error(data.message || "Upload failed.");
+                                            return data;
+                                        }}
+                                    />
+                                )}
                             </div>
+
+                            <div className="space-y-4 rounded-xl border border-zinc-700 bg-zinc-800/50 p-4">
+                                <h3 className="text-sm font-semibold text-zinc-300">
+                                    Quick Lookup
+                                </h3>
+                                <CustomSearch
+                                    label="Search Employee"
+                                    apiUrl="api/v2/get_employees"
+                                    value={employee}
+                                    onChange={setEmployee}
+                                    placeholder="Search Employee Name or ID..."
+                                />
+                                <ScheduleSearchField
+                                    label="Search Schedule"
+                                    apiUrl="api/v2/get_schedule"
+                                    value={schedule}
+                                    onChange={setSchedule}
+                                    placeholder="Search Schedule..."
+                                />
+                            </div>
+
+                            {batchResult && renderBatchResult(batchResult)}
                         </div>
 
-                        <div className="space-y-2">
-                            <h4 className="font-semibold text-yellow-500">
-                                3. Sample Upload Format
-                            </h4>
-                            <p>
-                                Empty cells are allowed and will be skipped
-                                automatically.
-                            </p>
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-[500px] border border-gray-300 text-left">
-                                    <thead className="bg-muted-foreground/20">
-                                        <tr>
-                                            <th className="border px-2 py-1">
-                                                Employee ID
-                                            </th>
-                                            <th className="border px-2 py-1">
-                                                Name
-                                            </th>
-                                            <th className="border px-2 py-1">
-                                                Dept
-                                            </th>
-                                            <th className="border px-2 py-1">
-                                                2025-01-01
-                                            </th>
-                                            <th className="border px-2 py-1">
-                                                2025-01-02
-                                            </th>
-                                            <th className="border px-2 py-1">
-                                                2025-01-03
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td className="border px-2 py-1">
-                                                10235
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Juan Dela Cruz
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Kitchen
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                05:00 - 14:00
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Rest Day
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                04:00 - 13:00
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="border px-2 py-1">
-                                                10412
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Maria Santos
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                Service
-                                            </td>
-                                            <td className="border px-2 py-1">
-                                                05:00 - 14:00
-                                            </td>
-                                            <td className="border px-2 py-1"></td>
-                                            <td className="border px-2 py-1">
-                                                ANNUAL LEAVE
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                        {/* Right: Guide */}
+                        <div className="space-y-5 rounded-xl border border-zinc-700 bg-zinc-800/50 p-5 text-sm">
+                            <h3 className="font-semibold text-yellow-500">
+                                Guide: Import CSV / XLSX to Upload Employee Schedules
+                            </h3>
+
+                            <div className="space-y-2">
+                                <h4 className="font-semibold text-yellow-500">
+                                    1. Accepted File Types
+                                </h4>
+                                <ul className="list-inside list-disc space-y-1 text-zinc-400">
+                                    <li>Only .CSV and .XLSX files are supported</li>
+                                    <li>Excel 2003 format (.xls) is NOT allowed</li>
+                                    <li>Unsupported file types will cause the import to fail</li>
+                                </ul>
+                            </div>
+
+                            <div className="space-y-2">
+                                <h4 className="font-semibold text-yellow-500">
+                                    2. Required File Structure
+                                </h4>
+                                <p className="text-zinc-400">
+                                    The file must follow this exact format. Do not rename or rearrange columns.
+                                </p>
+                                <div className="overflow-x-auto rounded-lg border border-zinc-700">
+                                    <table className="w-full min-w-[400px] text-left text-xs">
+                                        <thead className="bg-zinc-700/50">
+                                            <tr>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">Column</th>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">Description</th>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">Example</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-700/50">
+                                            <tr>
+                                                <td className="px-3 py-2 font-medium text-zinc-200">A</td>
+                                                <td className="px-3 py-2 text-zinc-400">Employee ID (required)</td>
+                                                <td className="px-3 py-2 text-zinc-500">10235</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="px-3 py-2 font-medium text-zinc-200">B</td>
+                                                <td className="px-3 py-2 text-zinc-400">Employee Name (optional)</td>
+                                                <td className="px-3 py-2 text-zinc-500">Juan Dela Cruz</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="px-3 py-2 font-medium text-zinc-200">C</td>
+                                                <td className="px-3 py-2 text-zinc-400">Department / Notes (optional)</td>
+                                                <td className="px-3 py-2 text-zinc-500">Kitchen</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="px-3 py-2 font-medium text-zinc-200">D+</td>
+                                                <td className="px-3 py-2 text-zinc-400">Date columns (schedule applied here)</td>
+                                                <td className="px-3 py-2 text-zinc-500">2025-01-01</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <h4 className="font-semibold text-yellow-500">
+                                    3. Sample Upload Format
+                                </h4>
+                                <p className="text-zinc-400">
+                                    Empty cells are allowed and will be skipped automatically.
+                                </p>
+                                <div className="overflow-x-auto rounded-lg border border-zinc-700">
+                                    <table className="w-full min-w-[400px] text-left text-xs">
+                                        <thead className="bg-zinc-700/50">
+                                            <tr>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">Employee ID</th>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">Name</th>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">Dept</th>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">2025-01-01</th>
+                                                <th className="border-b border-zinc-700 px-3 py-2 font-semibold text-zinc-300">2025-01-02</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-700/50">
+                                            <tr>
+                                                <td className="px-3 py-2 text-zinc-300">10235</td>
+                                                <td className="px-3 py-2 text-zinc-400">Juan Dela Cruz</td>
+                                                <td className="px-3 py-2 text-zinc-400">Kitchen</td>
+                                                <td className="px-3 py-2 text-zinc-500">05:00 - 14:00</td>
+                                                <td className="px-3 py-2 text-zinc-500">Rest Day</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="px-3 py-2 text-zinc-300">10412</td>
+                                                <td className="px-3 py-2 text-zinc-400">Maria Santos</td>
+                                                <td className="px-3 py-2 text-zinc-400">Service</td>
+                                                <td className="px-3 py-2 text-zinc-500">05:00 - 14:00</td>
+                                                <td className="px-3 py-2 text-zinc-500">ANNUAL LEAVE</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>

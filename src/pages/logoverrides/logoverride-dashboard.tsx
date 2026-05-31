@@ -58,7 +58,9 @@ import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
@@ -297,7 +299,7 @@ export default function LogoverrideDashboard() {
                                 No filed logoverride found.
                             </span>
                             <Link to={`/logoverrides/form/${employeeId}`}>
-                                <Button className="w-full text-sm sm:w-auto sm:text-base">
+                                <Button className="w-full bg-yellow-500 text-sm text-white hover:bg-yellow-600 sm:w-auto sm:text-base">
                                     File Logoverride
                                 </Button>
                             </Link>
@@ -308,10 +310,10 @@ export default function LogoverrideDashboard() {
                 <>
                     {/* Employee Info Card */}
                     <div className="mb-4 w-full px-3 sm:px-0">
-                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-4 text-white shadow-md sm:flex-row sm:justify-between sm:p-6">
+                        <Card className="flex flex-col items-center gap-4 rounded-xl border p-4 shadow-sm sm:flex-row sm:justify-between sm:p-6">
                             {/* Employee Info */}
                             <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-lg font-bold sm:h-16 sm:w-16 sm:text-2xl">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-lg font-bold text-yellow-400 sm:h-16 sm:w-16 sm:text-2xl">
                                     {employee?.name?.charAt(0) ?? "?"}
                                 </div>
                                 <div className="mt-2 flex flex-col items-center sm:mt-0 sm:items-start">
@@ -325,7 +327,7 @@ export default function LogoverrideDashboard() {
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="mt-1 text-xs opacity-90 sm:text-sm">
+                                    <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                                         ID: {employee?.id_number ?? "N/A"} •{" "}
                                         {employee?.branch_name ?? "N/A"}
                                     </p>
@@ -335,7 +337,7 @@ export default function LogoverrideDashboard() {
                             {/* File Button */}
                             <div className="w-full sm:w-auto">
                                 <Link to={`/logoverrides/form/${employeeId}`}>
-                                    <Button className="w-full text-sm sm:w-auto sm:text-base">
+                                    <Button className="w-full bg-yellow-500 text-sm text-white hover:bg-yellow-600 sm:w-auto sm:text-base">
                                         File Logoverride
                                     </Button>
                                 </Link>
@@ -354,7 +356,7 @@ export default function LogoverrideDashboard() {
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm md:text-base">
                                 <div className="flex justify-between">
-                                    <Badge className="w-fit bg-green-100 px-3 py-1 text-green-800">
+                                    <Badge className="w-fit bg-green-500/10 px-3 py-1 text-green-400">
                                         Previous Cut-off
                                     </Badge>
                                     <span className="font-medium">
@@ -362,7 +364,7 @@ export default function LogoverrideDashboard() {
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <Badge className="w-fit bg-green-100 px-3 py-1 text-green-800">
+                                    <Badge className="w-fit bg-green-500/10 px-3 py-1 text-green-400">
                                         Current Cut-off
                                     </Badge>
                                     <span className="font-medium">
@@ -382,7 +384,7 @@ export default function LogoverrideDashboard() {
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm md:text-base">
                                 <div className="flex justify-between">
-                                    <Badge className="w-fit bg-yellow-100 px-3 py-1 text-yellow-800">
+                                    <Badge className="w-fit bg-yellow-500/10 px-3 py-1 text-yellow-400">
                                         Previous Cut-off
                                     </Badge>
                                     <span className="font-medium">
@@ -390,7 +392,7 @@ export default function LogoverrideDashboard() {
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <Badge className="w-fit bg-yellow-100 px-3 py-1 text-yellow-800">
+                                    <Badge className="w-fit bg-yellow-500/10 px-3 py-1 text-yellow-400">
                                         Current Cut-off
                                     </Badge>
                                     <span className="font-medium">
@@ -410,7 +412,7 @@ export default function LogoverrideDashboard() {
                             </CardHeader>
                             <CardContent className="space-y-2 text-sm md:text-base">
                                 <div className="flex justify-between">
-                                    <Badge className="w-fit bg-red-100 px-3 py-1 text-red-800">
+                                    <Badge className="w-fit bg-red-500/10 px-3 py-1 text-red-400">
                                         Previous Cut-off
                                     </Badge>
                                     <span className="font-medium">
@@ -418,7 +420,7 @@ export default function LogoverrideDashboard() {
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <Badge className="w-fit bg-red-100 px-3 py-1 text-red-800">
+                                    <Badge className="w-fit bg-red-500/10 px-3 py-1 text-red-400">
                                         Current Cut-off
                                     </Badge>
                                     <span className="font-medium">
@@ -516,36 +518,30 @@ export default function LogoverrideDashboard() {
                                             <label className="mb-1 block text-sm font-medium">
                                                 Sort By
                                             </label>
-                                            <select
+                                            <Select
                                                 value={sortOption}
-                                                onChange={(e) => {
-                                                    setSortOption(
-                                                        e.target.value,
-                                                    );
+                                                onValueChange={(value) => {
+                                                    setSortOption(value);
                                                     setCurrentPage(1);
                                                 }}
-                                                className="bg-background focus:border-primary focus:ring-primary/40 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:ring-2 dark:border-gray-700 dark:bg-[#1E1E1E] dark:text-gray-100"
                                             >
-                                                <optgroup label="Created Date">
-                                                    <option value="newest">
-                                                        Newest First
-                                                    </option>
-                                                    <option value="oldest">
-                                                        Oldest First
-                                                    </option>
-                                                </optgroup>
-                                                <optgroup label="Status">
-                                                    <option value="approved">
-                                                        Approved Only
-                                                    </option>
-                                                    <option value="pending">
-                                                        Pending Only
-                                                    </option>
-                                                    <option value="disapproved">
-                                                        Disapproved Only
-                                                    </option>
-                                                </optgroup>
-                                            </select>
+                                                <SelectTrigger className="w-full sm:w-[180px]">
+                                                    <SelectValue placeholder="Sort by..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectLabel>Created Date</SelectLabel>
+                                                        <SelectItem value="newest">Newest First</SelectItem>
+                                                        <SelectItem value="oldest">Oldest First</SelectItem>
+                                                    </SelectGroup>
+                                                    <SelectGroup>
+                                                        <SelectLabel>Status</SelectLabel>
+                                                        <SelectItem value="approved">Approved Only</SelectItem>
+                                                        <SelectItem value="pending">Pending Only</SelectItem>
+                                                        <SelectItem value="disapproved">Disapproved Only</SelectItem>
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                 </div>
@@ -603,11 +599,11 @@ export default function LogoverrideDashboard() {
                                                                 className={
                                                                     r.status_label ===
                                                                     "Approved"
-                                                                        ? "bg-green-100 px-3 py-1 text-green-800"
+                                                                        ? "bg-green-500/10 px-3 py-1 text-green-400"
                                                                         : r.status_label ===
                                                                             "Pending"
-                                                                          ? "bg-yellow-100 px-3 py-1 text-yellow-800"
-                                                                          : "bg-red-100 px-3 py-1 text-red-800"
+                                                                          ? "bg-yellow-500/10 px-3 py-1 text-yellow-400"
+                                                                          : "bg-red-500/10 px-3 py-1 text-red-400"
                                                                 }
                                                             >
                                                                 {r.status_label}
@@ -776,7 +772,7 @@ export default function LogoverrideDashboard() {
                                                 <TableRow>
                                                     <TableCell
                                                         colSpan={6}
-                                                        className="py-5 text-center text-gray-500"
+                                                        className="py-5 text-center text-muted-foreground"
                                                     >
                                                         No records found.
                                                     </TableCell>

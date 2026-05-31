@@ -6,6 +6,8 @@ import {
     IconInnerShadowTop,
     IconUsers,
     IconCalendarCheck,
+    IconClipboardList,
+    IconClipboardCheck,
 } from "@tabler/icons-react";
 import { Timer } from "lucide-react";
 import { NavUser } from "@/components/nav-user";
@@ -65,11 +67,18 @@ const navMainItems = (
         );
 
         // if (hasScheduleAccess) {
-        //     items.push({
-        //         title: "Schedule",
-        //         url: `/schedules/${userId ?? ""}`,
-        //         icon: IconCalendarCheck,
-        //     });
+        //     items.push(
+        //         {
+        //             title: "Schedule",
+        //             url: `/schedules/${userId ?? ""}`,
+        //             icon: IconCalendarCheck,
+        //         },
+        //         {
+        //             title: "Forms",
+        //             url: `/forms/${userId ?? ""}`,
+        //             icon: IconClipboardList,
+        //         },
+        //     );
         // }
     }
 
@@ -90,6 +99,16 @@ const navMainItems = (
                 url: `/schedules/${userId ?? ""}`,
                 icon: IconCalendarCheck,
             },
+            //     {
+            //         title: "Forms",
+            //         url: `/forms/submissions/${userId ?? ""}`,
+            //         icon: IconClipboardList,
+            //     },
+            //     {
+            //         title: "Validate Forms",
+            //         url: `/forms/validation/${userId ?? ""}`,
+            //         icon: IconClipboardCheck,
+            //     },
         );
     }
 
@@ -154,7 +173,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         className={({ isActive }) =>
                                             `flex items-center gap-2 rounded-md px-4 py-4 transition-colors ${
                                                 isActive
-                                                    ? "bg-red-500 font-semibold text-white"
+                                                    ? "bg-primary text-primary-foreground font-semibold"
                                                     : "text-muted-foreground hover:bg-muted/10"
                                             }`
                                         }

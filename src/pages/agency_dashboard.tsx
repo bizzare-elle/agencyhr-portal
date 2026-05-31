@@ -89,22 +89,22 @@ export default function AgencyDashboard() {
             >
                 {/* Header */}
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3 text-2xl font-bold text-white">
+                    <div className="flex items-center gap-3 text-2xl font-bold">
                         <h3>Agency Dashboard</h3>
-                        <Badge className="bg-blue-500 text-white">
+                        <Badge className="bg-primary text-primary-foreground">
                             {data?.agency_name}
                         </Badge>
                     </div>
-                    <p className="text-sm text-white/60">
+                    <p className="text-sm text-muted-foreground">
                         Workforce and time management overview.
                     </p>
                 </div>
 
                 {/* Summary Card */}
-                <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
+                <Card className="transition-all duration-200">
                     <CardHeader>
                         <CardTitle>Total Employees</CardTitle>
-                        <CardDescription className="text-gray-400">
+                        <CardDescription>
                             Currently active in your agency
                         </CardDescription>
                     </CardHeader>
@@ -116,12 +116,12 @@ export default function AgencyDashboard() {
                 </Card>
 
                 {/* Employee Growth Chart */}
-                <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
+                <Card className="transition-all duration-200">
                     <CardHeader>
                         <CardTitle>
                             Employee Growth (Regular vs Probationary)
                         </CardTitle>
-                        <CardDescription className="text-gray-400">
+                        <CardDescription>
                             Monthly breakdown of employees by status
                         </CardDescription>
                     </CardHeader>
@@ -164,10 +164,10 @@ export default function AgencyDashboard() {
 
                 {/* Logoverride and Overtime Charts */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
+                    <Card className="transition-all duration-200">
                         <CardHeader>
                             <CardTitle>Monthly Logoverride Files</CardTitle>
-                            <CardDescription className="text-gray-400">
+                            <CardDescription>
                                 Total number of logoverride requests filed
                             </CardDescription>
                         </CardHeader>
@@ -201,10 +201,10 @@ export default function AgencyDashboard() {
                         </CardContent>
                     </Card>
 
-                    <Card className="border border-white/10 bg-[#1f1f1f] text-white transition-all duration-200 hover:border-white/20">
+                    <Card className="transition-all duration-200">
                         <CardHeader>
                             <CardTitle>Monthly Overtime Files</CardTitle>
-                            <CardDescription className="text-gray-400">
+                            <CardDescription>
                                 Total number of overtime requests filed
                             </CardDescription>
                         </CardHeader>

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { UploadCloud, FileSpreadsheet, X } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, X, ArrowUpCircle } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/axios";
@@ -139,7 +139,7 @@ export default function ScheduleUploadFile({ coordinatorId }: Props) {
             }
 
             uploadMutation.mutate({ employees });
-        } catch (err) {
+        } catch {
             setError("Failed to parse file.");
         }
     };
@@ -158,67 +158,90 @@ export default function ScheduleUploadFile({ coordinatorId }: Props) {
     };
 
     return (
-        <div className="w-full max-w-lg">
+        <div className="w-full">
             {!file && (
                 <div
                     role="button"
                     tabIndex={0}
                     onClick={() => inputRef.current?.click()}
+                    onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
                     onDragOver={(e) => {
                         e.preventDefault();
                         setDragging(true);
                     }}
                     onDragLeave={() => setDragging(false)}
                     onDrop={handleDrop}
-                    className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition ${
+                    className={`group cursor-pointer rounded-xl border-2 border-dashed px-6 py-10 text-center transition-all ${
                         dragging
-                            ? "scale-[1.02] border-yellow-500"
-                            : "border-border"
-                    } hover:border-yellow-500`}
+                            ? "border-yellow-500 bg-yellow-500/10"
+                            : "border-border hover:border-yellow-400 hover:bg-yellow-500/5"
+                    }`}
                 >
-                    <UploadCloud className="mx-auto mb-3 h-8 w-8 text-yellow-500 opacity-80" />
-                    <p className="text-sm font-medium">
-                        Click to upload or drag file here
+                    <UploadCloud
+                        className={`mx-auto mb-3 h-10 w-10 transition-colors ${
+                            dragging
+                                ? "text-yellow-500"
+                                : "text-muted-foreground group-hover:text-yellow-400"
+                        }`}
+                    />
+                    <p className="text-sm font-medium text-foreground">
+                        Click to upload or drag & drop
                     </p>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                        Upload the schedule template (.xlsx or .csv)
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        .xlsx or .csv &mdash; max 5MB
                     </p>
                 </div>
             )}
 
             {file && (
-                <div className="space-y-3 rounded-lg border p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex min-w-0 items-center gap-3">
-                            <FileSpreadsheet className="h-5 w-5 shrink-0 text-yellow-500" />
-                            <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-yellow-500">
-                                    {file.name}
-                                </p>
-                                <p className="text-muted-foreground text-xs">
-                                    {(file.size / 1024).toFixed(1)} KB
-                                </p>
-                            </div>
+                <div className="rounded-xl border bg-muted p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-500/10">
+                            <FileSpreadsheet className="h-5 w-5 text-yellow-500" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-foreground">
+                                {file.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {(file.size / 1024).toFixed(1)} KB
+                            </p>
                         </div>
                         <button
                             onClick={removeFile}
-                            className="p-1 opacity-70 transition hover:opacity-100"
+                            className="rounded-md p-1 text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
                             aria-label="Remove file"
                         >
                             <X size={16} />
                         </button>
                     </div>
+
                     <button
                         onClick={handleUpload}
                         disabled={isUploading}
-                        className="w-full rounded-md border px-4 py-2 text-sm font-medium transition hover:opacity-90 disabled:opacity-50"
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-yellow-600 disabled:opacity-50"
                     >
-                        {isUploading ? "Uploading..." : "Upload Schedule"}
+                        {isUploading ? (
+                            <>
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                Uploading...
+                            </>
+                        ) : (
+                            <>
+                                <ArrowUpCircle className="h-4 w-4" />
+                                Upload Schedule
+                            </>
+                        )}
                     </button>
                 </div>
             )}
 
-            {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+            {error && (
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-red-400">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />
+                    {error}
+                </p>
+            )}
 
             <input
                 ref={inputRef}

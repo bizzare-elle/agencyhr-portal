@@ -54,13 +54,13 @@ const columns: TableColumn<Employee>[] = [
         cell: (row) => {
             if (row.employment_status === "Active")
                 return (
-                    <Badge className="bg-green-700 text-white">Active</Badge>
+                    <Badge className="bg-green-500/10 text-green-400">Active</Badge>
                 );
 
             if (row.employment_status === "Resign")
                 return <Badge variant="destructive">Resigned</Badge>;
 
-            return <Badge className="bg-gray-600 text-white">Terminated</Badge>;
+            return <Badge className="bg-muted text-muted-foreground">Terminated</Badge>;
         },
     },
     {

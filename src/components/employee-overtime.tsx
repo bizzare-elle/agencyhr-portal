@@ -220,11 +220,11 @@ const OvertimeRequestsCard: React.FC<OvertimeRequestsCardProps> = ({
                                             <Badge
                                                 className={cn(
                                                     ot.status === "Approved"
-                                                        ? "bg-green-100 px-3 py-1 text-green-800"
+                                                        ? "bg-green-500/10 px-3 py-1 text-green-400"
                                                         : ot.status ===
                                                             "Pending for Approval"
-                                                          ? "bg-yellow-100 px-3 py-1 text-yellow-800"
-                                                          : "bg-red-100 px-3 py-1 text-red-800",
+                                                          ? "bg-yellow-500/10 px-3 py-1 text-yellow-400"
+                                                          : "bg-red-500/10 px-3 py-1 text-red-400",
                                                 )}
                                             >
                                                 {ot.status}

@@ -533,7 +533,7 @@ export default function OvertimeForm() {
                             <Button
                                 type="submit"
                                 disabled={overtimeMutation.isPending}
-                                className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                                className="flex w-full items-center justify-center gap-2 bg-yellow-500 text-white hover:bg-yellow-600 sm:w-auto"
                             >
                                 {overtimeMutation.isPending ? (
                                     <>

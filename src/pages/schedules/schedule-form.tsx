@@ -400,7 +400,7 @@ export default function ScheduleForm() {
                     <Button
                         onClick={handleSubmit}
                         disabled={saveScheduleMutation.isPending}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 bg-yellow-500 text-white hover:bg-yellow-600"
                     >
                         {saveScheduleMutation.isPending ? (
                             <>

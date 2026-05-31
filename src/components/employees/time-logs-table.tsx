@@ -82,7 +82,7 @@ const columns: TableColumn<TimeLog>[] = [
 
     {
         name: "Status",
-        cell: () => <Badge className="bg-green-600 text-white">Approved</Badge>,
+        cell: () => <Badge className="bg-green-500/10 text-green-400">Approved</Badge>,
     },
     {
         name: "Actions",

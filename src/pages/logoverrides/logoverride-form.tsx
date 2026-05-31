@@ -36,7 +36,6 @@ import {
 import api from "@/lib/axios";
 import { useAuthStore } from "@/hooks/use-auth";
 import { ParentComponent } from "@/components/parent-container";
-import { useMemo } from "react";
 
 // const getCutoffRange = () => {
 //     const now = new Date();
@@ -330,7 +329,6 @@ export default function LogoverrideForm() {
                                         isDateAllowed={(date: any) => {
                                             if (!date) return false;
 
-                                            // 🔥 normalize (handles dayjs, moment, Date)
                                             const d =
                                                 date instanceof Date
                                                     ? date
@@ -457,7 +455,7 @@ export default function LogoverrideForm() {
                             <Button
                                 type="submit"
                                 disabled={logoverrideMutation.isPending}
-                                className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                                className="flex w-full items-center justify-center gap-2 bg-yellow-500 text-white hover:bg-yellow-600 sm:w-auto"
                             >
                                 {logoverrideMutation.isPending ? (
                                     <>

@@ -261,9 +261,9 @@ export default function ScheduleDashboard() {
                 <>
                     {/* Header */}
                     <div className="mb-4 w-full">
-                        <Card className="flex flex-col items-center gap-4 rounded-xl bg-[#36454F] p-4 text-white shadow-md sm:flex-row sm:justify-between sm:p-6">
+                        <Card className="flex flex-col items-center gap-4 rounded-xl border p-4 shadow-sm sm:flex-row sm:justify-between sm:p-6">
                             <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
-                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20 text-xl font-bold sm:h-16 sm:w-16 sm:text-2xl">
+                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-xl font-bold text-yellow-400 sm:h-16 sm:w-16 sm:text-2xl">
                                     {initialLetter}
                                 </div>
 
@@ -278,7 +278,7 @@ export default function ScheduleDashboard() {
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="mt-1 text-xs opacity-90 sm:text-sm">
+                                    <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                                         ID: {employee.id_number} •{" "}
                                         {employee.branch_name}
                                     </p>
@@ -289,7 +289,7 @@ export default function ScheduleDashboard() {
                                 {" "}
                                 <div className="w-full sm:w-auto">
                                     <Link to={`/schedules/form/${employeeId}`}>
-                                        <Button className="w-full text-sm sm:w-auto sm:text-base">
+                                        <Button className="w-full bg-yellow-500 text-sm text-white hover:bg-yellow-600 sm:w-auto sm:text-base">
                                             File Employee Schedule
                                         </Button>
                                     </Link>
@@ -298,7 +298,7 @@ export default function ScheduleDashboard() {
                                     <Link
                                         to={`/schedules/upload/${employeeId}`}
                                     >
-                                        <Button className="w-full text-sm sm:w-auto sm:text-base">
+                                        <Button className="w-full bg-yellow-500 text-sm text-white hover:bg-yellow-600 sm:w-auto sm:text-base">
                                             Upload Schedule By Batch
                                         </Button>
                                     </Link>

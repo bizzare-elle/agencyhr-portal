@@ -1,5 +1,4 @@
 import React from "react";
-import moment from "moment";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
@@ -15,6 +14,85 @@ interface PrintTimeRecordsProps {
     queryTo?: string;
 }
 
+// ── Category mapping (mirrors batch-report-template & PHP reference) ──────────
+const KEY_CATEGORY_MAP: Record<string, string> = {
+    "Regular Day": "Regular Day",
+    "Regular Day ND": "Regular Day",
+    "Regular Day OT": "Regular Day",
+    "Regular Day OT + ND": "Regular Day",
+    Restday: "Rest Day",
+    "Restday ND": "Rest Day",
+    "Restday OT": "Rest Day",
+    "Restday OT + ND": "Rest Day",
+    "Special Day": "Special Holiday",
+    "Special Day ND": "Special Holiday",
+    "Special Day OT": "Special Holiday",
+    "Special Day OT + ND": "Special Holiday",
+    "Special Day Restday": "Special Holiday on Rest Day",
+    "Special Day Restday ND": "Special Holiday on Rest Day",
+    "Special Day Restday OT": "Special Holiday on Rest Day",
+    "Special Day Restday OT + ND": "Special Holiday on Rest Day",
+    "Double Special Day": "Special Holiday",
+    "Double Special Day ND": "Special Holiday",
+    "Double Special Day OT": "Special Holiday",
+    "Double Special Day OT + ND": "Special Holiday",
+    "Double Special Day Restday": "Special Holiday on Rest Day",
+    "Double Special Day Restday ND": "Special Holiday on Rest Day",
+    "Double Special Day Restday OT": "Special Holiday on Rest Day",
+    "Double Special Day Restday OT + ND": "Special Holiday on Rest Day",
+    "Legal Day": "Legal Holiday",
+    "Legal Day ND": "Legal Holiday",
+    "Legal Day OT": "Legal Holiday",
+    "Legal Day OT + ND": "Legal Holiday",
+    "Legal Day Restday": "Legal Holiday on Rest Day",
+    "Legal Day Restday ND": "Legal Holiday on Rest Day",
+    "Legal Day Restday OT": "Legal Holiday on Rest Day",
+    "Legal Day Restday OT + ND": "Legal Holiday on Rest Day",
+    "Double Legal Day": "Legal Holiday",
+    "Double Legal Day ND": "Legal Holiday",
+    "Double Legal Day OT": "Legal Holiday",
+    "Double Legal Day OT + ND": "Legal Holiday",
+    "Double Legal Day Restday": "Legal Holiday on Rest Day",
+    "Double Legal Day Restday ND": "Legal Holiday on Rest Day",
+    "Double Legal Day Restday OT": "Legal Holiday on Rest Day",
+    "Double Legal Day Restday OT + ND": "Legal Holiday on Rest Day",
+    "Regular Holiday (Single Pay)": "Legal Holiday (Day Off) 100%",
+};
+
+const SUMMARY_ORDER = [
+    "Regular Day",
+    "Rest Day",
+    "Legal Holiday",
+    "Legal Holiday on Rest Day",
+    "Legal Holiday (Day Off) 100%",
+    "Special Holiday",
+    "Special Holiday on Rest Day",
+];
+
+const CATEGORY_PRIORITY: Record<string, number> = {
+    "Legal Holiday": 3,
+    "Legal Holiday on Rest Day": 3,
+    "Legal Holiday (Day Off) 100%": 3,
+    "Rest Day": 2,
+    "Special Holiday on Rest Day": 2,
+    "Special Holiday": 1,
+    "Regular Day": 0,
+};
+
+type SummaryEntry = { days: number; ot: number; nd: number; ot_nd: number };
+type BranchSummary = Record<string, SummaryEntry>;
+type BranchLU = {
+    late_days: number;
+    late_hrs: number;
+    under_days: number;
+    under_hrs: number;
+    billable: number;
+};
+
+const floorHalf = (h: number) => Math.floor(h * 2) / 2;
+
+const fmt2 = (n: number) => n.toFixed(2);
+
 export const PrintTimeRecords: React.FC<
     PrintTimeRecordsProps & { records: any[] }
 > = ({
@@ -24,174 +102,345 @@ export const PrintTimeRecords: React.FC<
     idNumber,
     branchName,
     isHrEmployee,
-    queryFrom,
-    queryTo,
     records,
 }) => {
     const handlePrint = () => {
         const table = document.getElementById(tableId);
         if (!table) return;
 
-        const sumColumnByIndex = (index: number) => {
-            const rows = Array.from(table.querySelectorAll("tbody tr"));
-            return rows.reduce((sum, row) => {
-                const cells = row.querySelectorAll("td");
-                const val = parseFloat(
-                    cells[index]?.textContent?.trim() || "0",
-                );
-                return sum + (isNaN(val) ? 0 : val);
-            }, 0);
+        // ── Column totals from DOM table ────────────────────────────────────
+        const sumCol = (idx: number) =>
+            Array.from(table.querySelectorAll("tbody tr")).reduce(
+                (sum, row) => {
+                    const val = parseFloat(
+                        row.querySelectorAll("td")[idx]?.textContent?.trim() ||
+                            "0",
+                    );
+                    return sum + (isNaN(val) ? 0 : val);
+                },
+                0,
+            );
+
+        const totalOT = sumCol(7);
+        const totalBreakLate = sumCol(8);
+        const totalLate = sumCol(9);
+        const totalUndertime = sumCol(10);
+        const totalHoursWorked = sumCol(11);
+        const totalBillable = sumCol(12);
+
+        // ── Build per-branch attendance summary ─────────────────────────────
+        const blankSummary = (): BranchSummary => {
+            const s: BranchSummary = {};
+            SUMMARY_ORDER.forEach((t) => {
+                s[t] = { days: 0, ot: 0, nd: 0, ot_nd: 0 };
+            });
+            return s;
         };
 
-        const totalBreakLate = sumColumnByIndex(8);
-        const totalLate = sumColumnByIndex(9);
-        const totalUndertime = sumColumnByIndex(10);
-        const totalOvertime = sumColumnByIndex(7);
-        const totalHoursWorked = sumColumnByIndex(11);
-        const totalBillable = sumColumnByIndex(12);
+        const branchSummaries: Record<string, BranchSummary> = {};
+        const branchLU: Record<string, BranchLU> = {};
 
-        // --- Compute manhour totals grouped by category ---
-        const manhourTotals: { [key: string]: number } = {};
-        records.forEach((record) => {
+        records.forEach((rec: any) => {
+            const branchKey: string = rec.branch_timeIn || "Unassigned";
+
+            if (!branchSummaries[branchKey]) {
+                branchSummaries[branchKey] = blankSummary();
+                branchLU[branchKey] = {
+                    late_days: 0,
+                    late_hrs: 0,
+                    under_days: 0,
+                    under_hrs: 0,
+                    billable: 0,
+                };
+            }
+
+            const late = Number(rec.late ?? 0) + Number(rec.late_break ?? 0);
+            const under = Number(rec.undertime ?? 0);
+            if (late > 0) {
+                branchLU[branchKey].late_days++;
+                branchLU[branchKey].late_hrs += late;
+            }
+            if (under > 0) {
+                branchLU[branchKey].under_days++;
+                branchLU[branchKey].under_hrs += under;
+            }
+            branchLU[branchKey].billable += Number(rec.hours ?? 0);
+
+            // Parse manhour_conversion → {category: hours}
             let manhours: Record<string, number> = {};
             try {
                 manhours =
-                    typeof record.manhour_conversion === "string"
-                        ? JSON.parse(record.manhour_conversion)
-                        : record.manhour_conversion || {};
-            } catch {}
-            Object.entries(manhours).forEach(([category, value]) => {
-                const hours = Number(value);
-                if (hours > 0) {
-                    if (!manhourTotals[category]) manhourTotals[category] = 0;
-                    manhourTotals[category] += hours;
+                    typeof rec.manhour_conversion === "string"
+                        ? JSON.parse(rec.manhour_conversion)
+                        : rec.manhour_conversion || {};
+            } catch {
+                /* ignore malformed JSON */
+            }
+
+            // Determine highest-priority day category
+            let dayCategory: string | null = null;
+            Object.entries(manhours).forEach(([key, hours]) => {
+                if (Number(hours) <= 0) return;
+                const cat = KEY_CATEGORY_MAP[key];
+                if (!cat) return;
+                if (
+                    dayCategory === null ||
+                    (CATEGORY_PRIORITY[cat] ?? 0) >
+                        (CATEGORY_PRIORITY[dayCategory] ?? 0)
+                ) {
+                    dayCategory = cat;
                 }
+            });
+            if (!dayCategory) return;
+
+            branchSummaries[branchKey][dayCategory].days++;
+
+            Object.entries(manhours).forEach(([key, hours]) => {
+                if (Number(hours) <= 0) return;
+                const cat = KEY_CATEGORY_MAP[key];
+                if (cat !== dayCategory) return;
+                const isOT = key.includes("OT");
+                const isND = key.includes("ND");
+                if (isOT && isND)
+                    branchSummaries[branchKey][dayCategory!].ot_nd +=
+                        Number(hours);
+                else if (isOT)
+                    branchSummaries[branchKey][dayCategory!].ot +=
+                        Number(hours);
+                else if (isND)
+                    branchSummaries[branchKey][dayCategory!].nd +=
+                        Number(hours);
             });
         });
 
-        const printContent = table.outerHTML;
-        const printWindow = window.open("", "_blank");
+        // ── Render per-branch tables ────────────────────────────────────────
+        const branchTablesHtml = Object.entries(branchSummaries)
+            .map(([bName, bSummary]) => {
+                const bu = branchLU[bName];
+                const hasData =
+                    bu.late_hrs > 0 ||
+                    bu.under_hrs > 0 ||
+                    Object.values(bSummary).some(
+                        (d) =>
+                            d.days > 0 || d.ot > 0 || d.nd > 0 || d.ot_nd > 0,
+                    );
+                if (!hasData) return "";
+
+                const catRows = SUMMARY_ORDER.map((type) => {
+                    const d = bSummary[type];
+                    if (
+                        !d ||
+                        (d.days === 0 &&
+                            d.ot === 0 &&
+                            d.nd === 0 &&
+                            d.ot_nd === 0)
+                    )
+                        return "";
+                    const otD = floorHalf(d.ot);
+                    const ndD = floorHalf(d.nd);
+                    const otNdD = floorHalf(d.ot_nd);
+                    return `<tr>
+                        <td style="text-align:left;">${type}</td>
+                        <td>${d.days > 0 ? d.days : ""}</td>
+                        <td>${otD > 0 ? fmt2(otD) : ""}</td>
+                        <td>${ndD > 0 ? fmt2(ndD) : ""}</td>
+                        <td>${otNdD > 0 ? fmt2(otNdD) : ""}</td>
+                    </tr>`;
+                }).join("");
+
+                const lateRow =
+                    bu.late_hrs > 0
+                        ? `<tr>
+                        <td style="text-align:left;">Late(s) / Hour(s)</td>
+                        <td>${bu.late_days}</td>
+                        <td>${fmt2(bu.late_hrs)}</td>
+                        <td></td><td></td>
+                    </tr>`
+                        : "";
+
+                const underRow =
+                    bu.under_hrs > 0
+                        ? `<tr>
+                        <td style="text-align:left;">Undertime / Hour(s)</td>
+                        <td>${bu.under_days}</td>
+                        <td>${fmt2(bu.under_hrs)}</td>
+                        <td></td><td></td>
+                    </tr>`
+                        : "";
+
+                return `
+                    <table class="breakdown-table" style="width:49%; display:inline-table; vertical-align:top; margin-right:1%;">
+                        <thead>
+                            <tr>
+                                <th colspan="5" style="text-align:center; background-color:#d9d9d9; font-size:10px;">
+                                    TIMEKEEPING ATTENDANCE &mdash; ${bName.toUpperCase()}
+                                </th>
+                            </tr>
+                            <tr>
+                                <th style="text-align:left; width:44%;">Work Type</th>
+                                <th>Days</th>
+                                <th>OT</th>
+                                <th>ND</th>
+                                <th>OT + ND</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${catRows}
+                            ${lateRow}
+                            ${underRow}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td style="text-align:right;"><strong>Billable Hrs</strong></td>
+                                <td colspan="4"><strong>${fmt2(bu.billable)}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>`;
+            })
+            .join("");
+
+        // ── Inject tfoot totals row into the cloned table HTML ──────────────
+        const tfootHtml = `
+            <tfoot>
+                <tr>
+                    <td colspan="7" style="text-align:right; font-weight:bold;">Totals</td>
+                    <td>${totalOT > 0 ? fmt2(totalOT) : "&mdash;"}</td>
+                    <td>${totalBreakLate > 0 ? fmt2(totalBreakLate) : "&mdash;"}</td>
+                    <td>${totalLate > 0 ? fmt2(totalLate) : "&mdash;"}</td>
+                    <td>${totalUndertime > 0 ? fmt2(totalUndertime) : "&mdash;"}</td>
+                    <td>${fmt2(totalHoursWorked)}</td>
+                    <td>${fmt2(totalBillable)}</td>
+                </tr>
+            </tfoot>`;
+
+        const printContent = table.outerHTML.replace(
+            "</table>",
+            tfootHtml + "</table>",
+        );
 
         const disclaimerHtml = isHrEmployee
             ? `<div class="footer"><strong>Disclaimer:</strong> This is not an official document.</div>`
             : "";
 
-        if (printWindow) {
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Employee Time Records</title>
-                    <style>
-                        body { font-family: Helvetica, Arial, sans-serif; padding:10px; font-size:10px; color:#000; }
-                        .header { padding-bottom:6px; margin-bottom:5px; }
-                        .header-divider { border-bottom:1px solid #000; margin:6px 0 10px 0; }
-                        .header h2 { font-size:14px; font-weight:bold; margin:0; }
-                        .header h3 { font-size:11px; margin:2px 0; font-weight:normal; }
-                        .header h4 { font-size:9px; color:gray; margin:2px 0 0 0; }
-                        table { width:100%; border-collapse:collapse; margin-top:10px; }
-                        th { background-color:#d9e1f2; border:1px solid #000; padding:4px 6px; font-size:9px; font-weight:bold; text-align:center; }
-                        td { padding:3px 6px; font-size:9px; text-align:center; border-bottom:0.5px solid #ccc; border-left:1px solid #000; }
-                        td:last-child { border-right:1px solid #000; }
-                        .totals { margin-top:12px; padding-top:6px; border-top:1px solid #000; font-size:10px; }
-                        .signature { margin-top:40px; text-align:center; }
-                        .signature-line { margin:0 auto; width:220px; border-top:1px solid #000; padding-top:4px; font-size:9px; }
-                        .footer { margin-top:20px; text-align:center; font-size:9px; color:red; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h2>Employee Time Records</h2>
-                        <h4>Generated: ${format(new Date(), "PPpp")}</h4>
-                        <div class="header-divider"></div>
-                        <h3>Name: ${employeeName}</h3>
-                        <h3>ID Number: ${idNumber || "N/A"}</h3>
-                        <h3>Branch: ${branchName || "N/A"}</h3>
-                        <h3>Agency: ${agencyName || "No Agency"}</h3>
+        const printWindow = window.open("", "_blank");
+        if (!printWindow) return;
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Employee Timesheet</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        font-size: 10px;
+                        color: #6c757d;
+                        padding: 10px;
+                    }
+
+                    /* ── Header ── */
+                    .employee-header { font-size: 20px; font-weight: bold; line-height: 1.2; color: #000; }
+                    .generated-info  { font-size: 12px; font-weight: bold; line-height: 1.2; }
+                    .header-divider  { border: 0; border-top: 1px solid #6c757d; margin: 8px 0; }
+
+                    /* ── 4-column info grid ── */
+                    .info-grid {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 4px 16px;
+                        margin-bottom: 8px;
+                        font-size: 11px;
+                    }
+
+                    /* ── Main table ── */
+                    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+                    th, td { border: 1px solid #6c757d; padding: 4px 6px; text-align: center; vertical-align: middle; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    tr:nth-child(even) td { background-color: #f9f9f9; }
+                    tfoot td { font-weight: bold; background-color: #f2f2f2; }
+
+                    /* ── Breakdown tables ── */
+                    .breakdown-wrapper { margin-top: 10px; }
+                    .breakdown-table { font-size: 9px; margin-top: 6px; }
+                    .breakdown-table th { background-color: #e8e8e8; }
+                    .breakdown-table td, .breakdown-table th { padding: 3px 5px; }
+                    .breakdown-table tfoot td { font-weight: bold; background-color: #f2f2f2; }
+
+                    /* ── Signature ── */
+                    .signature-container { margin-top: 40px; text-align: center; }
+                    .signature-line      { width: 250px; border-top: 1px solid #000; margin: 20px auto 0; padding-top: 6px; }
+                    .signature-text      { font-size: 10px; font-weight: bold; }
+
+                    .footer { margin-top: 20px; text-align: center; font-size: 9px; color: red; }
+
+                    @page  { size: A4 portrait; margin: 8mm; }
+                    @media print {
+                        body { font-size: 7.5px; }
+                    }
+                </style>
+            </head>
+            <body>
+                <!-- Header -->
+                <div class="employee-header">Employee Timesheet</div>
+                <div class="generated-info">Generated: ${format(new Date(), "yyyy-MM-dd HH:mm:ss")}</div>
+                <hr class="header-divider">
+
+                <!-- 4-column info grid -->
+                <div class="info-grid">
+                    <div><strong>Name:</strong> ${employeeName}</div>
+                    <div><strong>ID Number:</strong> ${idNumber || "N/A"}</div>
+                    <div><strong>Branch:</strong> ${branchName || "N/A"}</div>
+                    <div><strong>Agency:</strong> ${agencyName || "—"}</div>
+                </div>
+
+                <!-- Main timesheet table (with injected tfoot) -->
+                ${printContent}
+
+                <!-- Per-branch attendance breakdown -->
+                <div class="breakdown-wrapper" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; margin-top:10px;">
+                    ${branchTablesHtml}
+                </div>
+
+                <!-- Signature -->
+                <div class="signature-container">
+                    <div class="signature-line">
+                        <span class="signature-text">${employeeName} &mdash; Employee Signature</span>
                     </div>
+                </div>
 
-                    ${printContent}
+                ${disclaimerHtml}
 
-                  <div class="totals" style="margin-top:12px; border-top:1px solid #000; padding-top:6px;">
-    <table style="width:30%; border-collapse: collapse; font-size:10px; margin-top:4px;">
-        <thead>
-            <tr>
-                <th style="border:1px solid #000; padding:4px;">Timekeeping Attendance Summary</th>
-                <th style="border:1px solid #000; padding:4px;">Total Hours</th>
-            </tr>
-        </thead>
-        <tbody>
-          ${Object.entries(manhourTotals)
-              .map(
-                  ([cat, hrs]) =>
-                      `<tr>
-                            <td style="border:1px solid #000; padding:4px;">${cat}</td>
-                            <td style="border:1px solid #000; padding:4px;">${hrs.toFixed(2)}</td>
-                        </tr>`,
-              )
-              .join("")}
-        </tbody>
-            <tr>
-                <td style="border:1px solid #000; padding:4px;">Total Break Late</td>
-                <td style="border:1px solid #000; padding:4px;">${totalBreakLate.toFixed(2)}</td>
-            </tr>
-            <tr>
-                <td style="border:1px solid #000; padding:4px;">Total Late</td>
-                <td style="border:1px solid #000; padding:4px;">${totalLate.toFixed(2)}</td>
-            </tr>
-            <tr>
-                <td style="border:1px solid #000; padding:4px;">Total Undertime</td>
-                <td style="border:1px solid #000; padding:4px;">${totalUndertime.toFixed(2)}</td>
-            </tr>
-            <tr>
-                <td style="border:1px solid #000; padding:4px;">Total Hours Worked</td>
-                <td style="border:1px solid #000; padding:4px;">${totalHoursWorked.toFixed(2)}</td>
-            </tr>
-            <tr>
-                <td style="border:1px solid #000; padding:4px;">Total Billable Hours</td>
-                <td style="border:1px solid #000; padding:4px;">${totalBillable.toFixed(2)}</td>
-            </tr>
-           
-          
-    </table>
-</div>
-
-                    <div class="signature">
-                        <div class="signature-line">${employeeName}</div>
-                    </div>
-
-                    ${disclaimerHtml}
-
-                    <script>
-                        document.querySelectorAll("tbody tr").forEach(row => {
-                            const cells = row.querySelectorAll("td");
-                            const overtimeIdx = 7;
-                            const breakLateIdx = 8;
-                            const lateIdx = 9;
-                            const undertimeIdx = 10;
-                            cells.forEach((cell, idx) => {
-                                const text = cell.textContent?.trim().toLowerCase();
-                                if (idx !== overtimeIdx && (!text || text === "no data" || text === "no filed" || text === "n/a")) {
+                <script>
+                    // Highlight missing / flagged cells
+                    document.querySelectorAll("tbody tr").forEach(function(row) {
+                        var cells = row.querySelectorAll("td");
+                        var overtimeIdx   = 7;
+                        var breakLateIdx  = 8;
+                        var lateIdx       = 9;
+                        var undertimeIdx  = 10;
+                        cells.forEach(function(cell, idx) {
+                            var text = (cell.textContent || "").trim().toLowerCase();
+                            if (idx !== overtimeIdx && (!text || text === "no data" || text === "no filed" || text === "n/a" || text === "—")) {
+                                cell.style.color = "red";
+                                cell.style.fontWeight = "bold";
+                                return;
+                            }
+                            if (idx === breakLateIdx || idx === lateIdx || idx === undertimeIdx) {
+                                var value = parseFloat(text);
+                                if (!isNaN(value) && value > 0) {
                                     cell.style.color = "red";
                                     cell.style.fontWeight = "bold";
-                                    return;
                                 }
-                                if (idx === breakLateIdx || idx === lateIdx || idx === undertimeIdx) {
-                                    const value = parseFloat(text);
-                                    if (!isNaN(value) && value > 0) {
-                                        cell.style.color = "red";
-                                        cell.style.fontWeight = "bold";
-                                    }
-                                }
-                            });
+                            }
                         });
-                    </script>
-                </body>
-                </html>
-            `);
+                    });
+                    window.onload = function() { window.print(); };
+                </script>
+            </body>
+            </html>
+        `);
 
-            printWindow.document.close();
-            printWindow.onload = () => printWindow.print();
-        }
+        printWindow.document.close();
     };
 
     return (

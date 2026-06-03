@@ -66,20 +66,20 @@ const navMainItems = (
             },
         );
 
-        if (hasScheduleAccess) {
-            items.push(
-                {
-                    title: "Schedule",
-                    url: `/schedules/${userId ?? ""}`,
-                    icon: IconCalendarCheck,
-                },
-                {
-                    title: "Forms",
-                    url: `/forms/${userId ?? ""}`,
-                    icon: IconClipboardList,
-                },
-            );
-        }
+        // if (hasScheduleAccess) {
+        //     items.push(
+        //         {
+        //             title: "Schedule",
+        //             url: `/schedules/${userId ?? ""}`,
+        //             icon: IconCalendarCheck,
+        //         },
+        //         {
+        //             title: "Forms",
+        //             url: `/forms/${userId ?? ""}`,
+        //             icon: IconClipboardList,
+        //         },
+        //     );
+        // }
     }
 
     if (role === "agency_coordinator") {
@@ -99,16 +99,16 @@ const navMainItems = (
                 url: `/schedules/${userId ?? ""}`,
                 icon: IconCalendarCheck,
             },
-            {
-                title: "Forms",
-                url: `/forms/submissions/${userId ?? ""}`,
-                icon: IconClipboardList,
-            },
-            {
-                title: "Validate Forms",
-                url: `/forms/validation/${userId ?? ""}`,
-                icon: IconClipboardCheck,
-            },
+            // {
+            //     title: "Forms",
+            //     url: `/forms/submissions/${userId ?? ""}`,
+            //     icon: IconClipboardList,
+            // },
+            // {
+            //     title: "Validate Forms",
+            //     url: `/forms/validation/${userId ?? ""}`,
+            //     icon: IconClipboardCheck,
+            // },
         );
     }
 

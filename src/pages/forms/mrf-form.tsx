@@ -35,13 +35,13 @@ const mrfSchema = z
         // Nature of Requisition (one of the four boxes)
         nature_of_requisition: z.enum(
             ["Replacement", "Additional Headcount", "New Position", "Pre-approved Position in Plantilla"],
-            { required_error: "Please select a nature of requisition" }
+            { message: "Please select a nature of requisition" }
         ),
         employee_being_replaced: z.string().optional(),
 
         // Employment Status
         employment_status: z.enum(["Probationary", "Agency", "OJT"], {
-            required_error: "Please select employment status",
+            message: "Please select employment status",
         }),
         employment_sub_type: z.enum(["Casual", "On-Call"]).optional(),
 

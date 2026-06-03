@@ -141,7 +141,9 @@ export const PrintTimeRecords: React.FC<
         const branchLU: Record<string, BranchLU> = {};
 
         records.forEach((rec: any) => {
-            const branchKey: string = rec.branch_timeIn || "Unassigned";
+            // Raw API records use clock_in_branch / clock_out_branch
+            const branchKey: string =
+                rec.clock_in_branch || rec.branch_timeIn || "Unassigned";
 
             if (!branchSummaries[branchKey]) {
                 branchSummaries[branchKey] = blankSummary();
@@ -154,8 +156,11 @@ export const PrintTimeRecords: React.FC<
                 };
             }
 
-            const late = Number(rec.late ?? 0) + Number(rec.late_break ?? 0);
-            const under = Number(rec.undertime ?? 0);
+            // Raw API field names: total_hrs_late, total_hrs_break_late, total_undertime_hrs, total_hrs
+            const late =
+                Number(rec.total_hrs_late ?? rec.late ?? 0) +
+                Number(rec.total_hrs_break_late ?? rec.late_break ?? 0);
+            const under = Number(rec.total_undertime_hrs ?? rec.undertime ?? 0);
             if (late > 0) {
                 branchLU[branchKey].late_days++;
                 branchLU[branchKey].late_hrs += late;
@@ -164,7 +169,9 @@ export const PrintTimeRecords: React.FC<
                 branchLU[branchKey].under_days++;
                 branchLU[branchKey].under_hrs += under;
             }
-            branchLU[branchKey].billable += Number(rec.hours ?? 0);
+            branchLU[branchKey].billable += Number(
+                rec.total_hrs ?? rec.hours ?? 0,
+            );
 
             // Parse manhour_conversion → {category: hours}
             let manhours: Record<string, number> = {};

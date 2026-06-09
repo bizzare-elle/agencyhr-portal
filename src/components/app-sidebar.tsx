@@ -66,20 +66,20 @@ const navMainItems = (
             },
         );
 
-        // if (hasScheduleAccess) {
-        //     items.push(
-        //         {
-        //             title: "Schedule",
-        //             url: `/schedules/${userId ?? ""}`,
-        //             icon: IconCalendarCheck,
-        //         },
-        //         {
-        //             title: "Forms",
-        //             url: `/forms/${userId ?? ""}`,
-        //             icon: IconClipboardList,
-        //         },
-        //     );
-        // }
+        if (hasScheduleAccess) {
+            items.push(
+                {
+                    title: "Schedule",
+                    url: `/schedules/${userId ?? ""}`,
+                    icon: IconCalendarCheck,
+                },
+                {
+                    title: "Forms",
+                    url: `/forms/${userId ?? ""}`,
+                    icon: IconClipboardList,
+                },
+            );
+        }
     }
 
     if (role === "agency_coordinator") {

@@ -47,6 +47,7 @@ import {
     TrendingUp,
     Building2,
     LogOut,
+    Users,
 } from "lucide-react";
 import api from "@/lib/axios";
 import { ApiResponse } from "@/index";
@@ -138,6 +139,21 @@ interface ResignationLog extends StatusFields {
     created_at: string;
 }
 
+interface MrfLog {
+    id: number;
+    branch_name: string | null;
+    position_title: string | null;
+    headcount: number;
+    request_type: string;
+    previous_employee_name: string | null;
+    target_start_date: string | null;
+    validation_status: number;
+    status_label: string;
+    created_at: string;
+    remarks: string | null;
+    filed_by_name: string | null;
+}
+
 interface SubmissionsResponse {
     salary_logs: SalaryLog[];
     position_logs: PositionLog[];
@@ -145,6 +161,7 @@ interface SubmissionsResponse {
     promotion_logs: PromotionLog[];
     dept_logs: DeptLog[];
     resignation_logs: ResignationLog[];
+    mrf_logs: MrfLog[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -178,7 +195,7 @@ function AuditStamp({ label, name, at }: { label: string; name?: string | null; 
     );
 }
 
-function TypeBadge({ type }: { type: "salary" | "position" | "branch" | "promotion" | "dept" | "resignation" }) {
+function TypeBadge({ type }: { type: "salary" | "position" | "branch" | "promotion" | "dept" | "resignation" | "mrf" }) {
     const map = {
         salary:      { label: "Pay Change",       cls: "bg-emerald-500/10 text-emerald-400", icon: DollarSign },
         position:    { label: "Position Change",  cls: "bg-blue-500/10 text-blue-400",       icon: UserCog },
@@ -186,6 +203,7 @@ function TypeBadge({ type }: { type: "salary" | "position" | "branch" | "promoti
         promotion:   { label: "Promotion",        cls: "bg-yellow-500/10 text-yellow-400",   icon: TrendingUp },
         dept:        { label: "Dept. Transfer",   cls: "bg-purple-500/10 text-purple-400",   icon: Building2 },
         resignation: { label: "Resignation",      cls: "bg-red-500/10 text-red-400",         icon: LogOut },
+        mrf:         { label: "MRF",              cls: "bg-green-500/10 text-green-400",     icon: Users },
     };
     const { label, cls, icon: Icon } = map[type];
     return (
@@ -448,6 +466,35 @@ function DeptDetail({ log }: { log: DeptLog }) {
     );
 }
 
+function MrfDetail({ log }: { log: MrfLog }) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild><Button size="sm" variant="outline">View</Button></DialogTrigger>
+            <DialogContent className="max-w-sm">
+                <DialogHeader><DialogTitle>MRF Details</DialogTitle></DialogHeader>
+                <div className="space-y-3 text-sm">
+                    {[
+                        { label: "Branch",             value: log.branch_name || "—" },
+                        { label: "Position Requested", value: log.position_title || "—" },
+                        { label: "Headcount",          value: String(log.headcount) },
+                        { label: "Employee Replaced",  value: log.previous_employee_name || "—" },
+                        { label: "Target Start",       value: log.target_start_date ? safeFormat(log.target_start_date) : "—" },
+                        { label: "Status",             value: <StatusBadge status={log.status_label} /> },
+                        { label: "Remarks",            value: log.remarks || "—" },
+                        { label: "Filed By",           value: log.filed_by_name || "—" },
+                        { label: "Submitted On",       value: safeFormat(log.created_at) },
+                    ].map(({ label, value }) => (
+                        <div key={label} className="flex items-start justify-between gap-4">
+                            <span className="shrink-0 text-muted-foreground">{label}</span>
+                            <span className="text-right font-medium">{value}</span>
+                        </div>
+                    ))}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function ResignationDetail({ log }: { log: ResignationLog }) {
     return (
         <Dialog>
@@ -491,7 +538,7 @@ export default function FormsSubmissions() {
             const res = await api.get<ApiResponse<SubmissionsResponse>>(
                 `/api/v2/forms/submissions/${id}`,
             );
-            return res.data.data ?? { salary_logs: [], position_logs: [], branch_logs: [] };
+            return res.data.data ?? { salary_logs: [], position_logs: [], branch_logs: [], mrf_logs: [] };
         },
         enabled: !!id,
         staleTime: 1000 * 60 * 5,
@@ -504,10 +551,16 @@ export default function FormsSubmissions() {
     const promotionLogs   = data?.promotion_logs   ?? [];
     const deptLogs        = data?.dept_logs        ?? [];
     const resignationLogs = data?.resignation_logs ?? [];
+    const mrfLogs         = data?.mrf_logs         ?? [];
 
     const q = search.trim().toLowerCase();
     const matchEmp = (r: { employee_name: string; id_number: string }) =>
         !q || r.employee_name.toLowerCase().includes(q) || r.id_number.toLowerCase().includes(q);
+    const matchMrf = (r: MrfLog) =>
+        !q ||
+        (r.branch_name ?? "").toLowerCase().includes(q) ||
+        (r.previous_employee_name ?? "").toLowerCase().includes(q) ||
+        (r.position_title ?? "").toLowerCase().includes(q);
 
     const filteredSalary      = useMemo(() => salaryLogs.filter(matchEmp),      [salaryLogs, q]);
     const filteredPosition    = useMemo(() => positionLogs.filter(matchEmp),    [positionLogs, q]);
@@ -515,6 +568,7 @@ export default function FormsSubmissions() {
     const filteredPromotion   = useMemo(() => promotionLogs.filter(matchEmp),   [promotionLogs, q]);
     const filteredDept        = useMemo(() => deptLogs.filter(matchEmp),        [deptLogs, q]);
     const filteredResignation = useMemo(() => resignationLogs.filter(matchEmp), [resignationLogs, q]);
+    const filteredMrf         = useMemo(() => mrfLogs.filter(matchMrf),         [mrfLogs, q]);
 
     type AllRow =
         | { kind: "salary";      data: SalaryLog }
@@ -522,7 +576,8 @@ export default function FormsSubmissions() {
         | { kind: "branch";      data: BranchLog }
         | { kind: "promotion";   data: PromotionLog }
         | { kind: "dept";        data: DeptLog }
-        | { kind: "resignation"; data: ResignationLog };
+        | { kind: "resignation"; data: ResignationLog }
+        | { kind: "mrf";         data: MrfLog };
 
     const allRows = useMemo<AllRow[]>(() => {
         const rows: AllRow[] = [
@@ -532,10 +587,11 @@ export default function FormsSubmissions() {
             ...filteredPromotion.map((d): AllRow   => ({ kind: "promotion",   data: d })),
             ...filteredDept.map((d): AllRow        => ({ kind: "dept",        data: d })),
             ...filteredResignation.map((d): AllRow => ({ kind: "resignation", data: d })),
+            ...filteredMrf.map((d): AllRow         => ({ kind: "mrf",         data: d })),
         ];
         rows.sort((a, b) => new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime());
         return rows;
-    }, [filteredSalary, filteredPosition, filteredBranch, filteredPromotion, filteredDept, filteredResignation]);
+    }, [filteredSalary, filteredPosition, filteredBranch, filteredPromotion, filteredDept, filteredResignation, filteredMrf]);
 
     const salaryPag      = usePagination(filteredSalary,      pageSize);
     const positionPag    = usePagination(filteredPosition,    pageSize);
@@ -543,11 +599,13 @@ export default function FormsSubmissions() {
     const promotionPag   = usePagination(filteredPromotion,   pageSize);
     const deptPag        = usePagination(filteredDept,        pageSize);
     const resignationPag = usePagination(filteredResignation, pageSize);
+    const mrfPag         = usePagination(filteredMrf,         pageSize);
     const allPag         = usePagination(allRows,             pageSize);
 
     const resetAll = () => {
         salaryPag.reset(); positionPag.reset(); branchPag.reset();
-        promotionPag.reset(); deptPag.reset(); resignationPag.reset(); allPag.reset();
+        promotionPag.reset(); deptPag.reset(); resignationPag.reset();
+        mrfPag.reset(); allPag.reset();
     };
 
     const summaryCards = [
@@ -557,6 +615,7 @@ export default function FormsSubmissions() {
         { label: "Dept. Transfers",   count: deptLogs.length,        icon: Building2,  cls: "text-purple-400",  bg: "bg-purple-500/10" },
         { label: "Branch Transfers",  count: branchLogs.length,      icon: GitBranch,  cls: "text-cyan-400",    bg: "bg-cyan-500/10" },
         { label: "Resignations",      count: resignationLogs.length, icon: LogOut,     cls: "text-red-400",     bg: "bg-red-500/10" },
+        { label: "MRF",               count: mrfLogs.length,         icon: Users,      cls: "text-green-400",   bg: "bg-green-500/10" },
     ];
 
     if (isLoading) return <FullPageLoader />;
@@ -638,6 +697,7 @@ export default function FormsSubmissions() {
                                 <TabsTrigger value="dept">Dept. Transfer ({filteredDept.length})</TabsTrigger>
                                 <TabsTrigger value="branch">Branch Transfer ({filteredBranch.length})</TabsTrigger>
                                 <TabsTrigger value="resignation">Resignation ({filteredResignation.length})</TabsTrigger>
+                                <TabsTrigger value="mrf">MRF ({filteredMrf.length})</TabsTrigger>
                             </TabsList>
 
                             {/* ── ALL ── */}
@@ -767,19 +827,40 @@ export default function FormsSubmissions() {
                                                             </TableRow>
                                                         );
                                                     }
-                                                    const r = row.data as ResignationLog;
+                                                    if (row.kind === "resignation") {
+                                                        const r = row.data as ResignationLog;
+                                                        return (
+                                                            <TableRow key={`res${r.id}`} className="transition hover:bg-muted/10">
+                                                                <TableCell className="px-3 py-3"><TypeBadge type="resignation" /></TableCell>
+                                                                <TableCell className="px-3 py-3">
+                                                                    <p className="font-medium">{r.employee_name}</p>
+                                                                    <p className="text-xs text-muted-foreground">{r.id_number}</p>
+                                                                </TableCell>
+                                                                <TableCell className="px-3 py-3 text-xs text-muted-foreground">{r.remarks?.split("\n")[0] || "—"}</TableCell>
+                                                                <TableCell className="px-3 py-3 text-center">{safeFormat(r.resignation_date)}</TableCell>
+                                                                <TableCell className="px-3 py-3 text-center"><StatusBadge status={r.status_label} /></TableCell>
+                                                                <TableCell className="px-3 py-3 text-center text-muted-foreground">{safeFormat(r.created_at)}</TableCell>
+                                                                <TableCell className="px-3 py-3 text-center"><ResignationDetail log={r} /></TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    }
+                                                    // MRF row
+                                                    const r = row.data as MrfLog;
                                                     return (
-                                                        <TableRow key={`res${r.id}`} className="transition hover:bg-muted/10">
-                                                            <TableCell className="px-3 py-3"><TypeBadge type="resignation" /></TableCell>
+                                                        <TableRow key={`mrf${r.id}`} className="transition hover:bg-muted/10">
+                                                            <TableCell className="px-3 py-3"><TypeBadge type="mrf" /></TableCell>
                                                             <TableCell className="px-3 py-3">
-                                                                <p className="font-medium">{r.employee_name}</p>
-                                                                <p className="text-xs text-muted-foreground">{r.id_number}</p>
+                                                                <p className="font-medium">{r.branch_name || "—"}</p>
+                                                                <p className="text-xs text-muted-foreground">{r.previous_employee_name || "—"}</p>
                                                             </TableCell>
-                                                            <TableCell className="px-3 py-3 text-xs text-muted-foreground">{r.remarks?.split("\n")[0] || "—"}</TableCell>
-                                                            <TableCell className="px-3 py-3 text-center">{safeFormat(r.resignation_date)}</TableCell>
+                                                            <TableCell className="px-3 py-3 text-xs">
+                                                                {r.position_title || <span className="text-muted-foreground">Not specified</span>}
+                                                                {r.headcount > 1 && <span className="ml-1 text-muted-foreground">×{r.headcount}</span>}
+                                                            </TableCell>
+                                                            <TableCell className="px-3 py-3 text-center">{r.target_start_date ? safeFormat(r.target_start_date) : "—"}</TableCell>
                                                             <TableCell className="px-3 py-3 text-center"><StatusBadge status={r.status_label} /></TableCell>
                                                             <TableCell className="px-3 py-3 text-center text-muted-foreground">{safeFormat(r.created_at)}</TableCell>
-                                                            <TableCell className="px-3 py-3 text-center"><ResignationDetail log={r} /></TableCell>
+                                                            <TableCell className="px-3 py-3 text-center"><MrfDetail log={r} /></TableCell>
                                                         </TableRow>
                                                     );
                                                 })
@@ -1112,6 +1193,57 @@ export default function FormsSubmissions() {
                                     setCurrentPage={resignationPag.setCurrentPage}
                                     totalPages={resignationPag.totalPages}
                                     pageNumbers={resignationPag.pageNumbers}
+                                    pageSize={pageSize}
+                                    setPageSize={setPageSize}
+                                    onPageSizeChange={resetAll}
+                                />
+                            </TabsContent>
+
+                            {/* ── MRF ── */}
+                            <TabsContent value="mrf">
+                                <div className="overflow-x-auto rounded-md border border-border">
+                                    <Table className="min-w-[700px] text-xs sm:text-sm">
+                                        <TableHeader className="bg-muted/50">
+                                            <TableRow>
+                                                <TableHead className="px-3 py-3">Branch</TableHead>
+                                                <TableHead className="px-3 py-3">Position Requested</TableHead>
+                                                <TableHead className="px-3 py-3">Employee Replaced</TableHead>
+                                                <TableHead className="px-3 py-3 text-center">Heads</TableHead>
+                                                <TableHead className="px-3 py-3 text-center">Target Start</TableHead>
+                                                <TableHead className="px-3 py-3 text-center">Status</TableHead>
+                                                <TableHead className="px-3 py-3 text-center">Submitted On</TableHead>
+                                                <TableHead className="px-3 py-3 text-center">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {(mrfPag.paginated as MrfLog[]).length > 0 ? (
+                                                (mrfPag.paginated as MrfLog[]).map((r) => (
+                                                    <TableRow key={r.id} className="transition hover:bg-muted/10">
+                                                        <TableCell className="px-3 py-3 font-medium">{r.branch_name || "—"}</TableCell>
+                                                        <TableCell className="px-3 py-3">{r.position_title || <span className="text-muted-foreground">Not specified</span>}</TableCell>
+                                                        <TableCell className="px-3 py-3 text-muted-foreground">{r.previous_employee_name || "—"}</TableCell>
+                                                        <TableCell className="px-3 py-3 text-center font-bold">{r.headcount}</TableCell>
+                                                        <TableCell className="px-3 py-3 text-center">{r.target_start_date ? safeFormat(r.target_start_date) : "—"}</TableCell>
+                                                        <TableCell className="px-3 py-3 text-center"><StatusBadge status={r.status_label} /></TableCell>
+                                                        <TableCell className="px-3 py-3 text-center text-muted-foreground">{safeFormat(r.created_at)}</TableCell>
+                                                        <TableCell className="px-3 py-3 text-center"><MrfDetail log={r} /></TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                                                        No MRF submissions found.
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                <Pagination
+                                    currentPage={mrfPag.currentPage}
+                                    setCurrentPage={mrfPag.setCurrentPage}
+                                    totalPages={mrfPag.totalPages}
+                                    pageNumbers={mrfPag.pageNumbers}
                                     pageSize={pageSize}
                                     setPageSize={setPageSize}
                                     onPageSizeChange={resetAll}

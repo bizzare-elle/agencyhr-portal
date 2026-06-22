@@ -47,6 +47,8 @@ interface VideoRecord {
     mime_type: string | null;
     file_size_display: string;
     training_name: string | null;
+    folder_id: number | null;
+    folder_name: string | null;
 }
 
 interface TrainingData {
@@ -79,24 +81,44 @@ function VideoPlayerModal({
 }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [url, setUrl] = useState<string | null>(null);
+    const [mimeType, setMimeType] = useState<string>("video/mp4");
     const [error, setError] = useState<string | null>(null);
 
     React.useEffect(() => {
-        api.get<ApiResponse<{ url: string; mime_type: string }>>(
+        let cancelled = false;
+
+        api.get<ApiResponse<{ url: string; mime_type: string; title: string }>>(
             `/api/v2/videos/${video.id}/url`,
             { params: { employee_id: employeeId } },
         )
             .then((res) => {
+                if (cancelled) return;
                 const d = res.data?.data;
-                if (d?.url) setUrl(d.url);
-                else setError("Could not load video.");
+                if (d?.url) {
+                    setMimeType(d.mime_type || "video/mp4");
+                    setUrl(d.url);
+                } else {
+                    setError("Could not load video.");
+                }
             })
-            .catch(() => setError("Could not load video."));
+            .catch((err) => {
+                if (cancelled) return;
+                const status = err?.response?.status;
+                if (status === 403) {
+                    setError("You don't have access to this video.");
+                } else {
+                    setError("Could not load video. Please try again.");
+                }
+            });
 
         return () => {
-            if (videoRef.current) {
-                videoRef.current.pause();
-                videoRef.current.src = "";
+            cancelled = true;
+            // Fully release the video resource so the browser stops downloading
+            const vid = videoRef.current;
+            if (vid) {
+                vid.pause();
+                vid.removeAttribute("src");
+                vid.load();
             }
         };
     }, [video.id, employeeId]);
@@ -131,7 +153,9 @@ function VideoPlayerModal({
                     style={{ background: "#000" }}
                 >
                     {error && (
-                        <p className="p-6 text-sm text-red-400">{error}</p>
+                        <p className="p-6 text-center text-sm text-red-400">
+                            {error}
+                        </p>
                     )}
                     {!error && !url && (
                         <div className="flex items-center gap-2 p-6 text-sm text-slate-400">
@@ -139,19 +163,24 @@ function VideoPlayerModal({
                             Loading video…
                         </div>
                     )}
-                    {url && (
+                    {!error && url && (
                         <video
                             ref={videoRef}
+                            key={url}
+                            src={url}
                             className="w-full"
                             style={{ maxHeight: "70vh" }}
                             controls
-                            autoPlay
                             controlsList="nodownload"
+                            preload="metadata"
+                            onError={() =>
+                                setError(
+                                    "Failed to play video. The file may be unavailable.",
+                                )
+                            }
                         >
-                            <source
-                                src={url}
-                                type={video.mime_type ?? "video/mp4"}
-                            />
+                            {/* fallback for browsers that don't support the src attribute approach */}
+                            <source src={url} type={mimeType} />
                         </video>
                     )}
                 </div>
@@ -206,6 +235,20 @@ export default function EmployeeTraining({
     const trainings = data?.trainings ?? [];
     const videos = data?.videos ?? [];
 
+    // Group videos by folder
+    const folderMap = new Map<string, VideoRecord[]>();
+    videos.forEach((v) => {
+        const key = v.folder_name ?? "Uncategorized";
+        if (!folderMap.has(key)) folderMap.set(key, []);
+        folderMap.get(key)!.push(v);
+    });
+    // Folders with a name first (sorted), then Uncategorized last
+    const folderKeys = Array.from(folderMap.keys()).sort((a, b) => {
+        if (a === "Uncategorized") return 1;
+        if (b === "Uncategorized") return -1;
+        return a.localeCompare(b);
+    });
+
     return (
         <div className="mt-6 space-y-6">
             {/* ── Video Assessments ──────────────────────────────────────── */}
@@ -222,45 +265,61 @@ export default function EmployeeTraining({
                             No video assessments assigned to you yet.
                         </Card>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {videos.map((v) => (
-                                <Card
-                                    key={v.id}
-                                    className="flex flex-col gap-3 p-4 shadow-sm"
-                                >
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-semibold leading-snug">
-                                                {v.title}
-                                            </p>
-                                            {v.training_name && (
-                                                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                                    {v.training_name}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <Badge
-                                            variant="outline"
-                                            className="shrink-0 text-xs"
-                                        >
-                                            {v.file_size_display}
-                                        </Badge>
+                        <div className="space-y-6">
+                            {folderKeys.map((folderName) => (
+                                <div key={folderName}>
+                                    <div className="mb-3 flex items-center gap-2">
+                                        <span className="text-base">📁</span>
+                                        <h3 className="text-sm font-semibold text-foreground">
+                                            {folderName}
+                                        </h3>
+                                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                            {folderMap.get(folderName)!.length}
+                                        </span>
+                                        <div className="h-px flex-1 bg-border" />
                                     </div>
+                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        {folderMap.get(folderName)!.map((v) => (
+                                            <Card
+                                                key={v.id}
+                                                className="flex flex-col gap-3 p-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-semibold leading-snug">
+                                                            {v.title}
+                                                        </p>
+                                                        {v.training_name && (
+                                                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                                                {v.training_name}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="shrink-0 text-xs"
+                                                    >
+                                                        {v.file_size_display}
+                                                    </Badge>
+                                                </div>
 
-                                    {v.description && (
-                                        <p className="line-clamp-2 text-xs text-muted-foreground">
-                                            {v.description}
-                                        </p>
-                                    )}
+                                                {v.description && (
+                                                    <p className="line-clamp-2 text-xs text-muted-foreground">
+                                                        {v.description}
+                                                    </p>
+                                                )}
 
-                                    <Button
-                                        size="sm"
-                                        className="mt-auto w-full"
-                                        onClick={() => setActiveVideo(v)}
-                                    >
-                                        ▶&nbsp;Watch
-                                    </Button>
-                                </Card>
+                                                <Button
+                                                    size="sm"
+                                                    className="mt-auto w-full"
+                                                    onClick={() => setActiveVideo(v)}
+                                                >
+                                                    ▶&nbsp;Watch
+                                                </Button>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     )}

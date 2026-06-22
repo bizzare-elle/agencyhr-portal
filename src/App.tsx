@@ -28,6 +28,7 @@ import MrfForm from "./pages/forms/mrf-form";
 import FormsSubmissions from "./pages/forms/forms-submissions";
 import FormsValidation from "./pages/forms/forms-validation";
 import ServiceChargePayslipDashboard from "./pages/payslip/service-charge-payslip-dashboard";
+import Notifications from "./pages/notifications";
 
 const router = createBrowserRouter([
         {
@@ -180,6 +181,11 @@ const router = createBrowserRouter([
                             handle: { title: "Service Charge Payslip" },
                         },
                     ],
+                },
+                {
+                    path: "/notifications/:id",
+                    element: <Notifications />,
+                    handle: { title: "Notifications" },
                 },
             ],
         },

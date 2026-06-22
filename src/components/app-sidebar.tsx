@@ -9,8 +9,10 @@ import {
     IconClipboardList,
     IconClipboardCheck,
     IconMoneybag,
+    IconBell,
 } from "@tabler/icons-react";
 import { Timer } from "lucide-react";
+import { useNotifications } from "@/hooks/use-notifications";
 import { NavUser } from "@/components/nav-user";
 import {
     Sidebar,
@@ -29,6 +31,7 @@ type NavItem = {
     title: string;
     url: string;
     icon: React.ElementType;
+    badge?: number;
 };
 
 const navMainItems = (
@@ -36,6 +39,7 @@ const navMainItems = (
     role?: string,
     agency_id?: string,
     job_level?: string,
+    notifCount?: number,
 ): NavItem[] => {
     const items: NavItem[] = [];
 
@@ -45,6 +49,12 @@ const navMainItems = (
 
     if (role === "hr_employee") {
         items.push(
+            {
+                title: "Notifications",
+                url: `/notifications/${userId ?? ""}`,
+                icon: IconBell,
+                badge: notifCount && notifCount > 0 ? notifCount : undefined,
+            },
             {
                 title: "Time Records",
                 url: `/${userId ?? ""}`,
@@ -69,7 +79,7 @@ const navMainItems = (
             //     title: "Service Charge Payslip",
             //     url: `/payslip/${userId ?? ""}`,
             //     icon: IconMoneybag,
-            // }, 
+            // },
         );
 
         if (hasScheduleAccess) {
@@ -141,11 +151,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
     });
 
+    const { unreadCount } = useNotifications(
+        me?.role === "hr_employee" ? me?.id : null,
+    );
+
     const menuItems = navMainItems(
         me?.id,
         me?.role,
         me?.agency_id,
         me?.job_level,
+        unreadCount,
     );
 
     return (
@@ -187,6 +202,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     >
                                         <item.icon className="!size-5" />
                                         {item.title}
+                                        {item.badge !== undefined && item.badge > 0 && (
+                                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-500 px-1 text-[11px] font-semibold text-white">
+                                                {item.badge > 99 ? "99+" : item.badge}
+                                            </span>
+                                        )}
                                     </NavLink>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

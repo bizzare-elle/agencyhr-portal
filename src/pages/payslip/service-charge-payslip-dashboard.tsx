@@ -80,7 +80,13 @@ export default function ServiceChargePayslipDashboard() {
     const meQuery = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
-            const response = await api.get<ApiResponse<{ hr_id: string; name: string }>>(
+            const response = await api.get<ApiResponse<{
+                hr_id: string;
+                name: string;
+                id_number?: string;
+                primary_branch_name?: string;
+                agency_name?: string;
+            }>>(
                 `/api/v2/auth/me`,
             );
             return response.data.data;

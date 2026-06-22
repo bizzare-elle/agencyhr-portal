@@ -1,0 +1,407 @@
+import { ParentComponent } from "@/components/parent-container";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import api from "@/lib/axios";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from "@/components/ui/card";
+import { ApiResponse, Employee } from "@/index";
+import { Button } from "@/components/ui/button";
+import FullPageLoader from "@/components/page-loader";
+import {
+    Table,
+    TableCell,
+    TableBody,
+    TableHeader,
+    TableRow,
+    TableHead,
+} from "@/components/ui/table";
+import { isAfter, isBefore } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar1Icon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { safeFormat } from "@/helpers/formatDates";
+import { formatToPeso } from "@/helpers/formatToPeso";
+
+interface ScRecord {
+    id: string;
+    date: string;
+    primary_branch_id: string;
+    employee_id: string;
+    total_billed_hours: string;
+    is_late: string;
+    sc_amount_gross: string;
+    sc_amount_net: string;
+    computation: string | null;
+    created_at: string;
+    branch_name: string;
+    amount_net: string;
+}
+
+interface ScPayslipResponse {
+    sc_data: ScRecord[];
+}
+
+export default function ServiceChargePayslipDashboard() {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [sortOption, setSortOption] = useState("newest");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+
+    useEffect(() => {
+        setDateFrom(dateRange.from ? safeFormat(dateRange.from, "yyyy-MM-dd") : "");
+        setDateTo(dateRange.to ? safeFormat(dateRange.to, "yyyy-MM-dd") : "");
+    }, [dateRange]);
+
+    const meQuery = useQuery({
+        queryKey: ["me"],
+        queryFn: async () => {
+            const response =
+                await api.get<ApiResponse<{ hr_id: string; name: string }>>(
+                    `/api/v2/auth/me`,
+                );
+              
+            return response.data.data;
+        },
+    });
+  
+    const employeeId = meQuery.data?.hr_id;
+   
+    const employeeQuery = useQuery({
+        queryKey: ["employee", employeeId],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<Employee>>(`/api/v2/employees/${employeeId}`);
+            return res.data.data;
+        },
+        enabled: !!employeeId,
+        staleTime: 1000 * 60 * 10,
+    });
+
+    const scQuery = useQuery({
+        queryKey: ["scPayslip", employeeId],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<ScPayslipResponse>>(
+                `/api/v2/sc-payslip-records/${employeeId}`,
+            );
+            return res.data.data ?? { sc_data: [] };
+        },
+        enabled: !!employeeId,
+    });
+
+    const employee = employeeQuery.data;
+    const employeeName = employee?.name ?? meQuery.data?.name;
+    const employeeIdNumber = employee?.id_number ?? meQuery.data?.hr_id;
+    const employeeBranch = employee?.branch_name;
+    const employeeAgency = employee?.agency_name;
+    const records: ScRecord[] = scQuery.data?.sc_data ?? [];
+ 
+    const filteredData = useMemo(() => {
+        let data = [...records];
+
+        if (dateFrom || dateTo) {
+            data = data.filter((item) => {
+                const date = new Date(item.date + "T00:00:00");
+                const from = dateFrom ? new Date(dateFrom + "T00:00:00") : null;
+                const to = dateTo ? new Date(dateTo + "T00:00:00") : null;
+                if (from && isBefore(date, from)) return false;
+                if (to && isAfter(date, to)) return false;
+                return true;
+            });
+        }
+
+        if (sortOption === "newest") {
+            data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        } else if (sortOption === "oldest") {
+            data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        } else if (sortOption === "highest") {
+            data.sort((a, b) => parseFloat(b.sc_amount_gross) - parseFloat(a.sc_amount_gross));
+        } else if (sortOption === "lowest") {
+            data.sort((a, b) => parseFloat(a.sc_amount_gross) - parseFloat(b.sc_amount_gross));
+        }
+
+        return data;
+    }, [records, sortOption, dateFrom, dateTo]);
+
+    const totalGross = useMemo(
+        () => filteredData.reduce((sum, r) => sum + parseFloat(r.sc_amount_gross || "0"), 0),
+        [filteredData],
+    );
+
+    const totalHours = useMemo(
+        () => filteredData.reduce((sum, r) => sum + parseFloat(r.total_billed_hours || "0"), 0),
+        [filteredData],
+    );
+
+    const totalPages = Math.ceil(filteredData.length / pageSize);
+    const paginatedData = filteredData.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize,
+    );
+
+    const renderPageNumbers = () => {
+        if (totalPages <= 1) return null;
+        const pages: (number | string)[] = [];
+        const maxVisible = 3;
+        let start = Math.max(currentPage - 2, 1);
+        let end = Math.min(start + maxVisible - 1, totalPages);
+        if (end - start + 1 < maxVisible) start = Math.max(end - maxVisible + 1, 1);
+        if (start > 1) { pages.push(1); if (start > 2) pages.push("..."); }
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (end < totalPages) { if (end < totalPages - 1) pages.push("..."); pages.push(totalPages); }
+
+        return pages.map((page, index) =>
+            typeof page === "number" ? (
+                <Button key={page} size="sm" variant={currentPage === page ? "default" : "outline"} onClick={() => setCurrentPage(page)}>
+                    {page}
+                </Button>
+            ) : (
+                <span key={`ellipsis-${index}`} className="px-2">{page}</span>
+            ),
+        );
+    };
+
+    if (meQuery.isLoading || employeeQuery.isLoading || scQuery.isLoading)
+        return <FullPageLoader />;
+
+    if (meQuery.isError || scQuery.isError)
+        return (
+            <ParentComponent>
+                <div className="text-center text-2xl font-bold">Error fetching data.</div>
+            </ParentComponent>
+        );
+
+    return (
+        <ParentComponent>
+            {/* Employee Header */}
+            <div className="mb-5 w-full px-3 sm:px-0">
+                <Card className="flex flex-col items-center gap-4 rounded-xl border p-4 shadow-sm sm:flex-row sm:justify-between sm:p-6">
+                    <div className="flex w-full flex-col items-center text-center sm:w-auto sm:flex-row sm:items-center sm:gap-4 sm:text-left">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-lg font-bold text-yellow-400 sm:h-16 sm:w-16 sm:text-2xl">
+                            {employeeName?.charAt(0) ?? "?"}
+                        </div>
+                        <div className="mt-2 flex flex-col items-center sm:mt-0 sm:items-start">
+                            <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-2">
+                                <h1 className="text-base font-bold tracking-wide sm:text-lg md:text-xl">
+                                    {employeeName ?? "N/A"}
+                                </h1>
+                                {employeeAgency && (
+                                    <Badge className="text-xs sm:text-sm md:text-base">
+                                        {meQuery.data?.agency_name}
+                                    </Badge>
+                                )}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                                ID: {meQuery.data?.id_number ?? "N/A"} • {meQuery.data?.primary_branch_name ?? "N/A"}
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid w-full grid-cols-1 gap-4 px-3 sm:px-0 md:grid-cols-3">
+                <Card className="rounded-2xl p-4 shadow-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                            <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                            Total Pay-Out
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <span className="text-xl font-bold text-green-400">{formatToPeso(totalGross)}</span>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {filteredData.length} record{filteredData.length !== 1 ? "s" : ""}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-2xl p-4 shadow-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                            <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                            Total Billed Hours
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <span className="text-xl font-bold text-yellow-400">{totalHours.toFixed(2)} hrs</span>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-2xl p-4 shadow-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center gap-2 text-base font-semibold md:text-lg">
+                            <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                            Avg SC per Day
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <span className="text-xl font-bold text-blue-400">
+                            {filteredData.length > 0 ? formatToPeso(totalGross / filteredData.length) : "₱0.00"}
+                        </span>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Table */}
+            <div className="w-full px-3 sm:px-0">
+                <Card className="p-3 sm:p-5">
+                    <CardHeader className="pb-5">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <CardTitle className="text-base sm:text-lg">Service Charge Records</CardTitle>
+                                <CardDescription className="text-sm sm:text-base">Daily service charge breakdown</CardDescription>
+                            </div>
+
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:space-x-4">
+                                <div className="w-full sm:w-auto">
+                                    <label className="mb-1 block text-sm font-medium">Date Range</label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal sm:w-[260px]",
+                                                    !dateRange.from && "text-muted-foreground",
+                                                )}
+                                            >
+                                                <Calendar1Icon className="mr-2 h-4 w-4" />
+                                                {dateRange.from ? (
+                                                    dateRange.to ? (
+                                                        <>{safeFormat(dateRange.from, "LLL dd, y")} - {safeFormat(dateRange.to, "LLL dd, y")}</>
+                                                    ) : safeFormat(dateRange.from, "LLL dd, y")
+                                                ) : (
+                                                    <span>Select date range</span>
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                initialFocus
+                                                mode="range"
+                                                selected={dateRange as DateRange}
+                                                onSelect={(range) => { setDateRange(range || {}); setCurrentPage(1); }}
+                                                numberOfMonths={1}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div className="w-full sm:w-auto">
+                                    <label className="mb-1 block text-sm font-medium">Sort By</label>
+                                    <Select value={sortOption} onValueChange={(v) => { setSortOption(v); setCurrentPage(1); }}>
+                                        <SelectTrigger className="w-full sm:w-[180px]">
+                                            <SelectValue placeholder="Sort by..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel>By Date</SelectLabel>
+                                                <SelectItem value="newest">Newest First</SelectItem>
+                                                <SelectItem value="oldest">Oldest First</SelectItem>
+                                            </SelectGroup>
+                                            <SelectGroup>
+                                                <SelectLabel>By Amount</SelectLabel>
+                                                <SelectItem value="highest">Highest Amount</SelectItem>
+                                                <SelectItem value="lowest">Lowest Amount</SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="overflow-x-auto">
+                        <div className="border-border w-full overflow-x-auto rounded-md border">
+                            <Table className="min-w-[650px] text-xs sm:text-sm">
+                                <TableHeader className="bg-muted/50">
+                                    <TableRow>
+                                        <TableHead className="px-3 py-4 text-center">Date</TableHead>
+                                        <TableHead className="px-3 py-4 text-center">Billed Hours</TableHead>
+                                        <TableHead className="px-3 py-4 text-center">Net SC</TableHead>
+                                        <TableHead className="px-3 py-4 text-center">Computation</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {paginatedData.length > 0 ? (
+                                        paginatedData.map((r) => (
+                                            <TableRow key={r.id} className="hover:bg-muted/10 transition">
+                                                <TableCell className="px-3 py-4 text-center">
+                                                    {safeFormat(new Date(r.date + "T00:00:00"), "MMM d, yyyy")}
+                                                </TableCell>
+                                                <TableCell className="px-3 py-4 text-center">
+                                                    {parseFloat(r.total_billed_hours).toFixed(2)} hrs
+                                                </TableCell>
+                                                <TableCell className="px-3 py-4 text-center font-medium text-yellow-400">
+                                                    {formatToPeso(parseFloat(r.sc_amount_net))}
+                                                </TableCell>
+                                                <TableCell className="px-3 py-4 text-center text-muted-foreground">
+                                                    {r.computation ?? "—"}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                                                No records found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center justify-center gap-2 sm:justify-start">
+                                <Label htmlFor="pageSize" className="text-muted-foreground text-sm">Rows per page:</Label>
+                                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                                    <SelectTrigger id="pageSize" className="bg-background text-foreground border-input w-[80px] border">
+                                        <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {[5, 10, 20, 50].map((size) => (
+                                            <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-2 sm:justify-end">
+                                <Button size="sm" variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+                                    Previous
+                                </Button>
+                                {renderPageNumbers()}
+                                <Button size="sm" variant="outline" disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage((p) => p + 1)}>
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </ParentComponent>
+    );
+}

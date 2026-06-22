@@ -8,6 +8,7 @@ import {
     IconCalendarCheck,
     IconClipboardList,
     IconClipboardCheck,
+    IconMoneybag,
 } from "@tabler/icons-react";
 import { Timer } from "lucide-react";
 import { NavUser } from "@/components/nav-user";
@@ -64,6 +65,11 @@ const navMainItems = (
                 url: `/overtime/${userId ?? ""}`,
                 icon: Timer,
             },
+            // {
+            //     title: "Service Charge Payslip",
+            //     url: `/payslip/${userId ?? ""}`,
+            //     icon: IconMoneybag,
+            // }, 
         );
 
         if (hasScheduleAccess) {

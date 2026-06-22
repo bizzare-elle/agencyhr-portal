@@ -27,6 +27,7 @@ import EicfForm from "./pages/forms/eicf-form";
 import MrfForm from "./pages/forms/mrf-form";
 import FormsSubmissions from "./pages/forms/forms-submissions";
 import FormsValidation from "./pages/forms/forms-validation";
+import ServiceChargePayslipDashboard from "./pages/payslip/service-charge-payslip-dashboard";
 
 const router = createBrowserRouter([
         {
@@ -167,6 +168,16 @@ const router = createBrowserRouter([
                             path: "upload/:id",
                             element: <ScheduleUpload />,
                             handle: { title: "Schedule Upload" },
+                        },
+                    ],
+                },
+                {
+                    path: "/payslip",
+                    children: [
+                        {
+                            path: ":id",
+                            element: <ServiceChargePayslipDashboard />,
+                            handle: { title: "Service Charge Payslip" },
                         },
                     ],
                 },

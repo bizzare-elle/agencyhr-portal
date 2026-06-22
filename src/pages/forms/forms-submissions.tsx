@@ -152,6 +152,9 @@ interface MrfLog {
     created_at: string;
     remarks: string | null;
     filed_by_name: string | null;
+    department_name: string | null;
+    immediate_superior: string | null;
+    justification: string | null;
 }
 
 interface SubmissionsResponse {
@@ -466,20 +469,41 @@ function DeptDetail({ log }: { log: DeptLog }) {
     );
 }
 
+function MrfRequestTypeBadge({ type }: { type: string }) {
+    const isReplacement = type === "Replacement";
+    return (
+        <Badge className={`flex w-fit items-center gap-1 px-2 py-0.5 text-xs ${
+            isReplacement
+                ? "bg-purple-500/10 text-purple-400"
+                : "bg-green-500/10 text-green-400"
+        }`}>
+            {isReplacement ? "↩ Replacement" : "+ Add'l Headcount"}
+        </Badge>
+    );
+}
+
 function MrfDetail({ log }: { log: MrfLog }) {
+    const isReplacement = log.request_type === "Replacement";
     return (
         <Dialog>
             <DialogTrigger asChild><Button size="sm" variant="outline">View</Button></DialogTrigger>
-            <DialogContent className="max-w-sm">
-                <DialogHeader><DialogTitle>MRF Details</DialogTitle></DialogHeader>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        MRF Details
+                        <MrfRequestTypeBadge type={log.request_type} />
+                    </DialogTitle>
+                </DialogHeader>
                 <div className="space-y-3 text-sm">
                     {[
                         { label: "Branch",             value: log.branch_name || "—" },
                         { label: "Position Requested", value: log.position_title || "—" },
+                        { label: "Department",         value: log.department_name || "—" },
                         { label: "Headcount",          value: String(log.headcount) },
-                        { label: "Employee Replaced",  value: log.previous_employee_name || "—" },
+                        { label: "Immediate Superior", value: log.immediate_superior || "—" },
                         { label: "Target Start",       value: log.target_start_date ? safeFormat(log.target_start_date) : "—" },
                         { label: "Status",             value: <StatusBadge status={log.status_label} /> },
+                        { label: "Justification",      value: log.justification || "—" },
                         { label: "Remarks",            value: log.remarks || "—" },
                         { label: "Filed By",           value: log.filed_by_name || "—" },
                         { label: "Submitted On",       value: safeFormat(log.created_at) },
@@ -489,6 +513,14 @@ function MrfDetail({ log }: { log: MrfLog }) {
                             <span className="text-right font-medium">{value}</span>
                         </div>
                     ))}
+                    {isReplacement && (
+                        <div className="flex items-start justify-between gap-4">
+                            <span className="shrink-0 text-muted-foreground">Employee(s) Replaced</span>
+                            <span className="text-right font-medium">
+                                {log.previous_employee_name || "—"}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
@@ -560,7 +592,9 @@ export default function FormsSubmissions() {
         !q ||
         (r.branch_name ?? "").toLowerCase().includes(q) ||
         (r.previous_employee_name ?? "").toLowerCase().includes(q) ||
-        (r.position_title ?? "").toLowerCase().includes(q);
+        (r.position_title ?? "").toLowerCase().includes(q) ||
+        (r.department_name ?? "").toLowerCase().includes(q) ||
+        (r.immediate_superior ?? "").toLowerCase().includes(q);
 
     const filteredSalary      = useMemo(() => salaryLogs.filter(matchEmp),      [salaryLogs, q]);
     const filteredPosition    = useMemo(() => positionLogs.filter(matchEmp),    [positionLogs, q]);
@@ -851,11 +885,14 @@ export default function FormsSubmissions() {
                                                             <TableCell className="px-3 py-3"><TypeBadge type="mrf" /></TableCell>
                                                             <TableCell className="px-3 py-3">
                                                                 <p className="font-medium">{r.branch_name || "—"}</p>
-                                                                <p className="text-xs text-muted-foreground">{r.previous_employee_name || "—"}</p>
+                                                                <MrfRequestTypeBadge type={r.request_type} />
                                                             </TableCell>
                                                             <TableCell className="px-3 py-3 text-xs">
                                                                 {r.position_title || <span className="text-muted-foreground">Not specified</span>}
                                                                 {r.headcount > 1 && <span className="ml-1 text-muted-foreground">×{r.headcount}</span>}
+                                                                {r.request_type === "Replacement" && r.previous_employee_name && (
+                                                                    <p className="mt-0.5 text-muted-foreground">↩ {r.previous_employee_name}</p>
+                                                                )}
                                                             </TableCell>
                                                             <TableCell className="px-3 py-3 text-center">{r.target_start_date ? safeFormat(r.target_start_date) : "—"}</TableCell>
                                                             <TableCell className="px-3 py-3 text-center"><StatusBadge status={r.status_label} /></TableCell>
@@ -1202,12 +1239,13 @@ export default function FormsSubmissions() {
                             {/* ── MRF ── */}
                             <TabsContent value="mrf">
                                 <div className="overflow-x-auto rounded-md border border-border">
-                                    <Table className="min-w-[700px] text-xs sm:text-sm">
+                                    <Table className="min-w-[800px] text-xs sm:text-sm">
                                         <TableHeader className="bg-muted/50">
                                             <TableRow>
+                                                <TableHead className="px-3 py-3">Type</TableHead>
                                                 <TableHead className="px-3 py-3">Branch</TableHead>
-                                                <TableHead className="px-3 py-3">Position Requested</TableHead>
-                                                <TableHead className="px-3 py-3">Employee Replaced</TableHead>
+                                                <TableHead className="px-3 py-3">Position / Dept</TableHead>
+                                                <TableHead className="px-3 py-3">Request Detail</TableHead>
                                                 <TableHead className="px-3 py-3 text-center">Heads</TableHead>
                                                 <TableHead className="px-3 py-3 text-center">Target Start</TableHead>
                                                 <TableHead className="px-3 py-3 text-center">Status</TableHead>
@@ -1219,9 +1257,22 @@ export default function FormsSubmissions() {
                                             {(mrfPag.paginated as MrfLog[]).length > 0 ? (
                                                 (mrfPag.paginated as MrfLog[]).map((r) => (
                                                     <TableRow key={r.id} className="transition hover:bg-muted/10">
+                                                        <TableCell className="px-3 py-3">
+                                                            <MrfRequestTypeBadge type={r.request_type} />
+                                                        </TableCell>
                                                         <TableCell className="px-3 py-3 font-medium">{r.branch_name || "—"}</TableCell>
-                                                        <TableCell className="px-3 py-3">{r.position_title || <span className="text-muted-foreground">Not specified</span>}</TableCell>
-                                                        <TableCell className="px-3 py-3 text-muted-foreground">{r.previous_employee_name || "—"}</TableCell>
+                                                        <TableCell className="px-3 py-3">
+                                                            <p>{r.position_title || <span className="text-muted-foreground">Not specified</span>}</p>
+                                                            {r.department_name && (
+                                                                <p className="text-xs text-muted-foreground">{r.department_name}</p>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="px-3 py-3 text-muted-foreground">
+                                                            {r.request_type === "Replacement"
+                                                                ? (r.previous_employee_name || "—")
+                                                                : <span className="italic">N/A</span>
+                                                            }
+                                                        </TableCell>
                                                         <TableCell className="px-3 py-3 text-center font-bold">{r.headcount}</TableCell>
                                                         <TableCell className="px-3 py-3 text-center">{r.target_start_date ? safeFormat(r.target_start_date) : "—"}</TableCell>
                                                         <TableCell className="px-3 py-3 text-center"><StatusBadge status={r.status_label} /></TableCell>
@@ -1231,7 +1282,7 @@ export default function FormsSubmissions() {
                                                 ))
                                             ) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                                                    <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
                                                         No MRF submissions found.
                                                     </TableCell>
                                                 </TableRow>

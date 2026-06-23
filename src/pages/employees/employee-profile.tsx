@@ -18,7 +18,6 @@ import FullPageLoader from "@/components/page-loader";
 import OvertimeRequestsCard from "@/components/employee-overtime";
 import LogoverrideRequests from "@/components/employee-logoverride";
 import EmployeeScheduleCard from "@/components/employee-schedule";
-import EmployeeTraining from "@/components/employee-training";
 import { ParentComponent } from "@/components/parent-container";
 
 const InfoRow = React.memo(
@@ -144,7 +143,6 @@ export default function EmployeeProfile() {
                             Log Override
                         </TabsTrigger>
                         <TabsTrigger value="overtime">Overtime</TabsTrigger>
-                        <TabsTrigger value="training">Training</TabsTrigger>
                     </TabsList>
 
                     {activeTab === "data" && (
@@ -371,13 +369,6 @@ export default function EmployeeProfile() {
                         </TabsContent>
                     )}
 
-                    {activeTab === "training" && (
-                        <TabsContent value="training">
-                            <EmployeeTraining
-                                employeeId={employeeId as string}
-                            />
-                        </TabsContent>
-                    )}
                 </Tabs>
             </div>
         </ParentComponent>

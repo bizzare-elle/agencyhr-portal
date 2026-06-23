@@ -30,6 +30,8 @@ import FormsValidation from "./pages/forms/forms-validation";
 import ServiceChargePayslipDashboard from "./pages/payslip/service-charge-payslip-dashboard";
 import Notifications from "./pages/notifications";
 import Announcements from "./pages/announcements";
+import TrainingPage from "./pages/training/training-page";
+import TrainingHistoryPage from "./pages/training/training-history-page";
 
 const router = createBrowserRouter([
         {
@@ -192,6 +194,16 @@ const router = createBrowserRouter([
                     path: "/announcements/:id",
                     element: <Announcements />,
                     handle: { title: "Announcements" },
+                },
+                {
+                    path: "/training/:id",
+                    element: <TrainingPage />,
+                    handle: { title: "Training" },
+                },
+                {
+                    path: "/training-history/:id",
+                    element: <TrainingHistoryPage />,
+                    handle: { title: "Training History" },
                 },
             ],
         },

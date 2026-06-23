@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import api from "@/lib/axios";
 import { ApiResponse } from "@/index";
 
-export type NotifType = "training" | "video" | "logoverride" | "overtime";
+export type NotifType = "training" | "video" | "logoverride" | "overtime" | "announcement";
 
 export interface NotificationItem {
     id: string;              // e.g. "training_5"

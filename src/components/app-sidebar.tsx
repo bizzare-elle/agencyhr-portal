@@ -10,6 +10,7 @@ import {
     IconClipboardCheck,
     IconMoneybag,
     IconBell,
+    IconSpeakerphone,
 } from "@tabler/icons-react";
 import { Timer } from "lucide-react";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -56,15 +57,21 @@ const navMainItems = (
                 badge: notifCount && notifCount > 0 ? notifCount : undefined,
             },
             {
-                title: "Time Records",
-                url: `/${userId ?? ""}`,
-                icon: IconDashboard,
+                title: "Announcements",
+                url: `/announcements/${userId ?? ""}`,
+                icon: IconSpeakerphone,
             },
             {
                 title: "Profile",
                 url: `/employees/${userId ?? ""}`,
                 icon: IconUsers,
             },
+            {
+                title: "Time Records",
+                url: `/${userId ?? ""}`,
+                icon: IconDashboard,
+            },
+
             {
                 title: "Logoverride",
                 url: `/logoverrides/${userId ?? ""}`,
@@ -163,6 +170,47 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         unreadCount,
     );
 
+    // Split items into logical groups for visual separation
+    const groupA = menuItems.filter((i) =>
+        ["Notifications", "Announcements"].includes(i.title),
+    );
+    const groupB = menuItems.filter((i) =>
+        ["Time Records", "Profile", "Logoverride", "Overtime"].includes(
+            i.title,
+        ),
+    );
+    const groupC = menuItems.filter((i) =>
+        ["Schedule", "Forms", "Dashboard", "Employee List"].includes(i.title),
+    );
+
+    const renderItem = (item: NavItem) => (
+        <SidebarMenu key={item.title}>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                    <NavLink
+                        to={item.url}
+                        className={({ isActive }) =>
+                            `flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                                isActive
+                                    ? "bg-primary text-primary-foreground font-semibold"
+                                    : "text-muted-foreground hover:bg-muted/10 hover:text-foreground"
+                            }`
+                        }
+                        end
+                    >
+                        <item.icon className="!size-[18px] shrink-0" />
+                        <span className="truncate">{item.title}</span>
+                        {item.badge !== undefined && item.badge > 0 && (
+                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-500 px-1 text-[10px] font-bold text-white">
+                                {item.badge > 99 ? "99+" : item.badge}
+                            </span>
+                        )}
+                    </NavLink>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        </SidebarMenu>
+    );
+
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader>
@@ -183,35 +231,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="mt-10">
-                {!isLoading &&
-                    menuItems.map((item) => (
-                        <SidebarMenu key={item.title}>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <NavLink
-                                        to={item.url}
-                                        className={({ isActive }) =>
-                                            `flex items-center gap-2 rounded-md px-4 py-4 transition-colors ${
-                                                isActive
-                                                    ? "bg-primary text-primary-foreground font-semibold"
-                                                    : "text-muted-foreground hover:bg-muted/10"
-                                            }`
-                                        }
-                                        end
-                                    >
-                                        <item.icon className="!size-5" />
-                                        {item.title}
-                                        {item.badge !== undefined && item.badge > 0 && (
-                                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-500 px-1 text-[11px] font-semibold text-white">
-                                                {item.badge > 99 ? "99+" : item.badge}
-                                            </span>
-                                        )}
-                                    </NavLink>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    ))}
+            <SidebarContent className="mt-4 gap-0 px-2">
+                {!isLoading && (
+                    <div className="flex flex-col gap-0.5">
+                        {groupA.length > 0 && (
+                            <div className="mb-1">{groupA.map(renderItem)}</div>
+                        )}
+                        {groupB.length > 0 && (
+                            <div className="mb-1 border-t border-white/5 pt-1">
+                                {groupB.map(renderItem)}
+                            </div>
+                        )}
+                        {groupC.length > 0 && (
+                            <div className="mb-1 border-t border-white/5 pt-1">
+                                {groupC.map(renderItem)}
+                            </div>
+                        )}
+                    </div>
+                )}
             </SidebarContent>
 
             <SidebarFooter>

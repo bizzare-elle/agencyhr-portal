@@ -29,6 +29,7 @@ import FormsSubmissions from "./pages/forms/forms-submissions";
 import FormsValidation from "./pages/forms/forms-validation";
 import ServiceChargePayslipDashboard from "./pages/payslip/service-charge-payslip-dashboard";
 import Notifications from "./pages/notifications";
+import Announcements from "./pages/announcements";
 
 const router = createBrowserRouter([
         {
@@ -186,6 +187,11 @@ const router = createBrowserRouter([
                     path: "/notifications/:id",
                     element: <Notifications />,
                     handle: { title: "Notifications" },
+                },
+                {
+                    path: "/announcements/:id",
+                    element: <Announcements />,
+                    handle: { title: "Announcements" },
                 },
             ],
         },

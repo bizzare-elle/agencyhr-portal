@@ -11,10 +11,11 @@ const TYPE_CONFIG: Record<string, {
     label: string; glow: string; dot: string;
     iconFg: string; iconBg: string; tag: string; tagBg: string; tagRing: string;
 }> = {
-    training:    { label: "Training",     glow: "rgba(96,165,250,0.18)",   dot: "bg-blue-400",   iconFg: "text-blue-400",   iconBg: "bg-blue-500/15",   tag: "text-blue-400",   tagBg: "bg-blue-500/10",   tagRing: "ring-blue-500/20" },
-    video:       { label: "Video",        glow: "rgba(45,212,191,0.18)",   dot: "bg-teal-400",   iconFg: "text-teal-400",   iconBg: "bg-teal-500/15",   tag: "text-teal-400",   tagBg: "bg-teal-500/10",   tagRing: "ring-teal-500/20" },
-    logoverride: { label: "Log Override", glow: "rgba(167,139,250,0.18)",  dot: "bg-violet-400", iconFg: "text-violet-400", iconBg: "bg-violet-500/15", tag: "text-violet-400", tagBg: "bg-violet-500/10", tagRing: "ring-violet-500/20" },
-    overtime:    { label: "Overtime",     glow: "rgba(251,146,60,0.18)",   dot: "bg-orange-400", iconFg: "text-orange-400", iconBg: "bg-orange-500/15", tag: "text-orange-400", tagBg: "bg-orange-500/10", tagRing: "ring-orange-500/20" },
+    training:     { label: "Training",     glow: "rgba(96,165,250,0.18)",   dot: "bg-blue-400",   iconFg: "text-blue-400",   iconBg: "bg-blue-500/15",   tag: "text-blue-400",   tagBg: "bg-blue-500/10",   tagRing: "ring-blue-500/20" },
+    video:        { label: "Video",        glow: "rgba(45,212,191,0.18)",   dot: "bg-teal-400",   iconFg: "text-teal-400",   iconBg: "bg-teal-500/15",   tag: "text-teal-400",   tagBg: "bg-teal-500/10",   tagRing: "ring-teal-500/20" },
+    logoverride:  { label: "Log Override", glow: "rgba(167,139,250,0.18)",  dot: "bg-violet-400", iconFg: "text-violet-400", iconBg: "bg-violet-500/15", tag: "text-violet-400", tagBg: "bg-violet-500/10", tagRing: "ring-violet-500/20" },
+    overtime:     { label: "Overtime",     glow: "rgba(251,146,60,0.18)",   dot: "bg-orange-400", iconFg: "text-orange-400", iconBg: "bg-orange-500/15", tag: "text-orange-400", tagBg: "bg-orange-500/10", tagRing: "ring-orange-500/20" },
+    announcement: { label: "Announcement", glow: "rgba(244,63,94,0.18)",    dot: "bg-rose-400",   iconFg: "text-rose-400",   iconBg: "bg-rose-500/15",   tag: "text-rose-400",   tagBg: "bg-rose-500/10",   tagRing: "ring-rose-500/20" },
 };
 
 const FALLBACK = TYPE_CONFIG["training"];
@@ -23,6 +24,11 @@ function cfg(type: string) { return TYPE_CONFIG[type] ?? FALLBACK; }
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
 function TypeIcon({ type }: { type: string }) {
+    if (type === "announcement") return (
+        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+        </svg>
+    );
     if (type === "video") return (
         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
@@ -165,7 +171,7 @@ function DateSection({ label, items, readIds, onClickItem }: {
 
 // ── Sidebar summary ───────────────────────────────────────────────────────────
 
-const TYPES: NotifType[] = ["training", "video", "logoverride", "overtime"];
+const TYPES: NotifType[] = ["announcement", "training", "video", "logoverride", "overtime"];
 
 function SummarySidebar({ items, unreadCount, readIds, onMarkAll }: {
     items: NotificationItem[]; unreadCount: number;
@@ -178,18 +184,26 @@ function SummarySidebar({ items, unreadCount, readIds, onMarkAll }: {
     }, {} as Record<string, { total: number; unread: number }>);
 
     return (
-        <aside className="w-64 shrink-0">
+        <aside className="order-first w-full md:order-last md:w-64 md:shrink-0">
             {/* Unread summary card */}
             <div className="mb-4 rounded-xl border border-white/8 bg-white/[0.03] p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-3">Summary</p>
-                <div className="flex items-end justify-between">
+                <div className="flex items-center justify-between md:block">
                     <div>
-                        <p className="text-3xl font-bold tabular-nums text-foreground">{unreadCount}</p>
-                        <p className="text-xs text-muted-foreground/60 mt-0.5">unread</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-1 md:mb-3">Summary</p>
+                        <div className="flex items-baseline gap-3 md:gap-0 md:justify-between">
+                            <div className="flex items-baseline gap-2 md:block">
+                                <p className="text-3xl font-bold tabular-nums text-foreground">{unreadCount}</p>
+                                <p className="text-xs text-muted-foreground/60 md:mt-0.5">unread</p>
+                            </div>
+                            <div className="hidden md:block text-right">
+                                <p className="text-lg font-semibold tabular-nums text-muted-foreground/50">{items.length}</p>
+                                <p className="text-xs text-muted-foreground/40">total</p>
+                            </div>
+                        </div>
                     </div>
-                    <div className="text-right">
-                        <p className="text-lg font-semibold tabular-nums text-muted-foreground/50">{items.length}</p>
-                        <p className="text-xs text-muted-foreground/40">total</p>
+                    <div className="flex items-center gap-2 md:hidden">
+                        <span className="text-sm text-muted-foreground/40">·</span>
+                        <p className="text-sm font-semibold tabular-nums text-muted-foreground/50">{items.length} total</p>
                     </div>
                 </div>
                 {unreadCount > 0 && (
@@ -197,36 +211,38 @@ function SummarySidebar({ items, unreadCount, readIds, onMarkAll }: {
                         variant="outline"
                         size="sm"
                         onClick={onMarkAll}
-                        className="mt-4 w-full h-7 rounded-lg border-white/10 bg-white/5 text-xs hover:bg-white/10"
+                        className="mt-3 w-full h-7 rounded-lg border-white/10 bg-white/5 text-xs hover:bg-white/10"
                     >
                         Mark all as read
                     </Button>
                 )}
             </div>
 
-            {/* By type */}
+            {/* By type — stacked on desktop, grid on mobile */}
             <div className="rounded-xl border border-white/8 bg-white/[0.03] overflow-hidden">
                 <p className="px-4 pt-3 pb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/40">By Type</p>
-                {TYPES.map((t) => {
-                    const c = cfg(t);
-                    const counts = countByType[t] ?? { total: 0, unread: 0 };
-                    return (
-                        <div key={t} className="flex items-center gap-3 border-t border-white/5 px-4 py-2.5">
-                            <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px]", c.iconBg, c.iconFg)}>
-                                <TypeIcon type={t} />
-                            </span>
-                            <span className="flex-1 text-xs text-muted-foreground/70">{c.label}</span>
-                            <div className="flex items-center gap-1.5">
-                                {counts.unread > 0 && (
-                                    <span className={cn("flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold", c.tagBg, c.tag)}>
-                                        {counts.unread}
-                                    </span>
-                                )}
-                                <span className="text-xs tabular-nums text-muted-foreground/30">{counts.total}</span>
+                <div className="grid grid-cols-2 md:block">
+                    {TYPES.map((t) => {
+                        const c = cfg(t);
+                        const counts = countByType[t] ?? { total: 0, unread: 0 };
+                        return (
+                            <div key={t} className="flex items-center gap-2.5 border-t border-white/5 px-3 py-2.5 md:px-4">
+                                <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px]", c.iconBg, c.iconFg)}>
+                                    <TypeIcon type={t} />
+                                </span>
+                                <span className="flex-1 min-w-0 text-xs text-muted-foreground/70 truncate">{c.label}</span>
+                                <div className="flex items-center gap-1.5">
+                                    {counts.unread > 0 && (
+                                        <span className={cn("flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold", c.tagBg, c.tag)}>
+                                            {counts.unread}
+                                        </span>
+                                    )}
+                                    <span className="text-xs tabular-nums text-muted-foreground/30">{counts.total}</span>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         </aside>
     );
@@ -241,7 +257,8 @@ export default function Notifications() {
 
     const handleClick = (item: NotificationItem) => {
         markOneRead(item.id);
-        if (item.type === "logoverride") navigate(`/logoverrides/${id}`);
+        if (item.type === "announcement") navigate(`/announcements/${id}`);
+        else if (item.type === "logoverride") navigate(`/logoverrides/${id}`);
         else if (item.type === "overtime") navigate(`/overtime/${id}`);
         else navigate(`/employees/${id}`);
     };
@@ -251,7 +268,7 @@ export default function Notifications() {
     return (
         <ParentComponent>
             {/* header */}
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <div className="flex items-center gap-2.5">
                         <h1 className="text-lg font-bold tracking-tight">Notifications</h1>
@@ -262,15 +279,15 @@ export default function Notifications() {
                         )}
                     </div>
                     <p className="mt-0.5 text-[11px] uppercase tracking-widest text-muted-foreground/40">
-                        Training · Video · Log Override · Overtime
+                        Announcements · Training · Video · Log Override · Overtime
                     </p>
                 </div>
             </div>
 
             {/* two-column body */}
-            <div className="flex gap-6">
+            <div className="flex flex-col gap-6 md:flex-row">
                 {/* ── timeline feed ── */}
-                <div className="flex-1 min-w-0">
+                <div className="order-last flex-1 min-w-0 md:order-first">
                     {/* loading */}
                     {isLoading && (
                         <div className="flex flex-col gap-3">

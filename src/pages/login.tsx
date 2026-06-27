@@ -63,6 +63,7 @@ export default function LoginPage() {
                         navigate(`/dashboard/${user.agency_id}`);
                     } else {
                         navigate(`/employees/${user.id}`);
+                        // navigate(`/maintenance`);
                     }
                 } else {
                     toast.error("Failed to load user info.");
@@ -126,7 +127,9 @@ export default function LoginPage() {
                                                 type="email"
                                                 autoComplete="email"
                                                 {...field}
-                                                disabled={loginMutation.isPending}
+                                                disabled={
+                                                    loginMutation.isPending
+                                                }
                                                 className="border-white/10 bg-white/10 text-white placeholder:text-white/30 focus-visible:border-yellow-500/50 focus-visible:ring-yellow-500/20"
                                             />
                                         </FormControl>
@@ -147,22 +150,37 @@ export default function LoginPage() {
                                             <div className="relative">
                                                 <Input
                                                     placeholder="••••••••"
-                                                    type={showPassword ? "text" : "password"}
+                                                    type={
+                                                        showPassword
+                                                            ? "text"
+                                                            : "password"
+                                                    }
                                                     autoComplete="current-password"
                                                     {...field}
-                                                    disabled={loginMutation.isPending}
+                                                    disabled={
+                                                        loginMutation.isPending
+                                                    }
                                                     className="border-white/10 bg-white/10 pr-10 text-white placeholder:text-white/30 focus-visible:border-yellow-500/50 focus-visible:ring-yellow-500/20"
                                                 />
                                                 <button
                                                     type="button"
-                                                    aria-label={showPassword ? "Hide password" : "Show password"}
-                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    aria-label={
+                                                        showPassword
+                                                            ? "Hide password"
+                                                            : "Show password"
+                                                    }
+                                                    onClick={() =>
+                                                        setShowPassword(
+                                                            !showPassword,
+                                                        )
+                                                    }
                                                     className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition hover:text-white/80"
                                                 >
-                                                    {showPassword
-                                                        ? <EyeOff className="h-4 w-4" />
-                                                        : <Eye className="h-4 w-4" />
-                                                    }
+                                                    {showPassword ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
                                                 </button>
                                             </div>
                                         </FormControl>

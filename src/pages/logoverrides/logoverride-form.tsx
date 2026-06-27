@@ -418,6 +418,9 @@ export default function LogoverrideForm() {
                                                             Forgot Clock-In or
                                                             Clock-Out
                                                         </SelectItem>
+                                                        <SelectItem value="In Training">
+                                                            In Training
+                                                        </SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </FormControl>

@@ -13,6 +13,7 @@ import {
     IconSpeakerphone,
     IconSchool,
     IconHistory,
+    IconReceipt,
 } from "@tabler/icons-react";
 import { Timer } from "lucide-react";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -94,11 +95,11 @@ const navMainItems = (
                 url: `/training-history/${userId ?? ""}`,
                 icon: IconHistory,
             },
-            // {
-            //     title: "Service Charge Payslip",
-            //     url: `/payslip/${userId ?? ""}`,
-            //     icon: IconMoneybag,
-            // },
+            {
+                title: "Payslip",
+                url: `/payslip/${userId ?? ""}`,
+                icon: IconReceipt,
+            },
         );
 
         if (hasScheduleAccess) {
@@ -187,7 +188,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ["Notifications", "Announcements"].includes(i.title),
     );
     const groupB = menuItems.filter((i) =>
-        ["Time Records", "Profile", "Logoverride", "Overtime", "Training Files", "Trainings"].includes(
+        ["Time Records", "Profile", "Logoverride", "Overtime", "Training Files", "Trainings", "Payslip"].includes(
             i.title,
         ),
     );

@@ -37,7 +37,7 @@ import Maintenance from "./pages/maintenance";
 const router = createBrowserRouter([
     {
         path: "/",
-        loader: async () => redirect("/maintenance"),
+        loader: async () => redirect("/login"),
     },
     {
         path: "/login",

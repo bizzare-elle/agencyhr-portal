@@ -129,56 +129,56 @@ const router = createBrowserRouter([
                     },
                 ],
             },
-            {
-                path: "/forms",
-                children: [
-                    {
-                        path: ":id",
-                        element: <FormsHub />,
-                        handle: { title: "Forms" },
-                    },
-                    {
-                        path: "eicf/:id",
-                        element: <EicfForm />,
-                        handle: { title: "EICF" },
-                    },
-                    {
-                        path: "mrf/:id",
-                        element: <MrfForm />,
-                        handle: { title: "MRF" },
-                    },
-                    {
-                        path: "submissions/:id",
-                        element: <FormsSubmissions />,
-                        handle: { title: "EICF Submissions" },
-                    },
-                    {
-                        path: "validation/:id",
-                        element: <FormsValidation />,
-                        handle: { title: "EICF Validation" },
-                    },
-                ],
-            },
-            {
-                path: "/schedules",
-                children: [
-                    {
-                        path: ":id",
-                        element: <ScheduleDashboard />,
-                        handle: { title: "Schedule Dashboard" },
-                    },
-                    {
-                        path: "form/:id",
-                        element: <ScheduleForm />,
-                        handle: { title: "Schedule Form" },
-                    },
-                    {
-                        path: "upload/:id",
-                        element: <ScheduleUpload />,
-                        handle: { title: "Schedule Upload" },
-                    },
-                ],
-            },
+            // {
+            //     path: "/forms",
+            //     children: [
+            //         {
+            //             path: ":id",
+            //             element: <FormsHub />,
+            //             handle: { title: "Forms" },
+            //         },
+            //         {
+            //             path: "eicf/:id",
+            //             element: <EicfForm />,
+            //             handle: { title: "EICF" },
+            //         },
+            //         {
+            //             path: "mrf/:id",
+            //             element: <MrfForm />,
+            //             handle: { title: "MRF" },
+            //         },
+            //         {
+            //             path: "submissions/:id",
+            //             element: <FormsSubmissions />,
+            //             handle: { title: "EICF Submissions" },
+            //         },
+            //         {
+            //             path: "validation/:id",
+            //             element: <FormsValidation />,
+            //             handle: { title: "EICF Validation" },
+            //         },
+            //     ],
+            // },
+            // {
+            //     path: "/schedules",
+            //     children: [
+            //         {
+            //             path: ":id",
+            //             element: <ScheduleDashboard />,
+            //             handle: { title: "Schedule Dashboard" },
+            //         },
+            //         {
+            //             path: "form/:id",
+            //             element: <ScheduleForm />,
+            //             handle: { title: "Schedule Form" },
+            //         },
+            //         {
+            //             path: "upload/:id",
+            //             element: <ScheduleUpload />,
+            //             handle: { title: "Schedule Upload" },
+            //         },
+            //     ],
+            // },
             // {
             //     path: "/payslip",
             //     children: [

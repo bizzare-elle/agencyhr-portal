@@ -95,26 +95,27 @@ const navMainItems = (
                 url: `/training-history/${userId ?? ""}`,
                 icon: IconHistory,
             },
-            {
-                title: "Payslip",
-                url: `/payslip/${userId ?? ""}`,
-                icon: IconReceipt,
-            },
+            // {
+            //     title: "Payslip",
+            //     url: `/payslip/${userId ?? ""}`,
+            //     icon: IconReceipt,
+            // },
         );
 
         if (hasScheduleAccess) {
-            items.push(
-                {
-                    title: "Schedule",
-                    url: `/schedules/${userId ?? ""}`,
-                    icon: IconCalendarCheck,
-                },
-                {
-                    title: "Forms",
-                    url: `/forms/${userId ?? ""}`,
-                    icon: IconClipboardList,
-                },
-            );
+            items
+                .push
+                // {
+                //     title: "Schedule",
+                //     url: `/schedules/${userId ?? ""}`,
+                //     icon: IconCalendarCheck,
+                // },
+                // {
+                //     title: "Forms",
+                //     url: `/forms/${userId ?? ""}`,
+                //     icon: IconClipboardList,
+                // },
+                ();
         }
     }
 
@@ -188,9 +189,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ["Notifications", "Announcements"].includes(i.title),
     );
     const groupB = menuItems.filter((i) =>
-        ["Time Records", "Profile", "Logoverride", "Overtime", "Training Files", "Trainings", "Payslip"].includes(
-            i.title,
-        ),
+        [
+            "Time Records",
+            "Profile",
+            "Logoverride",
+            "Overtime",
+            "Training Files",
+            "Trainings",
+            "Payslip",
+        ].includes(i.title),
     );
     const groupC = menuItems.filter((i) =>
         ["Schedule", "Forms", "Dashboard", "Employee List"].includes(i.title),

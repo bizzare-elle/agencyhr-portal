@@ -73,6 +73,13 @@ const createSchema = z.object({
                 today.setHours(0, 0, 0, 0);
                 const twoDaysAgo = new Date(today);
                 twoDaysAgo.setDate(today.getDate() - 2);
+
+                // Maintenance exception: June 25–28, 2026 — filing window open for 2 days (Jun 29–30)
+                const maintenanceDates = ["2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28"];
+                const maintenanceWindowEnd = new Date(2026, 5, 30, 23, 59, 59);
+                const iso = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`;
+                if (maintenanceDates.includes(iso) && new Date() <= maintenanceWindowEnd) return true;
+
                 return selected >= twoDaysAgo && selected <= today;
             },
             { message: "You can only select a date within the last 2 days." },
@@ -395,6 +402,13 @@ export default function OvertimeForm() {
                                                             0,
                                                             0,
                                                         );
+
+                                                        // Maintenance exception: June 25–28, 2026 — filing window open for 2 days (Jun 29–30)
+                                                        const maintenanceDates = ["2026-06-25", "2026-06-26", "2026-06-27", "2026-06-28"];
+                                                        const maintenanceWindowEnd = new Date(2026, 5, 30, 23, 59, 59);
+                                                        const iso = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, "0")}-${String(checkDate.getDate()).padStart(2, "0")}`;
+                                                        if (maintenanceDates.includes(iso) && new Date() <= maintenanceWindowEnd)
+                                                            return false;
 
                                                         return (
                                                             checkDate <

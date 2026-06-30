@@ -59,7 +59,9 @@ export default function LoginPage() {
 
                 if (user?.id) {
                     toast.success("Login successful!");
-                    if (user.role === "agency_coordinator") {
+                    if (user.is_admin === 1) {
+                        navigate(`/admin/${user.id}`);
+                    } else if (user.role === "agency_coordinator") {
                         navigate(`/dashboard/${user.agency_id}`);
                     } else {
                         navigate(`/employees/${user.id}`);

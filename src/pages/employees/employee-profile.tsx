@@ -8,8 +8,10 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { Wifi, Camera } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
+import { toast } from "sonner";
 import { ApiResponse, Employee } from "@/index";
 import { cn } from "@/lib/utils";
 import { formatToMonthDayYear } from "@/helpers/formatDates";
@@ -40,16 +42,45 @@ export default function EmployeeProfile() {
     const navigate = useNavigate();
     const { id: paramId } = useParams<{ id: string }>();
 
+    const queryClient = useQueryClient();
+    const avatarInputRef = React.useRef<HTMLInputElement>(null);
+    const [avatarUploading, setAvatarUploading] = React.useState(false);
+
     const { data: me } = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
-            const response =
-                await api.get<ApiResponse<{ hr_id: string; role: string }>>(
-                    `/api/v2/auth/me`,
-                );
+            const response = await api.get<ApiResponse<{
+                hr_id: string;
+                role: string;
+                can_work_remotely?: number;
+                profile_photo_url?: string;
+            }>>(`/api/v2/auth/me`);
             return response.data.data;
         },
     });
+
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+        if (!allowed.includes(file.type)) {
+            toast.error("Only JPEG, PNG, GIF, or WebP images allowed.");
+            return;
+        }
+        const form = new FormData();
+        form.append("avatar", file);
+        setAvatarUploading(true);
+        try {
+            await api.post(`/api/v2/employees/${employeeId}/avatar`, form);
+            await queryClient.invalidateQueries({ queryKey: ["me"] });
+            toast.success("Profile photo updated.");
+        } catch {
+            toast.error("Upload failed. Please try again.");
+        } finally {
+            setAvatarUploading(false);
+            if (avatarInputRef.current) avatarInputRef.current.value = "";
+        }
+    };
 
     const employeeId =
         me?.role === "agency_coordinator" && paramId ? paramId : me?.hr_id;
@@ -112,20 +143,85 @@ export default function EmployeeProfile() {
     return (
         <ParentComponent>
             <div className="mx-auto w-full max-w-[1600px] space-y-8 p-4 sm:p-6">
-                <div className="flex flex-col items-center gap-4 rounded-xl border p-6 shadow-sm sm:flex-row sm:justify-between">
-                    <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/20 text-2xl font-bold text-yellow-400">
-                            {employee.firstname.charAt(0) +
-                                employee.lastname.charAt(0)}
+                {/* Profile header */}
+                <div className="rounded-xl border bg-muted/5 p-5 sm:p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
+
+                        {/* Avatar */}
+                        <div className="relative self-center sm:self-start flex-shrink-0">
+                            <input
+                                ref={avatarInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif,image/webp"
+                                className="hidden"
+                                onChange={handleAvatarUpload}
+                            />
+                            <div className="h-20 w-20 rounded-2xl overflow-hidden bg-primary/15 flex items-center justify-center text-2xl font-bold text-primary">
+                                {me?.profile_photo_url ? (
+                                    <img
+                                        src={me.profile_photo_url}
+                                        alt={employee.name}
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    employee.firstname.charAt(0).toUpperCase() +
+                                    employee.lastname.charAt(0).toUpperCase()
+                                )}
+                            </div>
+                            {/* Upload overlay — only for own profile */}
+                            {me?.hr_id === String(employeeId) && (
+                                <button
+                                    onClick={() => avatarInputRef.current?.click()}
+                                    disabled={avatarUploading}
+                                    className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 hover:opacity-100 transition-opacity disabled:opacity-50"
+                                    title="Change profile photo"
+                                >
+                                    <Camera className="h-6 w-6 text-white" />
+                                </button>
+                            )}
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-wide sm:text-3xl">
-                                {employee.name}
-                            </h1>
-                            <p className="text-muted-foreground text-xs sm:text-sm">
-                                ID: {employee.id_number} •{" "}
-                                {employee.branch_name} • {employee.agency_name}
+
+                        {/* Info */}
+                        <div className="min-w-0 flex-1 text-center sm:text-left">
+                            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                                <h1 className="text-xl font-bold leading-tight sm:text-2xl">
+                                    {employee.name}
+                                </h1>
+                                <Badge
+                                    className={cn(
+                                        "text-xs",
+                                        employee.is_active
+                                            ? "border-green-500/30 bg-green-500/10 text-green-400"
+                                            : "border-red-500/30 bg-red-500/10 text-red-400",
+                                    )}
+                                >
+                                    {employee.is_active ? "Active" : "Inactive"}
+                                </Badge>
+                                {me?.can_work_remotely === 1 && (
+                                    <Badge className="gap-1 border-teal-500/30 bg-teal-500/10 text-teal-400">
+                                        <Wifi className="h-3 w-3" />
+                                        Remote Eligible
+                                    </Badge>
+                                )}
+                            </div>
+
+                            <p className="text-muted-foreground mt-1 text-sm">
+                                {employee.position_name || "—"}
                             </p>
+
+                            <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 sm:justify-start">
+                                {[
+                                    { label: "ID", value: employee.id_number },
+                                    { label: "Branch", value: employee.branch_name },
+                                    { label: "Dept", value: employee.department_name },
+                                    { label: "Agency", value: employee.agency_name },
+                                ].map(({ label, value }) => value ? (
+                                    <span key={label} className="text-xs text-muted-foreground">
+                                        <span className="font-medium text-foreground/60">{label}:</span>{" "}
+                                        {value}
+                                    </span>
+                                ) : null)}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -215,24 +311,7 @@ export default function EmployeeProfile() {
                                             )}
                                         />
                                         <InfoRow
-                                            label="Status"
-                                            value={
-                                                <Badge
-                                                    className={cn(
-                                                        "text-white",
-                                                        employee.is_active
-                                                            ? "bg-green-600"
-                                                            : "bg-red-600",
-                                                    )}
-                                                >
-                                                    {employee.is_active
-                                                        ? "Active"
-                                                        : "Inactive"}
-                                                </Badge>
-                                            }
-                                        />
-                                        <InfoRow
-                                            label="Company Email  Address"
+                                            label="Company Email Address"
                                             value={
                                                 employee.company_email_address
                                             }

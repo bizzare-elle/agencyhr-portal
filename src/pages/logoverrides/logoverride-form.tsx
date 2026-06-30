@@ -194,9 +194,9 @@ const schema = z.object({
         .refine(
             (file) =>
                 file instanceof File &&
-                file.size <= 5 * 1024 * 1024 &&
+                file.size <= 20 * 1024 * 1024 &&
                 ["image/jpeg", "image/png", "image/jpg"].includes(file.type),
-            { message: "File must be JPEG/PNG and under 5MB" },
+            { message: "File must be JPEG/PNG and under 20MB" },
         ),
 });
 

@@ -10,6 +10,7 @@ interface User {
     department_id?: number;
     status?: string;
     agency_id?: number;
+    is_admin?: number; // 1 = admin
 }
 
 interface AuthState {

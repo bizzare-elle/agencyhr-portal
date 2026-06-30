@@ -34,6 +34,8 @@ import TrainingPage from "./pages/training/training-page";
 import TrainingHistoryPage from "./pages/training/training-history-page";
 import Maintenance from "./pages/maintenance";
 import HrApprovals from "./pages/approvals/hr-approvals";
+import AdminPanel from "./pages/admin/admin-panel";
+import RemoteWork from "./pages/remote/remote-work";
 
 const router = createBrowserRouter([
     {
@@ -214,6 +216,16 @@ const router = createBrowserRouter([
                 path: "/approvals/:id",
                 element: <HrApprovals />,
                 handle: { title: "HR Approvals" },
+            },
+            {
+                path: "/admin/:id",
+                element: <AdminPanel />,
+                handle: { title: "Admin Panel" },
+            },
+            {
+                path: "/remote/:id",
+                element: <RemoteWork />,
+                handle: { title: "Work Remotely" },
             },
         ],
     },

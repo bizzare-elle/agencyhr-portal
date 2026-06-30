@@ -131,7 +131,15 @@ interface Paginated<T> {
 
 const EMPTY_PAGINATED = <T,>(): Paginated<T> => ({
     items: [],
-    meta: { total: 0, page: 1, per_page: 25, last_page: 1, pending: 0, approved: 0, disapproved: 0 },
+    meta: {
+        total: 0,
+        page: 1,
+        per_page: 25,
+        last_page: 1,
+        pending: 0,
+        approved: 0,
+        disapproved: 0,
+    },
 });
 
 const initials = (name?: string) =>
@@ -338,8 +346,7 @@ function ApproveButton({
                                             ? "overtime"
                                             : "log override"}
                                     </strong>{" "}
-                                    request from{" "}
-                                    <strong>Disapproved</strong> to{" "}
+                                    request from <strong>Disapproved</strong> to{" "}
                                     <strong>Approved</strong>. This is allowed
                                     because the record is within the active
                                     payroll cutoff.
@@ -366,7 +373,9 @@ function ApproveButton({
                                 mutation.mutate();
                             }}
                         >
-                            {isChange ? "Yes, change to Approved" : "Confirm Approve"}
+                            {isChange
+                                ? "Yes, change to Approved"
+                                : "Confirm Approve"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -520,8 +529,69 @@ function DisapproveButton({
 
 // ── Overtime detail dialog ─────────────────────────────────────────────────────
 
-function OvertimeDetailsDialog({ row }: { row: OvertimeRecord }) {
+function AttachmentImage({
+    type,
+    id,
+}: {
+    type: "overtime" | "logoverride";
+    id: number;
+}) {
+    const { data, isLoading, isError } = useQuery<{ url: string }>({
+        queryKey: ["approval-image", type, id],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<{ url: string }>>(
+                `/api/v2/approvals/${type}/${id}/image`,
+            );
+            return res.data.data as { url: string };
+        },
+        staleTime: 25 * 60 * 1000, // presigned URL valid 30 min; refetch before expiry
+        retry: false,
+    });
+
+    if (isLoading) {
+        return (
+            <div className="bg-muted/30 flex h-40 items-center justify-center rounded-md">
+                <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+            </div>
+        );
+    }
+    if (isError || !data?.url) {
+        return (
+            <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+                <ImageIcon className="h-4 w-4" />
+                Could not load attachment.
+            </p>
+        );
+    }
+    return (
+        <a href={data.url} target="_blank" rel="noopener noreferrer">
+            <img
+                src={data.url}
+                alt="Attachment"
+                className="max-h-64 w-full rounded-md border object-contain"
+            />
+        </a>
+    );
+}
+
+function OvertimeDetailsDialog({
+    row,
+    isApprover,
+    queryKey,
+}: {
+    row: OvertimeRecord;
+    isApprover?: boolean;
+    queryKey?: readonly unknown[];
+}) {
     const [open, setOpen] = useState(false);
+    const isActed = row.status !== 0;
+    const withinCutoff = row.within_cutoff === 1;
+    const canApprove =
+        !!isApprover && withinCutoff && (row.status === 0 || row.status === 2);
+    const canDisapprove =
+        !!isApprover && withinCutoff && (row.status === 0 || row.status === 1);
+    const showActions = canApprove || canDisapprove;
+
     return (
         <>
             <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
@@ -536,8 +606,9 @@ function OvertimeDetailsDialog({ row }: { row: OvertimeRecord }) {
                             Overtime Request
                         </DialogTitle>
                         <DialogDescription asChild>
-                            <span>
+                            <span className="flex flex-wrap items-center gap-1.5">
                                 <StatusBadge status={row.status} />
+                                {isActed && withinCutoff && <EditableBadge />}
                             </span>
                         </DialogDescription>
                     </DialogHeader>
@@ -574,10 +645,36 @@ function OvertimeDetailsDialog({ row }: { row: OvertimeRecord }) {
                         />
                     </div>
                     {row.image && (
-                        <p className="text-muted-foreground mt-2 flex items-center gap-1.5 text-sm">
-                            <ImageIcon className="h-4 w-4" />
-                            Has attachment on file.
+                        <div className="mt-3">
+                            <AttachmentImage type="overtime" id={row.id} />
+                        </div>
+                    )}
+                    {isApprover && !withinCutoff && (
+                        <p className="mt-3 flex items-center gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-400">
+                            <span>⚠</span>
+                            This record is outside the active payroll cutoff and
+                            can no longer be approved or changed.
                         </p>
+                    )}
+                    {showActions && queryKey && (
+                        <div className="flex justify-end gap-2 pt-2">
+                            <ApproveButton
+                                type="overtime"
+                                id={row.id}
+                                employeeName={row.employee_name}
+                                queryKey={queryKey}
+                                canAct={canApprove}
+                                isChange={isActed && withinCutoff}
+                            />
+                            <DisapproveButton
+                                type="overtime"
+                                id={row.id}
+                                employeeName={row.employee_name}
+                                queryKey={queryKey}
+                                canAct={canDisapprove}
+                                isChange={isActed && withinCutoff}
+                            />
+                        </div>
                     )}
                 </DialogContent>
             </Dialog>
@@ -587,8 +684,24 @@ function OvertimeDetailsDialog({ row }: { row: OvertimeRecord }) {
 
 // ── Log override detail dialog ─────────────────────────────────────────────────
 
-function LogoverrideDetailsDialog({ row }: { row: LogoverrideRecord }) {
+function LogoverrideDetailsDialog({
+    row,
+    isApprover,
+    queryKey,
+}: {
+    row: LogoverrideRecord;
+    isApprover?: boolean;
+    queryKey?: readonly unknown[];
+}) {
     const [open, setOpen] = useState(false);
+    const isActed = row.status !== 0;
+    const withinCutoff = row.within_cutoff === 1;
+    const canApprove =
+        !!isApprover && withinCutoff && (row.status === 0 || row.status === 2);
+    const canDisapprove =
+        !!isApprover && withinCutoff && (row.status === 0 || row.status === 1);
+    const showActions = canApprove || canDisapprove;
+
     return (
         <>
             <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
@@ -603,8 +716,9 @@ function LogoverrideDetailsDialog({ row }: { row: LogoverrideRecord }) {
                             Log Override Request
                         </DialogTitle>
                         <DialogDescription asChild>
-                            <span>
+                            <span className="flex flex-wrap items-center gap-1.5">
                                 <StatusBadge status={row.status} />
+                                {isActed && withinCutoff && <EditableBadge />}
                             </span>
                         </DialogDescription>
                     </DialogHeader>
@@ -640,10 +754,36 @@ function LogoverrideDetailsDialog({ row }: { row: LogoverrideRecord }) {
                         />
                     </div>
                     {row.image && (
-                        <p className="text-muted-foreground mt-2 flex items-center gap-1.5 text-sm">
-                            <ImageIcon className="h-4 w-4" />
-                            Has attachment on file.
+                        <div className="mt-3">
+                            <AttachmentImage type="logoverride" id={row.id} />
+                        </div>
+                    )}
+                    {isApprover && !withinCutoff && (
+                        <p className="mt-3 flex items-center gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-400">
+                            <span>⚠</span>
+                            This record is outside the active payroll cutoff and
+                            can no longer be approved or changed.
                         </p>
+                    )}
+                    {showActions && queryKey && (
+                        <div className="flex justify-end gap-2 pt-2">
+                            <ApproveButton
+                                type="logoverride"
+                                id={row.id}
+                                employeeName={row.employee_name}
+                                queryKey={queryKey}
+                                canAct={canApprove}
+                                isChange={isActed && withinCutoff}
+                            />
+                            <DisapproveButton
+                                type="logoverride"
+                                id={row.id}
+                                employeeName={row.employee_name}
+                                queryKey={queryKey}
+                                canAct={canDisapprove}
+                                isChange={isActed && withinCutoff}
+                            />
+                        </div>
                     )}
                 </DialogContent>
             </Dialog>
@@ -655,10 +795,10 @@ function LogoverrideDetailsDialog({ row }: { row: LogoverrideRecord }) {
 
 // "pending" → status=0, "approved" → status=1, "disapproved" → status=2, "all" → no filter
 const STATUS_FILTERS = [
-    { value: "pending",     label: "Pending",     apiStatus: "0" },
-    { value: "approved",    label: "Approved",    apiStatus: "1" },
+    { value: "pending", label: "Pending", apiStatus: "0" },
+    { value: "approved", label: "Approved", apiStatus: "1" },
     { value: "disapproved", label: "Disapproved", apiStatus: "2" },
-    { value: "all",         label: "All",         apiStatus: ""  },
+    { value: "all", label: "All", apiStatus: "" },
 ] as const;
 
 type StatusFilter = (typeof STATUS_FILTERS)[number]["value"];
@@ -677,15 +817,28 @@ export default function HrApprovals() {
     const [loPage, setLoPage] = useState(1);
     const [historyPage, setHistoryPage] = useState(1);
 
-    const handleOtFilter = (v: StatusFilter) => { setOtFilter(v); setOtPage(1); };
-    const handleLoFilter = (v: StatusFilter) => { setLoFilter(v); setLoPage(1); };
+    const handleOtFilter = (v: StatusFilter) => {
+        setOtFilter(v);
+        setOtPage(1);
+    };
+    const handleLoFilter = (v: StatusFilter) => {
+        setLoFilter(v);
+        setLoPage(1);
+    };
 
-    const otApiStatus  = STATUS_FILTERS.find((f) => f.value === otFilter)?.apiStatus ?? "";
-    const loApiStatus  = STATUS_FILTERS.find((f) => f.value === loFilter)?.apiStatus ?? "";
+    const otApiStatus =
+        STATUS_FILTERS.find((f) => f.value === otFilter)?.apiStatus ?? "";
+    const loApiStatus =
+        STATUS_FILTERS.find((f) => f.value === loFilter)?.apiStatus ?? "";
 
-    const otQueryKey      = ["approvals-overtime",    id, otPage, otApiStatus]   as const;
-    const loQueryKey      = ["approvals-logoverrides", id, loPage, loApiStatus]  as const;
-    const historyQueryKey = ["approvals-history",      id, historyPage]          as const;
+    const otQueryKey = ["approvals-overtime", id, otPage, otApiStatus] as const;
+    const loQueryKey = [
+        "approvals-logoverrides",
+        id,
+        loPage,
+        loApiStatus,
+    ] as const;
+    const historyQueryKey = ["approvals-history", id, historyPage] as const;
 
     const { data: approverInfo, isLoading: approverLoading } = useQuery<{
         is_approver: boolean;
@@ -695,18 +848,33 @@ export default function HrApprovals() {
         queryKey: ["approvals-is-approver"],
         queryFn: async () => {
             const res = await api.get<
-                ApiResponse<{ is_approver: boolean; cutoff_start: string; cutoff_end: string }>
+                ApiResponse<{
+                    is_approver: boolean;
+                    cutoff_start: string;
+                    cutoff_end: string;
+                }>
             >("/api/v2/approvals/is-approver");
-            return res.data.data ?? { is_approver: false, cutoff_start: "", cutoff_end: "" };
+            return (
+                res.data.data ?? {
+                    is_approver: false,
+                    cutoff_start: "",
+                    cutoff_end: "",
+                }
+            );
         },
         staleTime: 5 * 60 * 1000,
     });
     const isApprover = approverInfo?.is_approver ?? false;
 
-    const { data: otData, isLoading: otLoading } = useQuery<Paginated<OvertimeRecord>>({
+    const { data: otData, isLoading: otLoading } = useQuery<
+        Paginated<OvertimeRecord>
+    >({
         queryKey: otQueryKey,
         queryFn: async () => {
-            const params = new URLSearchParams({ page: String(otPage), per_page: "25" });
+            const params = new URLSearchParams({
+                page: String(otPage),
+                per_page: "25",
+            });
             if (otApiStatus !== "") params.set("status", otApiStatus);
             const res = await api.get<ApiResponse<Paginated<OvertimeRecord>>>(
                 `/api/v2/approvals/overtime?${params}`,
@@ -714,40 +882,62 @@ export default function HrApprovals() {
             const raw = res.data.data ?? EMPTY_PAGINATED<OvertimeRecord>();
             return {
                 ...raw,
-                items: raw.items.map((r) => ({ ...r, status: Number(r.status) })),
+                items: raw.items.map((r) => ({
+                    ...r,
+                    status: Number(r.status),
+                })),
             };
         },
         staleTime: 0,
     });
 
-    const { data: loData, isLoading: loLoading } = useQuery<Paginated<LogoverrideRecord>>({
+    const { data: loData, isLoading: loLoading } = useQuery<
+        Paginated<LogoverrideRecord>
+    >({
         queryKey: loQueryKey,
         queryFn: async () => {
-            const params = new URLSearchParams({ page: String(loPage), per_page: "25" });
+            const params = new URLSearchParams({
+                page: String(loPage),
+                per_page: "25",
+            });
             if (loApiStatus !== "") params.set("status", loApiStatus);
-            const res = await api.get<ApiResponse<Paginated<LogoverrideRecord>>>(
-                `/api/v2/approvals/logoverrides?${params}`,
-            );
+            const res = await api.get<
+                ApiResponse<Paginated<LogoverrideRecord>>
+            >(`/api/v2/approvals/logoverrides?${params}`);
             const raw = res.data.data ?? EMPTY_PAGINATED<LogoverrideRecord>();
             return {
                 ...raw,
-                items: raw.items.map((r) => ({ ...r, status: Number(r.status) })),
+                items: raw.items.map((r) => ({
+                    ...r,
+                    status: Number(r.status),
+                })),
             };
         },
         staleTime: 0,
     });
 
-    const { data: historyData, isLoading: historyLoading } = useQuery<Paginated<HistoryRecord>>({
+    const { data: historyData, isLoading: historyLoading } = useQuery<
+        Paginated<HistoryRecord>
+    >({
         queryKey: historyQueryKey,
         queryFn: async () => {
-            const params = new URLSearchParams({ page: String(historyPage), per_page: "25" });
+            const params = new URLSearchParams({
+                page: String(historyPage),
+                per_page: "25",
+            });
             const res = await api.get<ApiResponse<Paginated<HistoryRecord>>>(
                 `/api/v2/approvals/history?${params}`,
             );
-            const raw = res.data.data ?? { items: [], meta: { total: 0, page: 1, per_page: 25, last_page: 1 } };
+            const raw = res.data.data ?? {
+                items: [],
+                meta: { total: 0, page: 1, per_page: 25, last_page: 1 },
+            };
             return {
                 ...raw,
-                items: raw.items.map((r) => ({ ...r, status: Number(r.status) })),
+                items: raw.items.map((r) => ({
+                    ...r,
+                    status: Number(r.status),
+                })),
             };
         },
         staleTime: 0,
@@ -771,9 +961,9 @@ export default function HrApprovals() {
     }, [loData, loSearch]);
 
     // Counts from meta (total across all pages / statuses)
-    const otPending  = otData?.meta.pending  ?? 0;
+    const otPending = otData?.meta.pending ?? 0;
     const otApproved = otData?.meta.approved ?? 0;
-    const loPending  = loData?.meta.pending  ?? 0;
+    const loPending = loData?.meta.pending ?? 0;
     const loApproved = loData?.meta.approved ?? 0;
     const totalPending = otPending + loPending;
 
@@ -887,7 +1077,7 @@ export default function HrApprovals() {
                                     <History className="h-3.5 w-3.5" />
                                     History
                                     {historyTotal > 0 && (
-                                        <Badge className="ml-1 border-0 bg-muted px-1.5 py-0 text-xs text-muted-foreground">
+                                        <Badge className="bg-muted text-muted-foreground ml-1 border-0 px-1.5 py-0 text-xs">
                                             {historyTotal}
                                         </Badge>
                                     )}
@@ -940,7 +1130,10 @@ export default function HrApprovals() {
                             </TabsContent>
 
                             {/* ── Log overrides tab ── */}
-                            <TabsContent value="logoverrides" className="space-y-3">
+                            <TabsContent
+                                value="logoverrides"
+                                className="space-y-3"
+                            >
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="relative flex-1 sm:max-w-xs">
                                         <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
@@ -997,58 +1190,79 @@ export default function HrApprovals() {
                                 ) : (
                                     <>
                                         <div className="divide-border divide-y rounded-md border">
-                                            {(historyData?.items ?? []).map((r) => (
-                                                <div
-                                                    key={`${r._type}-${r.id}`}
-                                                    className="flex items-start gap-3 px-4 py-3"
-                                                >
-                                                    <div className="mt-0.5 flex-shrink-0">
-                                                        {r.status === 1 ? (
-                                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                                        ) : (
-                                                            <XCircle className="h-4 w-4 text-red-500" />
-                                                        )}
-                                                    </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <span className="text-sm font-medium">
-                                                                {r.employee_name ?? "—"}
-                                                            </span>
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="px-1.5 py-0 text-xs"
-                                                            >
-                                                                {r._type === "overtime"
-                                                                    ? "Overtime"
-                                                                    : "Log Override"}
-                                                            </Badge>
-                                                            <StatusBadge status={r.status} />
-                                                        </div>
-                                                        <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 text-xs">
-                                                            <span>{r.branch_name ?? "—"}</span>
-                                                            <span>
-                                                                Filed:{" "}
-                                                                {safeFormat(r.created_at)}
-                                                            </span>
-                                                            {r.approved_at && (
-                                                                <span>
-                                                                    Acted:{" "}
-                                                                    {safeFormat(r.approved_at)}
-                                                                </span>
+                                            {(historyData?.items ?? []).map(
+                                                (r) => (
+                                                    <div
+                                                        key={`${r._type}-${r.id}`}
+                                                        className="flex items-start gap-3 px-4 py-3"
+                                                    >
+                                                        <div className="mt-0.5 flex-shrink-0">
+                                                            {r.status === 1 ? (
+                                                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                                            ) : (
+                                                                <XCircle className="h-4 w-4 text-red-500" />
                                                             )}
                                                         </div>
-                                                        {r.status === 2 && r.disapproval_reason && (
-                                                            <p className="mt-1 text-xs text-red-400">
-                                                                Reason: {r.disapproval_reason}
-                                                            </p>
-                                                        )}
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="text-sm font-medium">
+                                                                    {r.employee_name ??
+                                                                        "—"}
+                                                                </span>
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="px-1.5 py-0 text-xs"
+                                                                >
+                                                                    {r._type ===
+                                                                    "overtime"
+                                                                        ? "Overtime"
+                                                                        : "Log Override"}
+                                                                </Badge>
+                                                                <StatusBadge
+                                                                    status={
+                                                                        r.status
+                                                                    }
+                                                                />
+                                                            </div>
+                                                            <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-3 text-xs">
+                                                                <span>
+                                                                    {r.branch_name ??
+                                                                        "—"}
+                                                                </span>
+                                                                <span>
+                                                                    Filed:{" "}
+                                                                    {safeFormat(
+                                                                        r.created_at,
+                                                                    )}
+                                                                </span>
+                                                                {r.approved_at && (
+                                                                    <span>
+                                                                        Acted:{" "}
+                                                                        {safeFormat(
+                                                                            r.approved_at,
+                                                                        )}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {r.status === 2 &&
+                                                                r.disapproval_reason && (
+                                                                    <p className="mt-1 text-xs text-red-400">
+                                                                        Reason:{" "}
+                                                                        {
+                                                                            r.disapproval_reason
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ),
+                                            )}
                                         </div>
                                         <Pagination
                                             page={historyPage}
-                                            lastPage={historyData?.meta.last_page ?? 1}
+                                            lastPage={
+                                                historyData?.meta.last_page ?? 1
+                                            }
                                             total={historyData?.meta.total ?? 0}
                                             perPage={25}
                                             onPageChange={setHistoryPage}
@@ -1118,10 +1332,6 @@ function OvertimeTable({
                         rows.map((row) => {
                             const isActed = row.status !== 0;
                             const withinCutoff = row.within_cutoff === 1;
-                            // Can approve: pending, OR already disapproved and within cutoff
-                            const canApprove = isApprover && (row.status === 0 || (withinCutoff && row.status === 2));
-                            // Can disapprove: pending, OR already approved and within cutoff
-                            const canDisapprove = isApprover && (row.status === 0 || (withinCutoff && row.status === 1));
                             return (
                                 <TableRow
                                     key={row.id}
@@ -1159,22 +1369,10 @@ function OvertimeTable({
                                     </TableCell>
                                     <TableCell className="px-4 py-3">
                                         <div className="flex items-center justify-end gap-2">
-                                            <OvertimeDetailsDialog row={row} />
-                                            <ApproveButton
-                                                type="overtime"
-                                                id={row.id}
-                                                employeeName={row.employee_name}
+                                            <OvertimeDetailsDialog
+                                                row={row}
+                                                isApprover={isApprover}
                                                 queryKey={queryKey}
-                                                canAct={canApprove}
-                                                isChange={isActed && withinCutoff}
-                                            />
-                                            <DisapproveButton
-                                                type="overtime"
-                                                id={row.id}
-                                                employeeName={row.employee_name}
-                                                queryKey={queryKey}
-                                                canAct={canDisapprove}
-                                                isChange={isActed && withinCutoff}
                                             />
                                         </div>
                                     </TableCell>
@@ -1253,8 +1451,6 @@ function LogoverrideTable({
                         rows.map((row) => {
                             const isActed = row.status !== 0;
                             const withinCutoff = row.within_cutoff === 1;
-                            const canApprove = isApprover && (row.status === 0 || (withinCutoff && row.status === 2));
-                            const canDisapprove = isApprover && (row.status === 0 || (withinCutoff && row.status === 1));
                             return (
                                 <TableRow
                                     key={row.id}
@@ -1293,22 +1489,8 @@ function LogoverrideTable({
                                         <div className="flex items-center justify-end gap-2">
                                             <LogoverrideDetailsDialog
                                                 row={row}
-                                            />
-                                            <ApproveButton
-                                                type="logoverride"
-                                                id={row.id}
-                                                employeeName={row.employee_name}
+                                                isApprover={isApprover}
                                                 queryKey={queryKey}
-                                                canAct={canApprove}
-                                                isChange={isActed && withinCutoff}
-                                            />
-                                            <DisapproveButton
-                                                type="logoverride"
-                                                id={row.id}
-                                                employeeName={row.employee_name}
-                                                queryKey={queryKey}
-                                                canAct={canDisapprove}
-                                                isChange={isActed && withinCutoff}
                                             />
                                         </div>
                                     </TableCell>

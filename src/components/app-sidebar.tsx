@@ -7,16 +7,13 @@ import {
     IconUsers,
     IconCalendarCheck,
     IconClipboardList,
-    IconClipboardCheck,
     IconFilter2Check,
-    IconMoneybag,
     IconBell,
     IconSpeakerphone,
     IconSchool,
     IconHistory,
-    IconReceipt,
 } from "@tabler/icons-react";
-import { Timer, ShieldCheck } from "lucide-react";
+import { Timer, ShieldCheck, Settings2, Wifi } from "lucide-react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -39,73 +36,119 @@ type NavItem = {
     badge?: number;
 };
 
-const navMainItems = (
+type NavSection = {
+    label: string;
+    items: NavItem[];
+};
+
+function buildSections(
     userId?: string,
     role?: string,
     agency_id?: string,
     job_level?: string,
     notifCount?: number,
     isApprover?: boolean,
-): NavItem[] => {
-    const items: NavItem[] = [];
+    isAdmin?: boolean,
+    canWorkRemotely?: boolean,
+): NavSection[] {
+    if (isAdmin) {
+        return [
+            {
+                label: "Admin",
+                items: [
+                    {
+                        title: "Admin Panel",
+                        url: `/admin/${userId ?? ""}`,
+                        icon: Settings2,
+                    },
+                ],
+            },
+        ];
+    }
 
     const hasScheduleAccess =
         job_level === "Level 5: Supervisory" ||
         job_level === "Level 6: Managerial";
 
     if (role === "hr_employee") {
-        items.push(
+        const sections: NavSection[] = [
             {
-                title: "Notifications",
-                url: `/notifications/${userId ?? ""}`,
-                icon: IconBell,
-                badge: notifCount && notifCount > 0 ? notifCount : undefined,
+                label: "My Profile",
+                items: [
+                    {
+                        title: "Profile",
+                        url: `/employees/${userId ?? ""}`,
+                        icon: IconUsers,
+                    },
+                ],
             },
             {
-                title: "Announcements",
-                url: `/announcements/${userId ?? ""}`,
-                icon: IconSpeakerphone,
+                label: "Attendance",
+                items: [
+                    {
+                        title: "Time Records",
+                        url: `/${userId ?? ""}`,
+                        icon: IconDashboard,
+                    },
+                    ...(canWorkRemotely
+                        ? [
+                              {
+                                  title: "Work Remotely",
+                                  url: `/remote/${userId ?? ""}`,
+                                  icon: Wifi,
+                              },
+                          ]
+                        : []),
+                    {
+                        title: "Logoverride",
+                        url: `/logoverrides/${userId ?? ""}`,
+                        icon: IconFileTime,
+                    },
+                    {
+                        title: "Overtime",
+                        url: `/overtime/${userId ?? ""}`,
+                        icon: Timer,
+                    },
+                ],
             },
             {
-                title: "Profile",
-                url: `/employees/${userId ?? ""}`,
-                icon: IconUsers,
+                label: "Learning",
+                items: [
+                    {
+                        title: "Training Files",
+                        url: `/training/${userId ?? ""}`,
+                        icon: IconSchool,
+                    },
+                    {
+                        title: "Trainings",
+                        url: `/training-history/${userId ?? ""}`,
+                        icon: IconHistory,
+                    },
+                ],
             },
             {
-                title: "Time Records",
-                url: `/${userId ?? ""}`,
-                icon: IconDashboard,
+                label: "Updates",
+                items: [
+                    {
+                        title: "Notifications",
+                        url: `/notifications/${userId ?? ""}`,
+                        icon: IconBell,
+                        badge:
+                            notifCount && notifCount > 0
+                                ? notifCount
+                                : undefined,
+                    },
+                    {
+                        title: "Announcements",
+                        url: `/announcements/${userId ?? ""}`,
+                        icon: IconSpeakerphone,
+                    },
+                ],
             },
-
-            {
-                title: "Logoverride",
-                url: `/logoverrides/${userId ?? ""}`,
-                icon: IconFileTime,
-            },
-            {
-                title: "Overtime",
-                url: `/overtime/${userId ?? ""}`,
-                icon: Timer,
-            },
-            {
-                title: "Training Files",
-                url: `/training/${userId ?? ""}`,
-                icon: IconSchool,
-            },
-            {
-                title: "Trainings",
-                url: `/training-history/${userId ?? ""}`,
-                icon: IconHistory,
-            },
-            // {
-            //     title: "Payslip",
-            //     url: `/payslip/${userId ?? ""}`,
-            //     icon: IconReceipt,
-            // },
-        );
+        ];
 
         if (hasScheduleAccess) {
-            items.push(
+            const mgmtItems: NavItem[] = [
                 {
                     title: "Schedule",
                     url: `/schedules/${userId ?? ""}`,
@@ -116,58 +159,73 @@ const navMainItems = (
                     url: `/forms/${userId ?? ""}`,
                     icon: IconClipboardList,
                 },
-            );
+            ];
             if (isApprover) {
-                items.push({
+                mgmtItems.push({
                     title: "HR Approvals",
                     url: `/approvals/${userId ?? ""}`,
                     icon: IconFilter2Check,
                 });
             }
+            sections.push({ label: "Management", items: mgmtItems });
+        } else if (isApprover) {
+            sections.push({
+                label: "Management",
+                items: [
+                    {
+                        title: "HR Approvals",
+                        url: `/approvals/${userId ?? ""}`,
+                        icon: IconFilter2Check,
+                    },
+                ],
+            });
         }
+
+        return sections;
     }
 
     if (role === "agency_coordinator") {
-        items.push(
+        const sections: NavSection[] = [
             {
-                title: "Dashboard",
-                url: `/dashboard/${agency_id ?? ""}`,
-                icon: IconDashboard,
+                label: "Overview",
+                items: [
+                    {
+                        title: "Dashboard",
+                        url: `/dashboard/${agency_id ?? ""}`,
+                        icon: IconDashboard,
+                    },
+                    {
+                        title: "Employee List",
+                        url: "/employees",
+                        icon: IconUsers,
+                    },
+                ],
             },
             {
-                title: "Employee List",
-                url: "/employees",
-                icon: IconUsers,
+                label: "Management",
+                items: [
+                    {
+                        title: "Schedule",
+                        url: `/schedules/${userId ?? ""}`,
+                        icon: IconCalendarCheck,
+                    },
+                    ...(isApprover
+                        ? [
+                              {
+                                  title: "HR Approvals",
+                                  url: `/approvals/${userId ?? ""}`,
+                                  icon: ShieldCheck,
+                              },
+                          ]
+                        : []),
+                ],
             },
-            {
-                title: "Schedule",
-                url: `/schedules/${userId ?? ""}`,
-                icon: IconCalendarCheck,
-            },
-            ...(isApprover
-                ? [
-                      {
-                          title: "HR Approvals",
-                          url: `/approvals/${userId ?? ""}`,
-                          icon: ShieldCheck,
-                      },
-                  ]
-                : []),
-            // {
-            //     title: "Forms",
-            //     url: `/forms/submissions/${userId ?? ""}`,
-            //     icon: IconClipboardList,
-            // },
-            // {
-            //     title: "Validate Forms",
-            //     url: `/forms/validation/${userId ?? ""}`,
-            //     icon: IconClipboardCheck,
-            // },
-        );
+        ];
+        return sections;
     }
 
-    return items;
-};
+    return [];
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { data: me, isLoading } = useQuery({
@@ -180,11 +238,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     email: string;
                     role: string;
                     avatar?: string;
+                    profile_photo_url?: string;
                     agency_id: string;
                     job_level: string;
+                    is_admin?: number;
+                    can_work_remotely?: number;
                 }>
             >(`/api/v2/auth/me`);
-
             return response.data.data;
         },
     });
@@ -193,8 +253,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         me?.role === "hr_employee" ? me?.id : null,
     );
 
-    // Share the same cache key as the HR Approvals page so this never causes
-    // a redundant network call when both the sidebar and the page are mounted.
     const { data: approverInfo } = useQuery<{ is_approver: boolean }>({
         queryKey: ["approvals-is-approver"],
         queryFn: async () => {
@@ -206,74 +264,48 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         enabled: !!me,
         staleTime: 5 * 60 * 1000,
     });
-    const isApprover = approverInfo?.is_approver ?? false;
 
-    const menuItems = navMainItems(
+    const isApprover = approverInfo?.is_approver ?? false;
+    const isAdmin = (me?.is_admin ?? 0) === 1;
+    const canWorkRemotely = (me?.can_work_remotely ?? 0) === 1;
+
+    const sections = buildSections(
         me?.id,
         me?.role,
         me?.agency_id,
         me?.job_level,
         unreadCount,
         isApprover,
-    );
-
-    // Split items into logical groups for visual separation
-    const groupA = menuItems.filter((i) =>
-        ["Notifications", "Announcements"].includes(i.title),
-    );
-    const groupB = menuItems.filter((i) =>
-        [
-            "Time Records",
-            "Profile",
-            "Logoverride",
-            "Overtime",
-            "Training Files",
-            "Trainings",
-            "Payslip",
-        ].includes(i.title),
-    );
-
-    const groupC = menuItems.filter((i) =>
-        [
-            // "Schedule",
-            // "Forms",
-            // "Dashboard",
-            "Employee List",
-            // "HR Approvals",
-        ].includes(i.title),
+        isAdmin,
+        canWorkRemotely,
     );
 
     const renderItem = (item: NavItem) => (
-        <SidebarMenu key={item.title}>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                    <NavLink
-                        to={item.url}
-                        className={({ isActive }) =>
-                            `flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                                isActive
-                                    ? "bg-primary text-primary-foreground font-semibold"
-                                    : "text-muted-foreground hover:bg-muted/10 hover:text-foreground"
-                            }`
-                        }
-                        end
-                    >
-                        <item.icon className="!size-[18px] shrink-0" />
-                        <span className="truncate">{item.title}</span>
-                        {item.badge !== undefined && item.badge > 0 && (
-                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-500 px-1 text-[10px] font-bold text-white">
-                                {item.badge > 99 ? "99+" : item.badge}
-                            </span>
-                        )}
-                    </NavLink>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        </SidebarMenu>
+        <NavLink
+            key={item.title}
+            to={item.url}
+            end
+            className={({ isActive }) =>
+                `flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+                    isActive
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "text-muted-foreground hover:bg-muted/10 hover:text-foreground"
+                }`
+            }
+        >
+            <item.icon className="size-4 shrink-0" />
+            <span className="truncate">{item.title}</span>
+            {item.badge !== undefined && item.badge > 0 && (
+                <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-500 px-1 text-[10px] font-bold text-white">
+                    {item.badge > 99 ? "99+" : item.badge}
+                </span>
+            )}
+        </NavLink>
     );
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>
-            <SidebarHeader>
+            <SidebarHeader className="pb-0">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton
@@ -291,39 +323,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="mt-4 gap-0 px-2">
+            <SidebarContent className="mt-1 gap-0 px-2">
                 {!isLoading && (
-                    <div className="flex flex-col gap-0.5">
-                        {groupA.length > 0 && (
-                            <div className="mb-1">{groupA.map(renderItem)}</div>
-                        )}
-                        {groupB.length > 0 && (
-                            <div className="mb-1 border-t border-white/5 pt-1">
-                                {groupB.map(renderItem)}
+                    <div className="flex flex-col gap-3 py-1">
+                        {sections.map((section) => (
+                            <div key={section.label}>
+                                <p className="text-muted-foreground/40 mb-0.5 px-2.5 text-[10px] font-semibold tracking-widest uppercase">
+                                    {section.label}
+                                </p>
+                                <div className="flex flex-col gap-px">
+                                    {section.items.map(renderItem)}
+                                </div>
                             </div>
-                        )}
-                        {groupC.length > 0 && (
-                            <div className="mb-1 border-t border-white/5 pt-1">
-                                {groupC.map(renderItem)}
-                            </div>
-                        )}
+                        ))}
                     </div>
                 )}
             </SidebarContent>
 
             <SidebarFooter>
-                {!isLoading && me ? (
-                    <NavUser
-                        user={{
-                            name: me.name,
-                            email: me.email,
-                            avatar: me.avatar ?? "/avatars/shadcn.jpg",
-                            id: me.id,
-                        }}
-                    />
-                ) : (
-                    <div className="text-muted-foreground px-4 py-2 text-sm">
-                        Loading user...
+                {!isLoading && me && (
+                    <div className="px-1 pt-1 pb-2">
+                        <NavUser
+                            user={{
+                                name: me.name,
+                                email: me.email,
+                                avatar: me.profile_photo_url ?? me.avatar ?? "",
+                                id: me.id,
+                            }}
+                        />
                     </div>
                 )}
             </SidebarFooter>

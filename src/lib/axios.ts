@@ -15,6 +15,10 @@ api.interceptors.request.use((config) => {
     } else {
         delete config.headers.Authorization;
     }
+    // Let the browser set Content-Type (with boundary) for multipart uploads
+    if (config.data instanceof FormData) {
+        delete config.headers["Content-Type"];
+    }
     return config;
 });
 export default api;

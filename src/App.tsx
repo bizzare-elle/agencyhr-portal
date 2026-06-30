@@ -33,6 +33,7 @@ import Announcements from "./pages/announcements";
 import TrainingPage from "./pages/training/training-page";
 import TrainingHistoryPage from "./pages/training/training-history-page";
 import Maintenance from "./pages/maintenance";
+import HrApprovals from "./pages/approvals/hr-approvals";
 
 const router = createBrowserRouter([
     {
@@ -129,66 +130,66 @@ const router = createBrowserRouter([
                     },
                 ],
             },
-            // {
-            //     path: "/forms",
-            //     children: [
-            //         {
-            //             path: ":id",
-            //             element: <FormsHub />,
-            //             handle: { title: "Forms" },
-            //         },
-            //         {
-            //             path: "eicf/:id",
-            //             element: <EicfForm />,
-            //             handle: { title: "EICF" },
-            //         },
-            //         {
-            //             path: "mrf/:id",
-            //             element: <MrfForm />,
-            //             handle: { title: "MRF" },
-            //         },
-            //         {
-            //             path: "submissions/:id",
-            //             element: <FormsSubmissions />,
-            //             handle: { title: "EICF Submissions" },
-            //         },
-            //         {
-            //             path: "validation/:id",
-            //             element: <FormsValidation />,
-            //             handle: { title: "EICF Validation" },
-            //         },
-            //     ],
-            // },
-            // {
-            //     path: "/schedules",
-            //     children: [
-            //         {
-            //             path: ":id",
-            //             element: <ScheduleDashboard />,
-            //             handle: { title: "Schedule Dashboard" },
-            //         },
-            //         {
-            //             path: "form/:id",
-            //             element: <ScheduleForm />,
-            //             handle: { title: "Schedule Form" },
-            //         },
-            //         {
-            //             path: "upload/:id",
-            //             element: <ScheduleUpload />,
-            //             handle: { title: "Schedule Upload" },
-            //         },
-            //     ],
-            // },
-            // {
-            //     path: "/payslip",
-            //     children: [
-            //         {
-            //             path: ":id",
-            //             element: <ServiceChargePayslipDashboard />,
-            //             handle: { title: "Service Charge Payslip" },
-            //         },
-            //     ],
-            // },
+            {
+                path: "/forms",
+                children: [
+                    {
+                        path: ":id",
+                        element: <FormsHub />,
+                        handle: { title: "Forms" },
+                    },
+                    {
+                        path: "eicf/:id",
+                        element: <EicfForm />,
+                        handle: { title: "EICF" },
+                    },
+                    {
+                        path: "mrf/:id",
+                        element: <MrfForm />,
+                        handle: { title: "MRF" },
+                    },
+                    {
+                        path: "submissions/:id",
+                        element: <FormsSubmissions />,
+                        handle: { title: "EICF Submissions" },
+                    },
+                    {
+                        path: "validation/:id",
+                        element: <FormsValidation />,
+                        handle: { title: "EICF Validation" },
+                    },
+                ],
+            },
+            {
+                path: "/schedules",
+                children: [
+                    {
+                        path: ":id",
+                        element: <ScheduleDashboard />,
+                        handle: { title: "Schedule Dashboard" },
+                    },
+                    {
+                        path: "form/:id",
+                        element: <ScheduleForm />,
+                        handle: { title: "Schedule Form" },
+                    },
+                    {
+                        path: "upload/:id",
+                        element: <ScheduleUpload />,
+                        handle: { title: "Schedule Upload" },
+                    },
+                ],
+            },
+            {
+                path: "/payslip",
+                children: [
+                    {
+                        path: ":id",
+                        element: <ServiceChargePayslipDashboard />,
+                        handle: { title: "Service Charge Payslip" },
+                    },
+                ],
+            },
             {
                 path: "/notifications/:id",
                 element: <Notifications />,
@@ -208,6 +209,11 @@ const router = createBrowserRouter([
                 path: "/training-history/:id",
                 element: <TrainingHistoryPage />,
                 handle: { title: "Training History" },
+            },
+            {
+                path: "/approvals/:id",
+                element: <HrApprovals />,
+                handle: { title: "HR Approvals" },
             },
         ],
     },

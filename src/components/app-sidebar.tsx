@@ -8,6 +8,7 @@ import {
     IconCalendarCheck,
     IconClipboardList,
     IconClipboardCheck,
+    IconFilter2Check,
     IconMoneybag,
     IconBell,
     IconSpeakerphone,
@@ -15,7 +16,7 @@ import {
     IconHistory,
     IconReceipt,
 } from "@tabler/icons-react";
-import { Timer } from "lucide-react";
+import { Timer, ShieldCheck } from "lucide-react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -44,6 +45,7 @@ const navMainItems = (
     agency_id?: string,
     job_level?: string,
     notifCount?: number,
+    isApprover?: boolean,
 ): NavItem[] => {
     const items: NavItem[] = [];
 
@@ -103,19 +105,25 @@ const navMainItems = (
         );
 
         if (hasScheduleAccess) {
-            items
-                .push
-                // {
-                //     title: "Schedule",
-                //     url: `/schedules/${userId ?? ""}`,
-                //     icon: IconCalendarCheck,
-                // },
-                // {
-                //     title: "Forms",
-                //     url: `/forms/${userId ?? ""}`,
-                //     icon: IconClipboardList,
-                // },
-                ();
+            items.push(
+                {
+                    title: "Schedule",
+                    url: `/schedules/${userId ?? ""}`,
+                    icon: IconCalendarCheck,
+                },
+                {
+                    title: "Forms",
+                    url: `/forms/${userId ?? ""}`,
+                    icon: IconClipboardList,
+                },
+            );
+            if (isApprover) {
+                items.push({
+                    title: "HR Approvals",
+                    url: `/approvals/${userId ?? ""}`,
+                    icon: IconFilter2Check,
+                });
+            }
         }
     }
 
@@ -136,6 +144,15 @@ const navMainItems = (
                 url: `/schedules/${userId ?? ""}`,
                 icon: IconCalendarCheck,
             },
+            ...(isApprover
+                ? [
+                      {
+                          title: "HR Approvals",
+                          url: `/approvals/${userId ?? ""}`,
+                          icon: ShieldCheck,
+                      },
+                  ]
+                : []),
             // {
             //     title: "Forms",
             //     url: `/forms/submissions/${userId ?? ""}`,
@@ -176,12 +193,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         me?.role === "hr_employee" ? me?.id : null,
     );
 
+    // Share the same cache key as the HR Approvals page so this never causes
+    // a redundant network call when both the sidebar and the page are mounted.
+    const { data: approverInfo } = useQuery<{ is_approver: boolean }>({
+        queryKey: ["approvals-is-approver"],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<{ is_approver: boolean }>>(
+                "/api/v2/approvals/is-approver",
+            );
+            return res.data.data ?? { is_approver: false };
+        },
+        enabled: !!me,
+        staleTime: 5 * 60 * 1000,
+    });
+    const isApprover = approverInfo?.is_approver ?? false;
+
     const menuItems = navMainItems(
         me?.id,
         me?.role,
         me?.agency_id,
         me?.job_level,
         unreadCount,
+        isApprover,
     );
 
     // Split items into logical groups for visual separation
@@ -199,8 +232,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             "Payslip",
         ].includes(i.title),
     );
+
     const groupC = menuItems.filter((i) =>
-        ["Schedule", "Forms", "Dashboard", "Employee List"].includes(i.title),
+        [
+            // "Schedule",
+            // "Forms",
+            // "Dashboard",
+            "Employee List",
+            // "HR Approvals",
+        ].includes(i.title),
     );
 
     const renderItem = (item: NavItem) => (

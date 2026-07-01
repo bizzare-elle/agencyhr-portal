@@ -74,8 +74,9 @@ export default function EmployeeProfile() {
             await api.post(`/api/v2/employees/${employeeId}/avatar`, form);
             await queryClient.invalidateQueries({ queryKey: ["me"] });
             toast.success("Profile photo updated.");
-        } catch {
-            toast.error("Upload failed. Please try again.");
+        } catch (err: any) {
+            const msg = err?.response?.data?.message ?? err?.message ?? "Upload failed.";
+            toast.error(msg);
         } finally {
             setAvatarUploading(false);
             if (avatarInputRef.current) avatarInputRef.current.value = "";

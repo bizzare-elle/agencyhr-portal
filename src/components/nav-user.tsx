@@ -93,8 +93,9 @@ export function NavUser({
             await api.post(`/api/v2/employees/${user.id}/avatar`, form);
             await queryClient.invalidateQueries({ queryKey: ["me"] });
             toast.success("Profile photo updated.");
-        } catch {
-            toast.error("Upload failed. Please try again.");
+        } catch (err: any) {
+            const msg = err?.response?.data?.message ?? err?.message ?? "Upload failed.";
+            toast.error(msg);
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";

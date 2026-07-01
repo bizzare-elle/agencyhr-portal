@@ -20,6 +20,9 @@ import {
     WifiOff,
     Search,
     Settings,
+    LayoutDashboard,
+    Building2,
+    Briefcase,
 } from "lucide-react";
 import {
     Sheet,
@@ -67,6 +70,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useQuery as useMe } from "@tanstack/react-query";
+import { ALL_TABS, TabDef, STANDARD_PERMISSIONS } from "@/lib/tabs";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -1227,6 +1231,450 @@ function ApproversTab() {
     );
 }
 
+// ── Tab Access Management ─────────────────────────────────────────────────────
+
+type TargetType = "employee" | "position";
+
+interface PositionRow { id: number; name: string; }
+
+function TabToggleRow({
+    tab,
+    enabled,
+    onChange,
+}: {
+    tab: TabDef;
+    enabled: boolean;
+    onChange: (enabled: boolean) => void;
+}) {
+    return (
+        <div className="flex items-center justify-between rounded-lg border px-4 py-2.5">
+            <div>
+                <p className="text-sm font-medium">{tab.label}</p>
+                <p className="text-[11px] text-muted-foreground">{tab.section}</p>
+            </div>
+            <button
+                onClick={() => onChange(!enabled)}
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+                    enabled ? "bg-primary" : "bg-muted"
+                }`}
+            >
+                <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                        enabled ? "translate-x-4" : "translate-x-0"
+                    }`}
+                />
+            </button>
+        </div>
+    );
+}
+
+function TabAccessTab() {
+    const queryClient = useQueryClient();
+    const [targetType, setTargetType] = React.useState<TargetType>("position");
+    const [selectedId, setSelectedId] = React.useState<number | null>(null);
+    const [permissions, setPermissions] = React.useState<Record<string, boolean>>({});
+    const [dirty, setDirty] = React.useState(false);
+    const [saving, setSaving] = React.useState(false);
+    const [search, setSearch] = React.useState("");
+
+    const { data: users } = useQuery<EmployeeRow[]>({
+        queryKey: ["admin-users"],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<EmployeeRow[]>>("/api/v2/admin/users");
+            return res.data.data ?? [];
+        },
+    });
+
+    const { data: positions } = useQuery<PositionRow[]>({
+        queryKey: ["admin-positions"],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<PositionRow[]>>("/api/v2/admin/positions");
+            return res.data.data ?? [];
+        },
+    });
+
+    const { data: savedPerms, isFetching } = useQuery<Record<string, number>>({
+        queryKey: ["tab-permissions", targetType, selectedId],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<Record<string, number>>>(
+                `/api/v2/admin/tab-permissions?target_type=${targetType}&target_id=${selectedId}`,
+            );
+            return res.data.data ?? {};
+        },
+        enabled: !!selectedId,
+    });
+
+    React.useEffect(() => {
+        if (!selectedId) return;
+        const map: Record<string, boolean> = {};
+        ALL_TABS.forEach((t) => {
+            const standard = (STANDARD_PERMISSIONS[t.key] ?? 1) === 1;
+            map[t.key] = savedPerms && t.key in savedPerms
+                ? savedPerms[t.key] === 1
+                : standard;
+        });
+        setPermissions(map);
+        setDirty(false);
+    }, [savedPerms, selectedId]);
+
+    const handleResetToStandard = () => {
+        const map: Record<string, boolean> = {};
+        ALL_TABS.forEach((t) => { map[t.key] = (STANDARD_PERMISSIONS[t.key] ?? 1) === 1; });
+        setPermissions(map);
+        setDirty(true);
+    };
+
+    const handleToggle = (key: string, val: boolean) => {
+        setPermissions((p) => ({ ...p, [key]: val }));
+        setDirty(true);
+    };
+
+    const handleSave = async () => {
+        if (!selectedId) return;
+        setSaving(true);
+        try {
+            const payload: Record<string, number> = {};
+            ALL_TABS.forEach((t) => { payload[t.key] = permissions[t.key] ? 1 : 0; });
+            await api.post("/api/v2/admin/tab-permissions", {
+                target_type: targetType,
+                target_id: selectedId,
+                permissions: payload,
+            });
+            queryClient.invalidateQueries({ queryKey: ["tab-permissions", targetType, selectedId] });
+            queryClient.invalidateQueries({ queryKey: ["me"] });
+            setDirty(false);
+            toast.success("Tab access saved.");
+        } catch {
+            toast.error("Failed to save.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const sections = Array.from(new Set(ALL_TABS.map((t) => t.section)));
+    const allTargets = targetType === "position"
+        ? (positions ?? []).map((p) => ({ id: p.id, label: p.name }))
+        : (users ?? [])
+              .filter((u) => u.role !== "agency_coordinator")
+              .map((u) => ({ id: u.id, label: u.name }));
+
+    const targetList = search.trim()
+        ? allTargets.filter((t) => t.label.toLowerCase().includes(search.trim().toLowerCase()))
+        : allTargets;
+
+    return (
+        <div className="grid gap-5 md:grid-cols-[280px_1fr]">
+            {/* Left — target picker */}
+            <div className="space-y-3">
+                <div className="flex rounded-lg border p-1 gap-1">
+                    {(["position", "employee"] as TargetType[]).map((t) => (
+                        <button
+                            key={t}
+                            onClick={() => { setTargetType(t); setSelectedId(null); setDirty(false); setSearch(""); }}
+                            className={`flex-1 rounded-md py-1.5 text-xs font-semibold capitalize transition-colors ${
+                                targetType === t
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            {t}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="rounded-lg border overflow-hidden">
+                    <div className="border-b px-3 py-2 flex items-center gap-2">
+                        <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={`Search ${targetType}s…`}
+                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                        />
+                        {search && (
+                            <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
+                                <X className="h-3 w-3" />
+                            </button>
+                        )}
+                    </div>
+                    <div className="max-h-[380px] overflow-y-auto divide-y">
+                        {targetList.length === 0 ? (
+                            <p className="px-4 py-6 text-center text-xs text-muted-foreground">
+                                {search ? "No matches found." : `No ${targetType}s found.`}
+                            </p>
+                        ) : targetList.map((item) => (
+                            <button
+                                key={item.id}
+                                onClick={() => setSelectedId(item.id)}
+                                className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                                    selectedId === item.id
+                                        ? "bg-primary/10 text-primary font-semibold"
+                                        : "hover:bg-muted/30 text-foreground"
+                                }`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Right — toggles */}
+            <div>
+                {!selectedId ? (
+                    <div className="flex h-48 items-center justify-center rounded-xl border border-dashed">
+                        <p className="text-sm text-muted-foreground">
+                            Select a {targetType} to manage tab access
+                        </p>
+                    </div>
+                ) : isFetching ? (
+                    <div className="flex h-48 items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                ) : (
+                    <div className="space-y-5">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-semibold">
+                                    {targetList.find((t) => t.id === selectedId)?.label}
+                                </p>
+                                <p className="text-xs text-muted-foreground capitalize">{targetType}-level permissions · unset tabs follow standard defaults</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button size="sm" variant="outline" onClick={handleResetToStandard} disabled={saving}>
+                                    Reset to Standard
+                                </Button>
+                                {dirty && (
+                                    <Button size="sm" onClick={handleSave} disabled={saving}>
+                                        {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                                        Save
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {sections.map((section) => (
+                            <div key={section}>
+                                <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                                    {section}
+                                </p>
+                                <div className="space-y-1.5">
+                                    {ALL_TABS.filter((t) => t.section === section).map((tab) => (
+                                        <TabToggleRow
+                                            key={tab.key}
+                                            tab={tab}
+                                            enabled={permissions[tab.key] ?? true}
+                                            onChange={(v) => handleToggle(tab.key, v)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Overview Tab ──────────────────────────────────────────────────────────────
+
+function StatTile({
+    label,
+    value,
+    icon: Icon,
+    iconBg,
+    iconColor,
+    sub,
+}: {
+    label: string;
+    value: number | string;
+    icon: React.ElementType;
+    iconBg: string;
+    iconColor: string;
+    sub?: string;
+}) {
+    return (
+        <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+                <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+                    <Icon className={`h-5 w-5 ${iconColor}`} />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-muted-foreground text-xs font-medium">{label}</p>
+                    <p className="text-2xl font-bold leading-tight tabular-nums">{value}</p>
+                    {sub && <p className="text-muted-foreground mt-0.5 text-[11px]">{sub}</p>}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function DistributionList({
+    title,
+    icon: Icon,
+    items,
+    total,
+    emptyLabel,
+}: {
+    title: string;
+    icon: React.ElementType;
+    items: { label: string; count: number }[];
+    total: number;
+    emptyLabel: string;
+}) {
+    const sorted = [...items].sort((a, b) => b.count - a.count).slice(0, 8);
+    const max = sorted[0]?.count ?? 1;
+
+    return (
+        <Card className="flex flex-col">
+            <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
+                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                    <Icon className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <span className="text-sm font-semibold">{title}</span>
+            </div>
+            <CardContent className="flex-1 px-5 py-4">
+                {sorted.length === 0 ? (
+                    <p className="text-muted-foreground py-6 text-center text-xs">{emptyLabel}</p>
+                ) : (
+                    <ul className="space-y-3">
+                        {sorted.map((item) => {
+                            const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+                            const barPct = max > 0 ? (item.count / max) * 100 : 0;
+                            return (
+                                <li key={item.label}>
+                                    <div className="mb-1 flex items-center justify-between gap-2">
+                                        <span className="truncate text-xs font-medium">{item.label || "—"}</span>
+                                        <span className="text-muted-foreground flex-shrink-0 text-xs tabular-nums">
+                                            {item.count} <span className="opacity-50">({pct}%)</span>
+                                        </span>
+                                    </div>
+                                    <div className="bg-muted/40 h-1.5 w-full overflow-hidden rounded-full">
+                                        <div
+                                            className="bg-primary/60 h-full rounded-full transition-all duration-500"
+                                            style={{ width: `${barPct}%` }}
+                                        />
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function OverviewTab() {
+    const { data: users = [], isLoading } = useQuery<EmployeeRow[]>({
+        queryKey: ["admin-users"],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<EmployeeRow[]>>("/api/v2/admin/users");
+            return res.data.data ?? [];
+        },
+        staleTime: 60 * 1000,
+    });
+
+    const stats = useMemo(() => {
+        const total          = users.length;
+        const active         = users.filter((u) => String(u.status) === "1").length;
+        const coordinators   = users.filter((u) => u.is_agency_coor  === 1).length;
+        const admins         = users.filter((u) => u.is_admin         === 1).length;
+        const remoteWorkers  = users.filter((u) => u.can_work_remotely === 1).length;
+        const employees      = users.filter((u) => u.is_agency_coor  === 0).length;
+
+        const branchMap: Record<string, number> = {};
+        const positionMap: Record<string, number> = {};
+        for (const u of users) {
+            const b = u.branch_name   || "No Branch";
+            const p = u.position_name || "No Position";
+            branchMap[b]   = (branchMap[b]   ?? 0) + 1;
+            positionMap[p] = (positionMap[p] ?? 0) + 1;
+        }
+
+        const byBranch   = Object.entries(branchMap).map(([label, count]) => ({ label, count }));
+        const byPosition = Object.entries(positionMap).map(([label, count]) => ({ label, count }));
+
+        return { total, active, coordinators, admins, remoteWorkers, employees, byBranch, byPosition };
+    }, [users]);
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+            </div>
+        );
+    }
+
+    const tiles = [
+        { label: "Total Accounts",  value: stats.total,         icon: Users,      iconBg: "bg-blue-500/10",   iconColor: "text-blue-400",   sub: `${stats.active} active` },
+        { label: "HR Employees",    value: stats.employees,     icon: UserCheck,  iconBg: "bg-teal-500/10",   iconColor: "text-teal-400",   sub: undefined },
+        { label: "Coordinators",    value: stats.coordinators,  icon: Briefcase,  iconBg: "bg-green-500/10",  iconColor: "text-green-400",  sub: undefined },
+        { label: "Admins",          value: stats.admins,        icon: ShieldCheck, iconBg: "bg-violet-500/10", iconColor: "text-violet-400", sub: undefined },
+        { label: "Remote Workers",  value: stats.remoteWorkers, icon: Wifi,       iconBg: "bg-orange-500/10", iconColor: "text-orange-400", sub: undefined },
+    ];
+
+    return (
+        <div className="space-y-6">
+            {/* KPI tiles */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {tiles.map((t) => (
+                    <StatTile key={t.label} {...t} />
+                ))}
+            </div>
+
+            {/* Distribution */}
+            <div className="grid gap-4 md:grid-cols-2">
+                <DistributionList
+                    title="Employees by Branch"
+                    icon={Building2}
+                    items={stats.byBranch}
+                    total={stats.total}
+                    emptyLabel="No branch data."
+                />
+                <DistributionList
+                    title="Employees by Position"
+                    icon={Briefcase}
+                    items={stats.byPosition}
+                    total={stats.total}
+                    emptyLabel="No position data."
+                />
+            </div>
+
+            {/* Role breakdown */}
+            <Card>
+                <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                        <Users className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="text-sm font-semibold">Access Overview</span>
+                </div>
+                <CardContent className="grid gap-px divide-y divide-border/40 p-0">
+                    {[
+                        { label: "Agency Coordinators", count: stats.coordinators, color: "bg-blue-500" },
+                        { label: "Admin Accounts",      count: stats.admins,        color: "bg-violet-500" },
+                        { label: "Remote Work Enabled", count: stats.remoteWorkers, color: "bg-orange-500" },
+                    ].map(({ label, count, color }) => {
+                        const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+                        return (
+                            <div key={label} className="flex items-center gap-4 px-5 py-3.5">
+                                <div className={`h-2 w-2 flex-shrink-0 rounded-full ${color}/70`} />
+                                <span className="flex-1 text-sm">{label}</span>
+                                <span className="text-muted-foreground text-xs tabular-nums">{count} of {stats.total}</span>
+                                <div className="bg-muted/40 h-1.5 w-24 overflow-hidden rounded-full">
+                                    <div className={`${color}/50 h-full rounded-full`} style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="text-muted-foreground w-8 text-right text-xs tabular-nums">{pct}%</span>
+                            </div>
+                        );
+                    })}
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function AdminPanel() {
@@ -1264,30 +1712,13 @@ export default function AdminPanel() {
                     </div>
                 </div>
 
-                {/* Access summary */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {[
-                        { label: "User Management", desc: "Promote/demote coordinators, grant/revoke admin access", icon: Users, color: "text-blue-400", bg: "bg-blue-500/10" },
-                        { label: "Approver Management", desc: "Assign who can approve overtime & log overrides per branch", icon: UserCheck, color: "text-green-400", bg: "bg-green-500/10" },
-                        { label: "Admin Access", desc: "Admins can access this panel and manage all settings", icon: ShieldCheck, color: "text-purple-400", bg: "bg-purple-500/10" },
-                    ].map((item) => (
-                        <Card key={item.label}>
-                            <CardContent className="flex items-start gap-3 p-4">
-                                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
-                                    <item.icon className={`h-4 w-4 ${item.color}`} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold">{item.label}</p>
-                                    <p className="text-muted-foreground text-xs">{item.desc}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-
                 {/* Tabs */}
-                <Tabs defaultValue="users">
+                <Tabs defaultValue="overview">
                     <TabsList className="mb-4">
+                        <TabsTrigger value="overview">
+                            <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
+                            Overview
+                        </TabsTrigger>
                         <TabsTrigger value="users">
                             <Users className="mr-1.5 h-3.5 w-3.5" />
                             Users
@@ -1300,7 +1731,15 @@ export default function AdminPanel() {
                             <UserCheck className="mr-1.5 h-3.5 w-3.5" />
                             Approvers
                         </TabsTrigger>
+                        <TabsTrigger value="tab-access">
+                            <Settings className="mr-1.5 h-3.5 w-3.5" />
+                            Tab Access
+                        </TabsTrigger>
                     </TabsList>
+
+                    <TabsContent value="overview">
+                        <OverviewTab />
+                    </TabsContent>
 
                     <TabsContent value="users">
                         <UsersTab meId={me.id} />
@@ -1312,6 +1751,10 @@ export default function AdminPanel() {
 
                     <TabsContent value="approvers">
                         <ApproversTab />
+                    </TabsContent>
+
+                    <TabsContent value="tab-access">
+                        <TabAccessTab />
                     </TabsContent>
                 </Tabs>
             </div>

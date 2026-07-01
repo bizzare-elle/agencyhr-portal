@@ -14,6 +14,7 @@ import {
     IconHistory,
 } from "@tabler/icons-react";
 import { Timer, ShieldCheck, Settings2, Wifi } from "lucide-react";
+import { isTabEnabled } from "@/lib/tabs";
 import { useNotifications } from "@/hooks/use-notifications";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -50,7 +51,9 @@ function buildSections(
     isApprover?: boolean,
     isAdmin?: boolean,
     canWorkRemotely?: boolean,
+    tabPerms?: Record<string, number>,
 ): NavSection[] {
+    const ok = (key: string) => isTabEnabled(key, tabPerms);
     if (isAdmin) {
         return [
             {
@@ -71,8 +74,10 @@ function buildSections(
         job_level === "Level 6: Managerial";
 
     if (role === "hr_employee") {
-        const sections: NavSection[] = [
-            {
+        const sections: NavSection[] = [];
+
+        if (ok("profile")) {
+            sections.push({
                 label: "My Profile",
                 items: [
                     {
@@ -81,94 +86,93 @@ function buildSections(
                         icon: IconUsers,
                     },
                 ],
-            },
-            {
-                label: "Attendance",
-                items: [
-                    {
-                        title: "Time Records",
-                        url: `/${userId ?? ""}`,
-                        icon: IconDashboard,
-                    },
-                    ...(canWorkRemotely
-                        ? [
-                              {
-                                  title: "Work Remotely",
-                                  url: `/remote/${userId ?? ""}`,
-                                  icon: Wifi,
-                              },
-                          ]
-                        : []),
-                    {
-                        title: "Logoverride",
-                        url: `/logoverrides/${userId ?? ""}`,
-                        icon: IconFileTime,
-                    },
-                    {
-                        title: "Overtime",
-                        url: `/overtime/${userId ?? ""}`,
-                        icon: Timer,
-                    },
-                ],
-            },
-            {
-                label: "Learning",
-                items: [
-                    {
-                        title: "Training Files",
-                        url: `/training/${userId ?? ""}`,
-                        icon: IconSchool,
-                    },
-                    {
-                        title: "Trainings",
-                        url: `/training-history/${userId ?? ""}`,
-                        icon: IconHistory,
-                    },
-                ],
-            },
-            {
-                label: "Updates",
-                items: [
-                    {
-                        title: "Notifications",
-                        url: `/notifications/${userId ?? ""}`,
-                        icon: IconBell,
-                        badge:
-                            notifCount && notifCount > 0
-                                ? notifCount
-                                : undefined,
-                    },
-                    {
-                        title: "Announcements",
-                        url: `/announcements/${userId ?? ""}`,
-                        icon: IconSpeakerphone,
-                    },
-                ],
-            },
-        ];
+            });
+        }
+
+        const attendanceItems: NavItem[] = [];
+        if (ok("time_records"))
+            attendanceItems.push({
+                title: "Time Records",
+                url: `/${userId ?? ""}`,
+                icon: IconDashboard,
+            });
+        if (ok("work_remotely") && canWorkRemotely)
+            attendanceItems.push({
+                title: "Work Remotely",
+                url: `/remote/${userId ?? ""}`,
+                icon: Wifi,
+            });
+        if (ok("logoverride"))
+            attendanceItems.push({
+                title: "Logoverride",
+                url: `/logoverrides/${userId ?? ""}`,
+                icon: IconFileTime,
+            });
+        if (ok("overtime"))
+            attendanceItems.push({
+                title: "Overtime",
+                url: `/overtime/${userId ?? ""}`,
+                icon: Timer,
+            });
+        if (attendanceItems.length)
+            sections.push({ label: "Attendance", items: attendanceItems });
+
+        const learningItems: NavItem[] = [];
+        if (ok("training_files"))
+            learningItems.push({
+                title: "Training Files",
+                url: `/training/${userId ?? ""}`,
+                icon: IconSchool,
+            });
+        if (ok("trainings"))
+            learningItems.push({
+                title: "Trainings",
+                url: `/training-history/${userId ?? ""}`,
+                icon: IconHistory,
+            });
+        if (learningItems.length)
+            sections.push({ label: "Learning", items: learningItems });
+
+        const updateItems: NavItem[] = [];
+        if (ok("notifications"))
+            updateItems.push({
+                title: "Notifications",
+                url: `/notifications/${userId ?? ""}`,
+                icon: IconBell,
+                badge: notifCount && notifCount > 0 ? notifCount : undefined,
+            });
+        if (ok("announcements"))
+            updateItems.push({
+                title: "Announcements",
+                url: `/announcements/${userId ?? ""}`,
+                icon: IconSpeakerphone,
+            });
+        if (updateItems.length)
+            sections.push({ label: "Updates", items: updateItems });
 
         if (hasScheduleAccess) {
-            const mgmtItems: NavItem[] = [
-                {
+            const mgmtItems: NavItem[] = [];
+            if (ok("schedule"))
+                mgmtItems.push({
                     title: "Schedule",
                     url: `/schedules/${userId ?? ""}`,
                     icon: IconCalendarCheck,
-                },
-                {
+                });
+            if (ok("forms"))
+                mgmtItems.push({
                     title: "Forms",
                     url: `/forms/${userId ?? ""}`,
                     icon: IconClipboardList,
-                },
-            ];
-            if (isApprover) {
+                });
+            if (ok("hr_approvals") && isApprover)
                 mgmtItems.push({
                     title: "HR Approvals",
                     url: `/approvals/${userId ?? ""}`,
                     icon: IconFilter2Check,
                 });
-            }
-            sections.push({ label: "Management", items: mgmtItems });
-        } else if (isApprover) {
+            if (mgmtItems.length)
+                sections.push({ label: "Management", items: mgmtItems });
+        } else if (isApprover && ok("hr_approvals")) {
             sections.push({
                 label: "Management",
                 items: [
@@ -243,6 +247,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     job_level: string;
                     is_admin?: number;
                     can_work_remotely?: number;
+                    tab_permissions?: Record<string, number>;
                 }>
             >(`/api/v2/auth/me`);
             return response.data.data;
@@ -278,6 +283,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isApprover,
         isAdmin,
         canWorkRemotely,
+        me?.tab_permissions,
     );
 
     const renderItem = (item: NavItem) => (
@@ -305,7 +311,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>
-            <SidebarHeader className="pb-0">
+            <SidebarHeader className="pb-8">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton

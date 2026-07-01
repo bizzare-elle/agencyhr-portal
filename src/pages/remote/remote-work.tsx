@@ -20,6 +20,7 @@ interface Punch {
     date_time: string;
     location: string;
     image_url?: string | null;
+    is_deleted?: boolean;
 }
 
 interface RemoteStatus {
@@ -477,41 +478,47 @@ export default function RemoteWork() {
                                             {[...data.punches].reverse().map((p) => {
                                                 const m = CLOCK_META[p.clock_type] ?? CLOCK_META["Clock-In"];
                                                 const Icon = m.icon;
+                                                const deleted = !!p.is_deleted;
                                                 return (
-                                                    <div key={p.id} className="flex items-center gap-3 pl-1">
-                                                        <div className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 ${m.bg}`}>
-                                                            <Icon className={`h-3.5 w-3.5 ${m.color}`} />
+                                                    <div key={p.id} className={`flex items-center gap-3 pl-1 ${deleted ? "opacity-40" : ""}`}>
+                                                        <div className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 ${deleted ? "bg-muted border-border" : m.bg}`}>
+                                                            <Icon className={`h-3.5 w-3.5 ${deleted ? "text-muted-foreground" : m.color}`} />
                                                         </div>
-                                                        <div className="flex flex-1 items-center justify-between rounded-xl border px-4 py-3 mb-0.5 gap-3">
+                                                        <div className={`flex flex-1 items-center justify-between rounded-xl border px-4 py-3 mb-0.5 gap-3 ${deleted ? "border-dashed bg-muted/20" : ""}`}>
                                                             <div className="min-w-0 flex-1">
-                                                                <p className={`text-xs font-semibold ${m.color}`}>{m.label}</p>
+                                                                <p className={`text-xs font-semibold ${deleted ? "line-through text-muted-foreground" : m.color}`}>{m.label}</p>
                                                                 <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-[11px]">
                                                                     <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
                                                                     <span className="truncate">{p.location}</span>
                                                                 </p>
+                                                                {deleted && (
+                                                                    <p className="mt-0.5 text-[10px] text-red-400/70 font-medium">removed</p>
+                                                                )}
                                                             </div>
                                                             <div className="flex items-center gap-2 flex-shrink-0">
                                                                 {p.image_url && (
                                                                     <img
                                                                         src={p.image_url}
                                                                         alt="selfie"
-                                                                        className="h-8 w-8 rounded-lg object-cover border border-border/50"
+                                                                        className={`h-8 w-8 rounded-lg object-cover border border-border/50 ${deleted ? "grayscale" : ""}`}
                                                                     />
                                                                 )}
-                                                                <p className="text-sm font-semibold tabular-nums">
+                                                                <p className={`text-sm font-semibold tabular-nums ${deleted ? "line-through text-muted-foreground" : ""}`}>
                                                                     {formatTime(p.date_time)}
                                                                 </p>
-                                                                <button
-                                                                    onClick={() => deletePunchMutation.mutate(p.id)}
-                                                                    disabled={deletePunchMutation.isPending}
-                                                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/40 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-30"
-                                                                    title="Remove entry"
-                                                                >
-                                                                    {deletePunchMutation.isPending
-                                                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                                        : <Trash2 className="h-3.5 w-3.5" />
-                                                                    }
-                                                                </button>
+                                                                {!deleted && (
+                                                                    <button
+                                                                        onClick={() => deletePunchMutation.mutate(p.id)}
+                                                                        disabled={deletePunchMutation.isPending}
+                                                                        className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/40 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-30"
+                                                                        title="Remove entry"
+                                                                    >
+                                                                        {deletePunchMutation.isPending
+                                                                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                            : <Trash2 className="h-3.5 w-3.5" />
+                                                                        }
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>

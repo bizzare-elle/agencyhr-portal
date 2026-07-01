@@ -68,6 +68,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useQuery as useMe } from "@tanstack/react-query";
 import { ALL_TABS, TabDef, STANDARD_PERMISSIONS } from "@/lib/tabs";

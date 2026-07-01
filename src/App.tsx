@@ -36,6 +36,7 @@ import Maintenance from "./pages/maintenance";
 import HrApprovals from "./pages/approvals/hr-approvals";
 import AdminPanel from "./pages/admin/admin-panel";
 import RemoteWork from "./pages/remote/remote-work";
+import SystemGuide from "./pages/system-guide";
 
 const router = createBrowserRouter([
     {
@@ -226,6 +227,11 @@ const router = createBrowserRouter([
                 path: "/remote/:id",
                 element: <RemoteWork />,
                 handle: { title: "Work Remotely" },
+            },
+            {
+                path: "/guide",
+                element: <SystemGuide />,
+                handle: { title: "System Guide" },
             },
         ],
     },

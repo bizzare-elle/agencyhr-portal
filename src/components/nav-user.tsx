@@ -24,7 +24,7 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/hooks/use-auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
@@ -186,14 +186,10 @@ export function NavUser({
                                     Reset Password
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild className="cursor-pointer gap-2.5">
-                                    <a
-                                        href="https://docs.google.com/presentation/d/1ZJLVoaMvxBzwrYFoSkINOSpktURRJBSM/edit?slide=id.p1#slide=id.p1"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
+                                    <NavLink to="/guide">
                                         <IconFileAnalytics className="h-4 w-4 text-muted-foreground" />
                                         View System Guide
-                                    </a>
+                                    </NavLink>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild className="cursor-pointer gap-2.5">
                                     <a

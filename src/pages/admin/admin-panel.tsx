@@ -558,6 +558,7 @@ function EmployeeDrawer({
     adminMutation,
     remoteMutation,
     branchMutation,
+    deleteMutation,
 }: {
     user: EmployeeRow | null;
     meId: number;
@@ -566,6 +567,7 @@ function EmployeeDrawer({
     adminMutation: any;
     remoteMutation: any;
     branchMutation: any;
+    deleteMutation: any;
 }) {
     const [pendingBranch, setPendingBranch] = useState<string>("");
 
@@ -673,6 +675,46 @@ function EmployeeDrawer({
                             onClick={() => remoteMutation.mutate(user.id)}
                         />
 
+                        {/* Delete account — not shown for self */}
+                        {user.id !== meId && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <button className="mt-1 w-full rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-red-500/15">
+                                                {deleteMutation.isPending
+                                                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                                                    : <Trash2 className="h-4 w-4" />
+                                                }
+                                            </div>
+                                            <div>
+                                                <p className="font-medium leading-tight">Remove Account</p>
+                                                <p className="text-red-400/60 mt-0.5 text-xs">Permanently deactivates this account</p>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Remove {user.name}?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will deactivate the account. The employee will no longer be able to log in. This action can only be undone by a database administrator.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            onClick={() => { deleteMutation.mutate(user.id); onClose(); }}
+                                        >
+                                            {deleteMutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                                            Remove Account
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+
                         {/* Branch assignment — only shown when remote work is on */}
                         {!!user.can_work_remotely && (
                             <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 p-3.5">
@@ -770,6 +812,15 @@ function UsersTab({ meId }: { meId: number }) {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
         },
         onError: () => toast.error("Failed to update branch."),
+    });
+
+    const deleteUserMutation = useMutation({
+        mutationFn: (id: number) => api.post(`/api/v2/admin/users/${id}/delete`, {}),
+        onSuccess: () => {
+            toast.success("Account removed.");
+            queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+        },
+        onError: (err: any) => toast.error(err?.response?.data?.message ?? "Failed to remove account."),
     });
 
     const filtered = useMemo(() => {
@@ -927,6 +978,7 @@ function UsersTab({ meId }: { meId: number }) {
             adminMutation={adminMutation}
             remoteMutation={remoteMutation}
             branchMutation={branchMutation}
+            deleteMutation={deleteUserMutation}
         />
         </>
     );

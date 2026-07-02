@@ -49,17 +49,21 @@ export default function EmployeeProfile() {
     const { data: me } = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
-            const response = await api.get<ApiResponse<{
-                hr_id: string;
-                role: string;
-                can_work_remotely?: number;
-                profile_photo_url?: string;
-            }>>(`/api/v2/auth/me`);
+            const response = await api.get<
+                ApiResponse<{
+                    hr_id: string;
+                    role: string;
+                    can_work_remotely?: number;
+                    profile_photo_url?: string;
+                }>
+            >(`/api/v2/auth/me`);
             return response.data.data;
         },
     });
 
-    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarUpload = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
         const file = e.target.files?.[0];
         if (!file) return;
         const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -75,7 +79,10 @@ export default function EmployeeProfile() {
             await queryClient.invalidateQueries({ queryKey: ["me"] });
             toast.success("Profile photo updated.");
         } catch (err: any) {
-            const msg = err?.response?.data?.message ?? err?.message ?? "Upload failed.";
+            const msg =
+                err?.response?.data?.message ??
+                err?.message ??
+                "Upload failed.";
             toast.error(msg);
         } finally {
             setAvatarUploading(false);
@@ -145,11 +152,10 @@ export default function EmployeeProfile() {
         <ParentComponent>
             <div className="mx-auto w-full max-w-[1600px] space-y-8 p-4 sm:p-6">
                 {/* Profile header */}
-                <div className="rounded-xl border bg-muted/5 p-5 sm:p-6">
+                <div className="bg-muted/5 rounded-xl border p-5 sm:p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-
                         {/* Avatar */}
-                        <div className="relative self-center sm:self-start flex-shrink-0">
+                        <div className="relative flex-shrink-0 self-center sm:self-start">
                             <input
                                 ref={avatarInputRef}
                                 type="file"
@@ -157,7 +163,7 @@ export default function EmployeeProfile() {
                                 className="hidden"
                                 onChange={handleAvatarUpload}
                             />
-                            <div className="h-20 w-20 rounded-2xl overflow-hidden bg-primary/15 flex items-center justify-center text-2xl font-bold text-primary">
+                            <div className="bg-primary/15 text-primary flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl text-2xl font-bold">
                                 {me?.profile_photo_url ? (
                                     <img
                                         src={me.profile_photo_url}
@@ -172,9 +178,11 @@ export default function EmployeeProfile() {
                             {/* Upload overlay — only for own profile */}
                             {me?.hr_id === String(employeeId) && (
                                 <button
-                                    onClick={() => avatarInputRef.current?.click()}
+                                    onClick={() =>
+                                        avatarInputRef.current?.click()
+                                    }
                                     disabled={avatarUploading}
-                                    className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 hover:opacity-100 transition-opacity disabled:opacity-50"
+                                    className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 transition-opacity hover:opacity-100 disabled:opacity-50"
                                     title="Change profile photo"
                                 >
                                     <Camera className="h-6 w-6 text-white" />
@@ -185,7 +193,7 @@ export default function EmployeeProfile() {
                         {/* Info */}
                         <div className="min-w-0 flex-1 text-center sm:text-left">
                             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                                <h1 className="text-xl font-bold leading-tight sm:text-2xl">
+                                <h1 className="text-xl leading-tight font-bold sm:text-2xl">
                                     {employee.name}
                                 </h1>
                                 <Badge
@@ -213,15 +221,31 @@ export default function EmployeeProfile() {
                             <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 sm:justify-start">
                                 {[
                                     { label: "ID", value: employee.id_number },
-                                    { label: "Branch", value: employee.branch_name },
-                                    { label: "Dept", value: employee.department_name },
-                                    { label: "Agency", value: employee.agency_name },
-                                ].map(({ label, value }) => value ? (
-                                    <span key={label} className="text-xs text-muted-foreground">
-                                        <span className="font-medium text-foreground/60">{label}:</span>{" "}
-                                        {value}
-                                    </span>
-                                ) : null)}
+                                    {
+                                        label: "Branch",
+                                        value: employee.branch_name,
+                                    },
+                                    {
+                                        label: "Department",
+                                        value: employee.department_name,
+                                    },
+                                    {
+                                        label: "Agency",
+                                        value: employee.agency_name,
+                                    },
+                                ].map(({ label, value }) =>
+                                    value ? (
+                                        <span
+                                            key={label}
+                                            className="text-muted-foreground text-xs"
+                                        >
+                                            <span className="text-foreground/60 font-medium">
+                                                {label}:
+                                            </span>{" "}
+                                            {value}
+                                        </span>
+                                    ) : null,
+                                )}
                             </div>
                         </div>
                     </div>
@@ -448,7 +472,6 @@ export default function EmployeeProfile() {
                             />
                         </TabsContent>
                     )}
-
                 </Tabs>
             </div>
         </ParentComponent>

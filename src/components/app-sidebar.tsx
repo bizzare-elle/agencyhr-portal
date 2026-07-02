@@ -164,7 +164,7 @@ function buildSections(
                     url: `/forms/${userId ?? ""}`,
                     icon: IconClipboardList,
                 });
-            if (ok("hr_approvals") && isApprover)
+            if (ok("hr_approvals") || isApprover)
                 mgmtItems.push({
                     title: "HR Approvals",
                     url: `/approvals/${userId ?? ""}`,
@@ -172,7 +172,7 @@ function buildSections(
                 });
             if (mgmtItems.length)
                 sections.push({ label: "Management", items: mgmtItems });
-        } else if (isApprover && ok("hr_approvals")) {
+        } else if (ok("hr_approvals") || isApprover) {
             sections.push({
                 label: "Management",
                 items: [

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import CustomSelect from "@/components/custom-select";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -117,7 +118,13 @@ interface BranchRow {
 
 const initials = (name?: string | null) =>
     name
-        ? name.trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 2)
+        ? name
+              .trim()
+              .split(/\s+/)
+              .map((w) => w[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2)
         : "?";
 
 function RoleBadge({ role, isAdmin }: { role: string; isAdmin: number }) {
@@ -132,7 +139,7 @@ function RoleBadge({ role, isAdmin }: { role: string; isAdmin: number }) {
                 className={
                     role === "agency_coordinator"
                         ? "border-0 bg-blue-500/15 px-2 py-0.5 text-xs text-blue-400"
-                        : "border-0 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground"
+                        : "bg-muted/40 text-muted-foreground border-0 px-2 py-0.5 text-xs"
                 }
             >
                 {role === "agency_coordinator" ? "Coordinator" : "HR Employee"}
@@ -143,7 +150,13 @@ function RoleBadge({ role, isAdmin }: { role: string; isAdmin: number }) {
 
 // ── Create Account Dialog ─────────────────────────────────────────────────────
 
-function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CreateAccountDialog({
+    open,
+    onClose,
+}: {
+    open: boolean;
+    onClose: () => void;
+}) {
     const queryClient = useQueryClient();
     const [firstname, setFirstname] = useState("");
     const [lastname, setLastname] = useState("");
@@ -153,7 +166,12 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
     const [showPass, setShowPass] = useState(false);
 
     const reset = () => {
-        setFirstname(""); setLastname(""); setEmail(""); setPassword(""); setIsAdmin(false); setShowPass(false);
+        setFirstname("");
+        setLastname("");
+        setEmail("");
+        setPassword("");
+        setIsAdmin(false);
+        setShowPass(false);
     };
 
     const mutation = useMutation({
@@ -172,12 +190,21 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
             onClose();
         },
         onError: (err: any) => {
-            toast.error(err?.response?.data?.message || "Failed to create account.");
+            toast.error(
+                err?.response?.data?.message || "Failed to create account.",
+            );
         },
     });
 
-    const handleClose = () => { reset(); onClose(); };
-    const valid = firstname.trim() && lastname.trim() && email.trim() && password.length >= 6;
+    const handleClose = () => {
+        reset();
+        onClose();
+    };
+    const valid =
+        firstname.trim() &&
+        lastname.trim() &&
+        email.trim() &&
+        password.length >= 6;
 
     return (
         <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -188,14 +215,18 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
                         Create Account
                     </DialogTitle>
                     <DialogDescription>
-                        Creates a new agency account. Employment status will be set to inactive — the account is for portal access only.
+                        Creates a new agency account. Employment status will be
+                        set to inactive — the account is for portal access only.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <label className="text-sm font-medium">First Name <span className="text-destructive">*</span></label>
+                            <label className="text-sm font-medium">
+                                First Name{" "}
+                                <span className="text-destructive">*</span>
+                            </label>
                             <input
                                 className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
                                 value={firstname}
@@ -204,7 +235,10 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-sm font-medium">Last Name <span className="text-destructive">*</span></label>
+                            <label className="text-sm font-medium">
+                                Last Name{" "}
+                                <span className="text-destructive">*</span>
+                            </label>
                             <input
                                 className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
                                 value={lastname}
@@ -215,7 +249,9 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Email <span className="text-destructive">*</span></label>
+                        <label className="text-sm font-medium">
+                            Email <span className="text-destructive">*</span>
+                        </label>
                         <input
                             type="email"
                             className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
@@ -226,7 +262,9 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Password <span className="text-destructive">*</span></label>
+                        <label className="text-sm font-medium">
+                            Password <span className="text-destructive">*</span>
+                        </label>
                         <div className="relative">
                             <input
                                 type={showPass ? "text" : "password"}
@@ -238,15 +276,19 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
                             <button
                                 type="button"
                                 onClick={() => setShowPass(!showPass)}
-                                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
+                                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition"
                                 tabIndex={-1}
                             >
-                                {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                {showPass ? (
+                                    <EyeOff className="h-4 w-4" />
+                                ) : (
+                                    <Eye className="h-4 w-4" />
+                                )}
                             </button>
                         </div>
                     </div>
 
-                    <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:bg-muted/10 transition">
+                    <label className="hover:bg-muted/10 flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition">
                         <input
                             type="checkbox"
                             className="h-4 w-4 accent-purple-500"
@@ -254,18 +296,27 @@ function CreateAccountDialog({ open, onClose }: { open: boolean; onClose: () => 
                             onChange={(e) => setIsAdmin(e.target.checked)}
                         />
                         <div>
-                            <p className="text-sm font-medium">Grant Admin Access</p>
-                            <p className="text-muted-foreground text-xs">This account will have full access to the Admin Panel.</p>
+                            <p className="text-sm font-medium">
+                                Grant Admin Access
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                This account will have full access to the Admin
+                                Panel.
+                            </p>
                         </div>
                     </label>
 
                     <div className="flex justify-end gap-2 pt-1">
-                        <Button variant="outline" onClick={handleClose}>Cancel</Button>
+                        <Button variant="outline" onClick={handleClose}>
+                            Cancel
+                        </Button>
                         <Button
                             disabled={!valid || mutation.isPending}
                             onClick={() => mutation.mutate()}
                         >
-                            {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                            {mutation.isPending && (
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            )}
                             Create Account
                         </Button>
                     </div>
@@ -297,19 +348,28 @@ function PaginatedAccessCard({
     const [page, setPage] = useState(1);
     const totalPages = Math.max(1, Math.ceil(items.length / ACCESS_PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
-    const slice = items.slice((safePage - 1) * ACCESS_PAGE_SIZE, safePage * ACCESS_PAGE_SIZE);
+    const slice = items.slice(
+        (safePage - 1) * ACCESS_PAGE_SIZE,
+        safePage * ACCESS_PAGE_SIZE,
+    );
 
     return (
         <Card className={`border ${bg} flex flex-col`}>
-            <CardHeader className="pb-3 pt-4 px-4">
+            <CardHeader className="px-4 pt-4 pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>
+                        <div
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}
+                        >
                             <Icon className="h-4 w-4" />
                         </div>
-                        <CardTitle className="text-sm font-semibold">{label}</CardTitle>
+                        <CardTitle className="text-sm font-semibold">
+                            {label}
+                        </CardTitle>
                     </div>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${badgeColor}`}>
+                    <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${badgeColor}`}
+                    >
                         {items.length}
                     </span>
                 </div>
@@ -317,17 +377,29 @@ function PaginatedAccessCard({
 
             <CardContent className="flex flex-1 flex-col px-4 pb-4">
                 {items.length === 0 ? (
-                    <p className="text-muted-foreground py-4 text-center text-xs">None assigned</p>
+                    <p className="text-muted-foreground py-4 text-center text-xs">
+                        None assigned
+                    </p>
                 ) : (
                     <>
-                        <ul className="flex-1 divide-y divide-border/40">
+                        <ul className="divide-border/40 flex-1 divide-y">
                             {slice.map((u) => (
-                                <li key={u.id} className="flex items-center gap-2.5 py-2.5">
+                                <li
+                                    key={u.id}
+                                    className="flex items-center gap-2.5 py-2.5"
+                                >
                                     <div className="bg-primary/15 text-primary flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                                        {u.name.split(",").map((p: string) => p.trim()[0]).join("").slice(0, 2).toUpperCase()}
+                                        {u.name
+                                            .split(",")
+                                            .map((p: string) => p.trim()[0])
+                                            .join("")
+                                            .slice(0, 2)
+                                            .toUpperCase()}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="truncate text-xs font-medium leading-tight">{u.name}</p>
+                                        <p className="truncate text-xs leading-tight font-medium">
+                                            {u.name}
+                                        </p>
                                         <p className="text-muted-foreground truncate text-[11px]">
                                             {u.branch_name || "No branch"}
                                         </p>
@@ -337,11 +409,11 @@ function PaginatedAccessCard({
                         </ul>
 
                         {totalPages > 1 && (
-                            <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-3">
+                            <div className="border-border/40 mt-3 flex items-center justify-between border-t pt-3">
                                 <button
                                     disabled={safePage === 1}
                                     onClick={() => setPage((p) => p - 1)}
-                                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed text-xs px-1"
+                                    className="text-muted-foreground hover:text-foreground px-1 text-xs disabled:cursor-not-allowed disabled:opacity-30"
                                 >
                                     ← Prev
                                 </button>
@@ -351,7 +423,7 @@ function PaginatedAccessCard({
                                 <button
                                     disabled={safePage === totalPages}
                                     onClick={() => setPage((p) => p + 1)}
-                                    className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed text-xs px-1"
+                                    className="text-muted-foreground hover:text-foreground px-1 text-xs disabled:cursor-not-allowed disabled:opacity-30"
                                 >
                                     Next →
                                 </button>
@@ -368,14 +440,25 @@ function AccessListsTab() {
     const { data: users = [], isLoading } = useQuery<EmployeeRow[]>({
         queryKey: ["admin-users"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<EmployeeRow[]>>("/api/v2/admin/users");
+            const res = await api.get<ApiResponse<EmployeeRow[]>>(
+                "/api/v2/admin/users",
+            );
             return res.data.data ?? [];
         },
     });
 
-    const coordinators  = useMemo(() => users.filter((u) => u.is_agency_coor   === 1), [users]);
-    const admins        = useMemo(() => users.filter((u) => u.is_admin          === 1), [users]);
-    const remoteWorkers = useMemo(() => users.filter((u) => u.can_work_remotely === 1), [users]);
+    const coordinators = useMemo(
+        () => users.filter((u) => u.is_agency_coor === 1),
+        [users],
+    );
+    const admins = useMemo(
+        () => users.filter((u) => u.is_admin === 1),
+        [users],
+    );
+    const remoteWorkers = useMemo(
+        () => users.filter((u) => u.can_work_remotely === 1),
+        [users],
+    );
 
     if (isLoading) {
         return (
@@ -386,9 +469,33 @@ function AccessListsTab() {
     }
 
     const sections = [
-        { key: "coors",  label: "Coordinators",   icon: UserCheck,  bg: "bg-blue-500/10 border-blue-500/20",   iconBg: "bg-blue-500/15 text-blue-400",   badgeColor: "bg-blue-500/15 text-blue-400",   items: coordinators  },
-        { key: "admins", label: "Admins",          icon: ShieldCheck, bg: "bg-violet-500/10 border-violet-500/20", iconBg: "bg-violet-500/15 text-violet-400", badgeColor: "bg-violet-500/15 text-violet-400", items: admins        },
-        { key: "remote", label: "Remote Workers",  icon: Wifi,       bg: "bg-teal-500/10 border-teal-500/20",   iconBg: "bg-teal-500/15 text-teal-400",   badgeColor: "bg-teal-500/15 text-teal-400",   items: remoteWorkers },
+        {
+            key: "coors",
+            label: "Coordinators",
+            icon: UserCheck,
+            bg: "bg-blue-500/10 border-blue-500/20",
+            iconBg: "bg-blue-500/15 text-blue-400",
+            badgeColor: "bg-blue-500/15 text-blue-400",
+            items: coordinators,
+        },
+        {
+            key: "admins",
+            label: "Admins",
+            icon: ShieldCheck,
+            bg: "bg-violet-500/10 border-violet-500/20",
+            iconBg: "bg-violet-500/15 text-violet-400",
+            badgeColor: "bg-violet-500/15 text-violet-400",
+            items: admins,
+        },
+        {
+            key: "remote",
+            label: "Remote Workers",
+            icon: Wifi,
+            bg: "bg-teal-500/10 border-teal-500/20",
+            iconBg: "bg-teal-500/15 text-teal-400",
+            badgeColor: "bg-teal-500/15 text-teal-400",
+            items: remoteWorkers,
+        },
     ];
 
     return (
@@ -427,13 +534,25 @@ function SearchableSelect({
     const selected = options.find((o) => String(o.id) === value);
 
     return (
-        <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setQuery(""); }}>
+        <Popover
+            open={open}
+            onOpenChange={(v) => {
+                setOpen(v);
+                if (!v) setQuery("");
+            }}
+        >
             <PopoverTrigger asChild>
                 <button
                     type="button"
-                    className="bg-background border-border flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500/50"
+                    className="bg-background border-border flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs focus:ring-1 focus:ring-teal-500/50 focus:outline-none"
                 >
-                    <span className={selected ? "text-foreground" : "text-muted-foreground"}>
+                    <span
+                        className={
+                            selected
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                        }
+                    >
                         {selected ? selected.name : placeholder}
                     </span>
                     <ChevronDown className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
@@ -453,10 +572,13 @@ function SearchableSelect({
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Search branch…"
-                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                            className="placeholder:text-muted-foreground w-full bg-transparent text-xs outline-none"
                         />
                         {query && (
-                            <button onClick={() => setQuery("")} className="text-muted-foreground hover:text-foreground">
+                            <button
+                                onClick={() => setQuery("")}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
                                 <X className="h-3 w-3" />
                             </button>
                         )}
@@ -468,24 +590,40 @@ function SearchableSelect({
                     {/* None option */}
                     <button
                         type="button"
-                        onClick={() => { onChange(""); setOpen(false); setQuery(""); }}
-                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-muted/40"
+                        onClick={() => {
+                            onChange("");
+                            setOpen(false);
+                            setQuery("");
+                        }}
+                        className="hover:bg-muted/40 flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs"
                     >
-                        <Check className={`h-3.5 w-3.5 flex-shrink-0 ${!value ? "opacity-100 text-primary" : "opacity-0"}`} />
-                        <span className="text-muted-foreground italic">{emptyLabel}</span>
+                        <Check
+                            className={`h-3.5 w-3.5 flex-shrink-0 ${!value ? "text-primary opacity-100" : "opacity-0"}`}
+                        />
+                        <span className="text-muted-foreground italic">
+                            {emptyLabel}
+                        </span>
                     </button>
 
                     {filtered.length === 0 ? (
-                        <p className="text-muted-foreground px-3 py-2 text-xs">No results</p>
+                        <p className="text-muted-foreground px-3 py-2 text-xs">
+                            No results
+                        </p>
                     ) : (
                         filtered.map((o) => (
                             <button
                                 key={o.id}
                                 type="button"
-                                onClick={() => { onChange(String(o.id)); setOpen(false); setQuery(""); }}
-                                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-muted/40"
+                                onClick={() => {
+                                    onChange(String(o.id));
+                                    setOpen(false);
+                                    setQuery("");
+                                }}
+                                className="hover:bg-muted/40 flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs"
                             >
-                                <Check className={`h-3.5 w-3.5 flex-shrink-0 ${String(o.id) === value ? "opacity-100 text-primary" : "opacity-0"}`} />
+                                <Check
+                                    className={`h-3.5 w-3.5 flex-shrink-0 ${String(o.id) === value ? "text-primary opacity-100" : "opacity-0"}`}
+                                />
                                 <span>{o.name}</span>
                             </button>
                         ))
@@ -523,27 +661,45 @@ function AccessToggleCard({
         <button
             disabled={disabled}
             onClick={onClick}
-            className={`w-full rounded-xl border p-3.5 text-left transition-all hover:border-primary/40 hover:bg-muted/10 disabled:opacity-50 disabled:cursor-not-allowed ${
-                active && danger ? "border-red-500/30 bg-red-500/5" : active ? "border-primary/30 bg-primary/5" : "border-border"
+            className={`hover:border-primary/40 hover:bg-muted/10 w-full rounded-xl border p-3.5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                active && danger
+                    ? "border-red-500/30 bg-red-500/5"
+                    : active
+                      ? "border-primary/30 bg-primary/5"
+                      : "border-border"
             }`}
         >
             <div className="flex items-center gap-3">
-                <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${
-                    active && danger ? "bg-red-500/15 text-red-400" : active ? "bg-primary/15 text-primary" : "bg-muted/40 text-muted-foreground"
-                }`}>
-                    {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+                <div
+                    className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${
+                        active && danger
+                            ? "bg-red-500/15 text-red-400"
+                            : active
+                              ? "bg-primary/15 text-primary"
+                              : "bg-muted/40 text-muted-foreground"
+                    }`}
+                >
+                    {disabled ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <Icon className="h-4 w-4" />
+                    )}
                 </div>
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium leading-tight">{label}</p>
-                    <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>
+                    <p className="text-sm leading-tight font-medium">{label}</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                        {description}
+                    </p>
                 </div>
-                <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                    active && danger
-                        ? "bg-red-500/15 text-red-400"
-                        : active
-                        ? "bg-green-500/15 text-green-400"
-                        : "bg-muted/40 text-muted-foreground"
-                }`}>
+                <span
+                    className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        active && danger
+                            ? "bg-red-500/15 text-red-400"
+                            : active
+                              ? "bg-green-500/15 text-green-400"
+                              : "bg-muted/40 text-muted-foreground"
+                    }`}
+                >
                     {active ? activeLabel : inactiveLabel}
                 </span>
             </div>
@@ -575,7 +731,9 @@ function EmployeeDrawer({
     const { data: branches = [] } = useQuery<{ id: number; name: string }[]>({
         queryKey: ["admin-branches"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<{ id: number; name: string }[]>>("/api/v2/admin/branches");
+            const res = await api.get<
+                ApiResponse<{ id: number; name: string }[]>
+            >("/api/v2/admin/branches");
             return res.data.data ?? [];
         },
         staleTime: 5 * 60 * 1000,
@@ -595,27 +753,39 @@ function EmployeeDrawer({
         });
     };
 
-    const branchDirty = pendingBranch !== (user.branch_id ? String(user.branch_id) : "");
+    const branchDirty =
+        pendingBranch !== (user.branch_id ? String(user.branch_id) : "");
 
     return (
         <Sheet open={!!user} onOpenChange={(o) => !o && onClose()}>
-            <SheetContent side="right" className="flex w-80 flex-col gap-0 p-0 sm:w-96">
-
+            <SheetContent
+                side="right"
+                className="flex w-80 flex-col gap-0 p-0 sm:w-96"
+            >
                 {/* Header */}
-                <div className="border-b bg-muted/20 px-5 pb-5 pt-6">
+                <div className="bg-muted/20 border-b px-5 pt-6 pb-5">
                     <SheetHeader className="mb-0">
                         <SheetTitle className="sr-only">{user.name}</SheetTitle>
-                        <SheetDescription className="sr-only">{user.email}</SheetDescription>
+                        <SheetDescription className="sr-only">
+                            {user.email}
+                        </SheetDescription>
                     </SheetHeader>
                     <div className="flex items-center gap-3.5">
                         <div className="bg-primary/20 text-primary flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl text-base font-bold">
                             {initials(user.name)}
                         </div>
                         <div className="min-w-0">
-                            <p className="truncate text-base font-semibold leading-tight">{user.name}</p>
-                            <p className="text-muted-foreground mt-0.5 truncate text-xs">{user.email}</p>
+                            <p className="truncate text-base leading-tight font-semibold">
+                                {user.name}
+                            </p>
+                            <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                                {user.email}
+                            </p>
                             <div className="mt-1.5">
-                                <RoleBadge role={user.role} isAdmin={user.is_admin} />
+                                <RoleBadge
+                                    role={user.role}
+                                    isAdmin={user.is_admin}
+                                />
                             </div>
                         </div>
                     </div>
@@ -623,22 +793,34 @@ function EmployeeDrawer({
 
                 {/* Info */}
                 <div className="border-b px-5 py-4">
-                    <p className="text-muted-foreground mb-3 text-[11px] font-semibold uppercase tracking-wider">Details</p>
-                    <div className="divide-y divide-border/50">
+                    <p className="text-muted-foreground mb-3 text-[11px] font-semibold tracking-wider uppercase">
+                        Details
+                    </p>
+                    <div className="divide-border/50 divide-y">
                         <div className="flex items-center justify-between py-2">
-                            <span className="text-muted-foreground text-xs">Branch</span>
-                            <span className="text-xs font-medium">{user.branch_name || "—"}</span>
+                            <span className="text-muted-foreground text-xs">
+                                Branch
+                            </span>
+                            <span className="text-xs font-medium">
+                                {user.branch_name || "—"}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between py-2">
-                            <span className="text-muted-foreground text-xs">Position</span>
-                            <span className="text-xs font-medium">{user.position_name || "—"}</span>
+                            <span className="text-muted-foreground text-xs">
+                                Position
+                            </span>
+                            <span className="text-xs font-medium">
+                                {user.position_name || "—"}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Access controls */}
                 <div className="flex-1 overflow-y-auto px-5 py-4">
-                    <p className="text-muted-foreground mb-3 text-[11px] font-semibold uppercase tracking-wider">Access Controls</p>
+                    <p className="text-muted-foreground mb-3 text-[11px] font-semibold tracking-wider uppercase">
+                        Access Controls
+                    </p>
                     <div className="space-y-2.5">
                         <AccessToggleCard
                             icon={UserCheck}
@@ -648,7 +830,12 @@ function EmployeeDrawer({
                             activeLabel="Coordinator"
                             inactiveLabel="Employee"
                             disabled={roleMutation.isPending}
-                            onClick={() => roleMutation.mutate({ id: user.id, is_agency_coor: user.is_agency_coor ? 0 : 1 })}
+                            onClick={() =>
+                                roleMutation.mutate({
+                                    id: user.id,
+                                    is_agency_coor: user.is_agency_coor ? 0 : 1,
+                                })
+                            }
                         />
 
                         {user.id !== meId && (
@@ -683,32 +870,50 @@ function EmployeeDrawer({
                                     <button className="mt-1 w-full rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10">
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-red-500/15">
-                                                {deleteMutation.isPending
-                                                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                                                    : <Trash2 className="h-4 w-4" />
-                                                }
+                                                {deleteMutation.isPending ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="h-4 w-4" />
+                                                )}
                                             </div>
                                             <div>
-                                                <p className="font-medium leading-tight">Remove Account</p>
-                                                <p className="text-red-400/60 mt-0.5 text-xs">Permanently deactivates this account</p>
+                                                <p className="leading-tight font-medium">
+                                                    Remove Account
+                                                </p>
+                                                <p className="mt-0.5 text-xs text-red-400/60">
+                                                    Permanently deactivates this
+                                                    account
+                                                </p>
                                             </div>
                                         </div>
                                     </button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Remove {user.name}?</AlertDialogTitle>
+                                        <AlertDialogTitle>
+                                            Remove {user.name}?
+                                        </AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This will deactivate the account. The employee will no longer be able to log in. This action can only be undone by a database administrator.
+                                            This will deactivate the account.
+                                            The employee will no longer be able
+                                            to log in. This action can only be
+                                            undone by a database administrator.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogCancel>
+                                            Cancel
+                                        </AlertDialogCancel>
                                         <AlertDialogAction
                                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                            onClick={() => { deleteMutation.mutate(user.id); onClose(); }}
+                                            onClick={() => {
+                                                deleteMutation.mutate(user.id);
+                                                onClose();
+                                            }}
                                         >
-                                            {deleteMutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                                            {deleteMutation.isPending && (
+                                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                            )}
                                             Remove Account
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
@@ -724,8 +929,13 @@ function EmployeeDrawer({
                                         <UserCheck className="h-4 w-4" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium leading-tight">Remote Branch</p>
-                                        <p className="text-muted-foreground text-xs">Assign the branch this employee works at remotely</p>
+                                        <p className="text-sm leading-tight font-medium">
+                                            Remote Branch
+                                        </p>
+                                        <p className="text-muted-foreground text-xs">
+                                            Assign the branch this employee
+                                            works at remotely
+                                        </p>
                                     </div>
                                 </div>
                                 <SearchableSelect
@@ -741,10 +951,14 @@ function EmployeeDrawer({
                                         onClick={handleBranchSave}
                                         className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-teal-600 disabled:opacity-50"
                                     >
-                                        {branchMutation.isPending
-                                            ? <><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>
-                                            : "Save Branch"
-                                        }
+                                        {branchMutation.isPending ? (
+                                            <>
+                                                <Loader2 className="h-3 w-3 animate-spin" />{" "}
+                                                Saving…
+                                            </>
+                                        ) : (
+                                            "Save Branch"
+                                        )}
                                     </button>
                                 )}
                             </div>
@@ -770,14 +984,21 @@ function UsersTab({ meId }: { meId: number }) {
     const { data: users = [], isLoading } = useQuery<EmployeeRow[]>({
         queryKey: ["admin-users"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<EmployeeRow[]>>("/api/v2/admin/users");
+            const res = await api.get<ApiResponse<EmployeeRow[]>>(
+                "/api/v2/admin/users",
+            );
             return res.data.data ?? [];
         },
     });
 
     const roleMutation = useMutation({
-        mutationFn: ({ id, is_agency_coor }: { id: number; is_agency_coor: number }) =>
-            api.post(`/api/v2/admin/users/${id}/role`, { is_agency_coor }),
+        mutationFn: ({
+            id,
+            is_agency_coor,
+        }: {
+            id: number;
+            is_agency_coor: number;
+        }) => api.post(`/api/v2/admin/users/${id}/role`, { is_agency_coor }),
         onSuccess: () => {
             toast.success("Role updated.");
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -786,7 +1007,8 @@ function UsersTab({ meId }: { meId: number }) {
     });
 
     const adminMutation = useMutation({
-        mutationFn: (id: number) => api.post(`/api/v2/admin/users/${id}/toggle-admin`, {}),
+        mutationFn: (id: number) =>
+            api.post(`/api/v2/admin/users/${id}/toggle-admin`, {}),
         onSuccess: (_, id) => {
             const user = users.find((u) => u.id === id);
             toast.success(user?.is_admin ? "Admin revoked." : "Admin granted.");
@@ -796,18 +1018,28 @@ function UsersTab({ meId }: { meId: number }) {
     });
 
     const remoteMutation = useMutation({
-        mutationFn: (id: number) => api.post(`/api/v2/admin/users/${id}/toggle-remote`, {}),
+        mutationFn: (id: number) =>
+            api.post(`/api/v2/admin/users/${id}/toggle-remote`, {}),
         onSuccess: (res) => {
-            const granted = res.data?.data?.can_work_remotely === 1 || res.data?.can_work_remotely === 1;
-            toast.success(granted ? "Remote access granted." : "Remote access revoked.");
+            const granted =
+                res.data?.data?.can_work_remotely === 1 ||
+                res.data?.can_work_remotely === 1;
+            toast.success(
+                granted ? "Remote access granted." : "Remote access revoked.",
+            );
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
         },
         onError: () => toast.error("Failed to update remote access."),
     });
 
     const branchMutation = useMutation({
-        mutationFn: ({ id, branch_id }: { id: number; branch_id: number | null }) =>
-            api.post(`/api/v2/admin/users/${id}/branch`, { branch_id }),
+        mutationFn: ({
+            id,
+            branch_id,
+        }: {
+            id: number;
+            branch_id: number | null;
+        }) => api.post(`/api/v2/admin/users/${id}/branch`, { branch_id }),
         onSuccess: () => {
             toast.success("Branch updated.");
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
@@ -816,12 +1048,16 @@ function UsersTab({ meId }: { meId: number }) {
     });
 
     const deleteUserMutation = useMutation({
-        mutationFn: (id: number) => api.post(`/api/v2/admin/users/${id}/delete`, {}),
+        mutationFn: (id: number) =>
+            api.post(`/api/v2/admin/users/${id}/delete`, {}),
         onSuccess: () => {
             toast.success("Account removed.");
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
         },
-        onError: (err: any) => toast.error(err?.response?.data?.message ?? "Failed to remove account."),
+        onError: (err: any) =>
+            toast.error(
+                err?.response?.data?.message ?? "Failed to remove account.",
+            ),
     });
 
     const filtered = useMemo(() => {
@@ -840,148 +1076,372 @@ function UsersTab({ meId }: { meId: number }) {
     const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     // Sync selected with latest data after mutations
-    const selectedLive = selected ? (users.find((u) => u.id === selected.id) ?? null) : null;
+    const selectedLive = selected
+        ? (users.find((u) => u.id === selected.id) ?? null)
+        : null;
 
-    const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        setPage(1);
+    };
 
     if (isLoading) return <FullPageLoader />;
 
     return (
         <>
-        <Card>
-            <CardHeader className="bg-primary/5 border-b px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                        <Users className="h-4 w-4" />
-                        All Employees ({filtered.length}{search ? ` of ${users.length}` : ""})
-                    </CardTitle>
-                    <Button size="sm" onClick={() => setCreateOpen(true)}>
-                        <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                        Create Account
-                    </Button>
-                </div>
+            <Card className="py-0">
+                <CardHeader className="bg-primary/5 border-b px-6 py-7">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Users className="h-4 w-4" />
+                            All Employees ({filtered.length}
+                            {search ? ` of ${users.length}` : ""})
+                        </CardTitle>
+                        <Button size="sm" onClick={() => setCreateOpen(true)}>
+                            <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                            Create Account
+                        </Button>
+                    </div>
 
-                {/* Search bar */}
-                <div className="relative mt-3">
-                    <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+                    {/* Search bar */}
+                    <div className="relative mt-3">
+                        <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+                        <input
+                            className="border-input bg-background focus:ring-primary w-full rounded-md border py-2 pr-3 pl-8 text-sm focus:ring-1 focus:outline-none"
+                            placeholder="Search by name, email, branch or position…"
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button
+                                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                                onClick={() => handleSearch("")}
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="px-5 py-3 text-xs font-semibold uppercase">
+                                    Employee
+                                </TableHead>
+                                <TableHead className="px-4 py-3 text-xs font-semibold uppercase">
+                                    Branch
+                                </TableHead>
+                                <TableHead className="px-4 py-3 text-xs font-semibold uppercase">
+                                    Position
+                                </TableHead>
+                                <TableHead className="px-4 py-3 text-xs font-semibold uppercase">
+                                    Role
+                                </TableHead>
+                                <TableHead className="px-4 py-3 text-right text-xs font-semibold uppercase">
+                                    Manage
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {paged.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={5}
+                                        className="text-muted-foreground py-10 text-center text-sm"
+                                    >
+                                        No employees match your search.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                paged.map((u) => (
+                                    <TableRow
+                                        key={u.id}
+                                        className="hover:bg-muted/10 cursor-pointer transition"
+                                        onClick={() => setSelected(u)}
+                                    >
+                                        <TableCell className="px-5 py-3">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="bg-primary/20 text-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                                                    {initials(u.name)}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm leading-tight font-medium">
+                                                        {u.name}
+                                                    </p>
+                                                    <p className="text-muted-foreground text-xs">
+                                                        {u.email}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground px-4 py-3 text-sm">
+                                            {u.branch_name || "—"}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground px-4 py-3 text-sm">
+                                            {u.position_name || "—"}
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3">
+                                            <RoleBadge
+                                                role={u.role}
+                                                isAdmin={u.is_admin}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="px-4 py-3 text-right">
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 w-7 p-0"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelected(u);
+                                                }}
+                                            >
+                                                <Settings className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between border-t px-5 py-3">
+                            <p className="text-muted-foreground text-xs">
+                                Showing {(page - 1) * PAGE_SIZE + 1}–
+                                {Math.min(page * PAGE_SIZE, filtered.length)} of{" "}
+                                {filtered.length}
+                            </p>
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0 text-xs"
+                                    disabled={page === 1}
+                                    onClick={() => setPage(1)}
+                                >
+                                    «
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0 text-xs"
+                                    disabled={page === 1}
+                                    onClick={() => setPage(page - 1)}
+                                >
+                                    ‹
+                                </Button>
+                                {Array.from(
+                                    { length: totalPages },
+                                    (_, i) => i + 1,
+                                )
+                                    .filter(
+                                        (p) =>
+                                            p === 1 ||
+                                            p === totalPages ||
+                                            Math.abs(p - page) <= 1,
+                                    )
+                                    .reduce<(number | "…")[]>(
+                                        (acc, p, i, arr) => {
+                                            if (
+                                                i > 0 &&
+                                                (p as number) -
+                                                    (arr[i - 1] as number) >
+                                                    1
+                                            )
+                                                acc.push("…");
+                                            acc.push(p);
+                                            return acc;
+                                        },
+                                        [],
+                                    )
+                                    .map((p, i) =>
+                                        p === "…" ? (
+                                            <span
+                                                key={`ellipsis-${i}`}
+                                                className="text-muted-foreground px-1 text-xs"
+                                            >
+                                                …
+                                            </span>
+                                        ) : (
+                                            <Button
+                                                key={p}
+                                                size="sm"
+                                                variant={
+                                                    p === page
+                                                        ? "default"
+                                                        : "outline"
+                                                }
+                                                className="h-7 w-7 p-0 text-xs"
+                                                onClick={() =>
+                                                    setPage(p as number)
+                                                }
+                                            >
+                                                {p}
+                                            </Button>
+                                        ),
+                                    )}
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0 text-xs"
+                                    disabled={page === totalPages}
+                                    onClick={() => setPage(page + 1)}
+                                >
+                                    ›
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 w-7 p-0 text-xs"
+                                    disabled={page === totalPages}
+                                    onClick={() => setPage(totalPages)}
+                                >
+                                    »
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <CreateAccountDialog
+                open={createOpen}
+                onClose={() => {
+                    setCreateOpen(false);
+                    setPage(1);
+                }}
+            />
+
+            <EmployeeDrawer
+                user={selectedLive}
+                meId={meId}
+                onClose={() => setSelected(null)}
+                roleMutation={roleMutation}
+                adminMutation={adminMutation}
+                remoteMutation={remoteMutation}
+                branchMutation={branchMutation}
+                deleteMutation={deleteUserMutation}
+            />
+        </>
+    );
+}
+
+// ── Multi-select for approver picker ──────────────────────────────────────────
+
+function MultiApproverSelect({
+    selectedIds,
+    onChange,
+    candidates,
+    placeholder,
+    chipColor,
+}: {
+    selectedIds: number[];
+    onChange: (ids: number[]) => void;
+    candidates: ApproverCandidate[];
+    placeholder: string;
+    chipColor: "blue" | "green";
+}) {
+    const [open, setOpen] = React.useState(false);
+    const [search, setSearch] = React.useState("");
+
+    const filtered = React.useMemo(() => {
+        const q = search.toLowerCase();
+        return candidates.filter(
+            (c) =>
+                !selectedIds.includes(Number(c.user_id)) &&
+                c.name.toLowerCase().includes(q),
+        );
+    }, [candidates, selectedIds, search]);
+
+    const nameOf = (id: number) =>
+        candidates.find((c) => Number(c.user_id) === id)?.name ?? `#${id}`;
+
+    const toggle = (id: number) => {
+        onChange(
+            selectedIds.includes(id)
+                ? selectedIds.filter((x) => x !== id)
+                : [...selectedIds, id],
+        );
+    };
+
+    const chipCls =
+        chipColor === "blue"
+            ? "bg-blue-500/15 text-blue-300 border-blue-500/20"
+            : "bg-green-500/15 text-green-300 border-green-500/20";
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <button
+                    type="button"
+                    className="border-input bg-background hover:border-primary/50 min-h-9 w-full rounded-md border px-3 py-1.5 text-left text-sm transition-colors focus:outline-none"
+                >
+                    {selectedIds.length === 0 ? (
+                        <span className="text-muted-foreground text-sm">
+                            {placeholder}
+                        </span>
+                    ) : (
+                        <div className="flex flex-wrap gap-1">
+                            {selectedIds.map((id) => (
+                                <span
+                                    key={id}
+                                    className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium ${chipCls}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggle(id);
+                                    }}
+                                >
+                                    {nameOf(id)}
+                                    <X className="h-3 w-3 opacity-60 hover:opacity-100" />
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </button>
+            </PopoverTrigger>
+            <PopoverContent
+                className="w-[--radix-popover-trigger-width] p-0"
+                align="start"
+            >
+                <div className="border-b p-2">
                     <input
-                        className="border-input bg-background w-full rounded-md border py-2 pl-8 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="Search by name, email, branch or position…"
+                        autoFocus
                         value={search}
-                        onChange={(e) => handleSearch(e.target.value)}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search…"
+                        className="placeholder:text-muted-foreground w-full bg-transparent text-sm outline-none"
                     />
-                    {search && (
-                        <button
-                            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-                            onClick={() => handleSearch("")}
-                        >
-                            <X className="h-3.5 w-3.5" />
-                        </button>
+                </div>
+                <div className="max-h-52 overflow-y-auto py-1">
+                    {filtered.length === 0 ? (
+                        <p className="text-muted-foreground px-3 py-4 text-center text-xs">
+                            {search ? "No matches" : "All selected"}
+                        </p>
+                    ) : (
+                        filtered.map((c) => (
+                            <button
+                                key={c.user_id}
+                                type="button"
+                                onClick={() => {
+                                    toggle(Number(c.user_id));
+                                    setSearch("");
+                                }}
+                                className="hover:bg-muted/40 flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
+                            >
+                                <span className="flex-1">{c.name}</span>
+                                {c.branch_name && (
+                                    <span className="text-muted-foreground text-xs">
+                                        {c.branch_name}
+                                    </span>
+                                )}
+                            </button>
+                        ))
                     )}
                 </div>
-            </CardHeader>
-            <CardContent className="p-0">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="px-5 py-3 text-xs font-semibold uppercase">Employee</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase">Branch</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase">Position</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase">Role</TableHead>
-                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase text-right">Manage</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paged.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="text-muted-foreground py-10 text-center text-sm">
-                                    No employees match your search.
-                                </TableCell>
-                            </TableRow>
-                        ) : paged.map((u) => (
-                            <TableRow
-                                key={u.id}
-                                className="hover:bg-muted/10 cursor-pointer transition"
-                                onClick={() => setSelected(u)}
-                            >
-                                <TableCell className="px-5 py-3">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="bg-primary/20 text-primary flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold">
-                                            {initials(u.name)}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium leading-tight">{u.name}</p>
-                                            <p className="text-muted-foreground text-xs">{u.email}</p>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-muted-foreground px-4 py-3 text-sm">
-                                    {u.branch_name || "—"}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground px-4 py-3 text-sm">
-                                    {u.position_name || "—"}
-                                </TableCell>
-                                <TableCell className="px-4 py-3">
-                                    <RoleBadge role={u.role} isAdmin={u.is_admin} />
-                                </TableCell>
-                                <TableCell className="px-4 py-3 text-right">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-7 w-7 p-0"
-                                        onClick={(e) => { e.stopPropagation(); setSelected(u); }}
-                                    >
-                                        <Settings className="h-3.5 w-3.5" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-
-                {totalPages > 1 && (
-                    <div className="flex items-center justify-between border-t px-5 py-3">
-                        <p className="text-muted-foreground text-xs">
-                            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-                        </p>
-                        <div className="flex items-center gap-1">
-                            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={page === 1} onClick={() => setPage(1)}>«</Button>
-                            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={page === 1} onClick={() => setPage(page - 1)}>‹</Button>
-                            {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                                .reduce<(number | "…")[]>((acc, p, i, arr) => {
-                                    if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push("…");
-                                    acc.push(p);
-                                    return acc;
-                                }, [])
-                                .map((p, i) =>
-                                    p === "…" ? (
-                                        <span key={`ellipsis-${i}`} className="text-muted-foreground px-1 text-xs">…</span>
-                                    ) : (
-                                        <Button key={p} size="sm" variant={p === page ? "default" : "outline"} className="h-7 w-7 p-0 text-xs" onClick={() => setPage(p as number)}>{p}</Button>
-                                    )
-                                )}
-                            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={page === totalPages} onClick={() => setPage(page + 1)}>›</Button>
-                            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={page === totalPages} onClick={() => setPage(totalPages)}>»</Button>
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-
-        <CreateAccountDialog open={createOpen} onClose={() => { setCreateOpen(false); setPage(1); }} />
-
-        <EmployeeDrawer
-            user={selectedLive}
-            meId={meId}
-            onClose={() => setSelected(null)}
-            roleMutation={roleMutation}
-            adminMutation={adminMutation}
-            remoteMutation={remoteMutation}
-            branchMutation={branchMutation}
-            deleteMutation={deleteUserMutation}
-        />
-        </>
+            </PopoverContent>
+        </Popover>
     );
 }
 
@@ -1001,23 +1461,40 @@ function ApproverFormDialog({
     candidates: ApproverCandidate[];
 }) {
     const queryClient = useQueryClient();
-    const [branchId, setBranchId] = useState<string>(
-        editing?.branch_id ? String(editing.branch_id) : "",
-    );
-    const [a1Ids, setA1Ids] = useState<number[]>(
-        editing?.approver_1_names.map((x) => x.user_id) ?? [],
-    );
-    const [a2Ids, setA2Ids] = useState<number[]>(
-        editing?.approver_2_names.map((x) => x.user_id) ?? [],
-    );
+    const [branchId, setBranchId] = useState<string>("");
+    const [a1Ids, setA1Ids] = useState<number[]>([]);
+    const [a2Ids, setA2Ids] = useState<number[]>([]);
+    // Reset form whenever the dialog opens or switches between rows
+    React.useEffect(() => {
+        if (!open) return;
+        setBranchId(editing?.branch_id ? String(editing.branch_id) : "");
+        setA1Ids(editing?.approver_1_names.map((x) => x.user_id) ?? []);
+        setA2Ids(editing?.approver_2_names.map((x) => x.user_id) ?? []);
+    }, [open, editing?.id]);
+
+    // Same query key as CustomSelect so TanStack deduplicates the request
+    const { data: localCandidates = [] } = useQuery<ApproverCandidate[]>({
+        queryKey: ["custom-select", "/api/v2/admin/approvers/eligible"],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<ApproverCandidate[]>>(
+                "/api/v2/admin/approvers/eligible",
+            );
+            return res.data.data ?? [];
+        },
+        staleTime: 5 * 60 * 1000,
+    });
 
     const mutation = useMutation({
         mutationFn: () => {
             const form = new FormData();
             if (editing) form.append("id", String(editing.id));
             if (branchId) form.append("branch_id", branchId);
-            a1Ids.forEach((id) => form.append("approver_1_user_ids[]", String(id)));
-            a2Ids.forEach((id) => form.append("approver_2_user_ids[]", String(id)));
+            a1Ids.forEach((id) =>
+                form.append("approver_1_user_ids[]", String(id)),
+            );
+            a2Ids.forEach((id) =>
+                form.append("approver_2_user_ids[]", String(id)),
+            );
             return api.post("/api/v2/admin/approvers", form);
         },
         onSuccess: () => {
@@ -1028,20 +1505,16 @@ function ApproverFormDialog({
         onError: () => toast.error("Failed to save."),
     });
 
-    const toggleId = (list: number[], setList: (v: number[]) => void, id: number) => {
-        setList(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
-    };
-
-    const nameOf = (userId: number) =>
-        candidates.find((c) => c.user_id === userId)?.name ?? `User #${userId}`;
-
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{editing ? "Edit Approver" : "Add Approver"}</DialogTitle>
+                    <DialogTitle>
+                        {editing ? "Edit Approver" : "Add Approver"}
+                    </DialogTitle>
                     <DialogDescription>
-                        Configure who can approve overtime and log override requests.
+                        Configure who can approve overtime and log override
+                        requests.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -1049,85 +1522,54 @@ function ApproverFormDialog({
                     {/* Branch */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium">Branch</label>
-                        <select
-                            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                        <CustomSelect
+                            apiUrl="/api/v2/admin/branches"
                             value={branchId}
-                            onChange={(e) => setBranchId(e.target.value)}
-                        >
-                            <option value="">— Global (all branches) —</option>
-                            {branches.map((b) => (
-                                <option key={b.id} value={b.id}>{b.name}</option>
-                            ))}
-                        </select>
+                            onChange={(val) => setBranchId(val ?? "")}
+                            placeholder="— Global (all branches) —"
+                            allowClear={true}
+                        />
                     </div>
 
                     {/* Approver 1 */}
                     <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Approver 1</label>
-                        <div className="flex flex-wrap gap-1 mb-1">
-                            {a1Ids.map((id) => (
-                                <span key={id} className="inline-flex items-center gap-1 rounded border bg-blue-500/10 px-2 py-0.5 text-xs text-blue-400">
-                                    {nameOf(id)}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => toggleId(a1Ids, setA1Ids, id)} />
-                                </span>
-                            ))}
-                        </div>
-                        <select
-                            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                            value=""
-                            onChange={(e) => {
-                                const v = parseInt(e.target.value);
-                                if (v) toggleId(a1Ids, setA1Ids, v);
-                            }}
-                        >
-                            <option value="">+ Add approver 1…</option>
-                            {candidates
-                                .filter((c) => !a1Ids.includes(c.user_id))
-                                .map((c) => (
-                                    <option key={c.user_id} value={c.user_id}>
-                                        {c.name} {c.branch_name ? `(${c.branch_name})` : ""}
-                                    </option>
-                                ))}
-                        </select>
+                        <label className="text-sm font-medium">
+                            Approver 1
+                        </label>
+                        <MultiApproverSelect
+                            selectedIds={a1Ids}
+                            onChange={setA1Ids}
+                            candidates={localCandidates}
+                            placeholder="Select approver 1…"
+                            chipColor="blue"
+                        />
                     </div>
 
                     {/* Approver 2 */}
                     <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Approver 2</label>
-                        <div className="flex flex-wrap gap-1 mb-1">
-                            {a2Ids.map((id) => (
-                                <span key={id} className="inline-flex items-center gap-1 rounded border bg-green-500/10 px-2 py-0.5 text-xs text-green-400">
-                                    {nameOf(id)}
-                                    <X className="h-3 w-3 cursor-pointer" onClick={() => toggleId(a2Ids, setA2Ids, id)} />
-                                </span>
-                            ))}
-                        </div>
-                        <select
-                            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
-                            value=""
-                            onChange={(e) => {
-                                const v = parseInt(e.target.value);
-                                if (v) toggleId(a2Ids, setA2Ids, v);
-                            }}
-                        >
-                            <option value="">+ Add approver 2…</option>
-                            {candidates
-                                .filter((c) => !a2Ids.includes(c.user_id))
-                                .map((c) => (
-                                    <option key={c.user_id} value={c.user_id}>
-                                        {c.name} {c.branch_name ? `(${c.branch_name})` : ""}
-                                    </option>
-                                ))}
-                        </select>
+                        <label className="text-sm font-medium">
+                            Approver 2
+                        </label>
+                        <MultiApproverSelect
+                            selectedIds={a2Ids}
+                            onChange={setA2Ids}
+                            candidates={localCandidates}
+                            placeholder="Select approver 2…"
+                            chipColor="green"
+                        />
                     </div>
 
                     <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" onClick={onClose}>Cancel</Button>
+                        <Button variant="outline" onClick={onClose}>
+                            Cancel
+                        </Button>
                         <Button
                             disabled={mutation.isPending}
                             onClick={() => mutation.mutate()}
                         >
-                            {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                            {mutation.isPending && (
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            )}
                             {editing ? "Save Changes" : "Create"}
                         </Button>
                     </div>
@@ -1145,10 +1587,14 @@ function ApproversTab() {
     const [editing, setEditing] = useState<ApproverRow | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
-    const { data: approvers = [], isLoading: apLoading } = useQuery<ApproverRow[]>({
+    const { data: approvers = [], isLoading: apLoading } = useQuery<
+        ApproverRow[]
+    >({
         queryKey: ["admin-approvers"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<ApproverRow[]>>("/api/v2/admin/approvers");
+            const res = await api.get<ApiResponse<ApproverRow[]>>(
+                "/api/v2/admin/approvers",
+            );
             return res.data.data ?? [];
         },
     });
@@ -1156,7 +1602,9 @@ function ApproversTab() {
     const { data: candidates = [] } = useQuery<ApproverCandidate[]>({
         queryKey: ["admin-approver-candidates"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<ApproverCandidate[]>>("/api/v2/admin/approvers/eligible");
+            const res = await api.get<ApiResponse<ApproverCandidate[]>>(
+                "/api/v2/admin/approvers/eligible",
+            );
             return res.data.data ?? [];
         },
     });
@@ -1164,13 +1612,16 @@ function ApproversTab() {
     const { data: branches = [] } = useQuery<BranchRow[]>({
         queryKey: ["admin-branches"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<BranchRow[]>>("/api/v2/admin/branches");
+            const res = await api.get<ApiResponse<BranchRow[]>>(
+                "/api/v2/admin/branches",
+            );
             return res.data.data ?? [];
         },
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => api.post(`/api/v2/admin/approvers/${id}/delete`, {}),
+        mutationFn: (id: number) =>
+            api.post(`/api/v2/admin/approvers/${id}/delete`, {}),
         onSuccess: () => {
             toast.success("Approver removed.");
             queryClient.invalidateQueries({ queryKey: ["admin-approvers"] });
@@ -1179,15 +1630,21 @@ function ApproversTab() {
         onError: () => toast.error("Failed to remove."),
     });
 
-    const openAdd = () => { setEditing(null); setFormOpen(true); };
-    const openEdit = (row: ApproverRow) => { setEditing(row); setFormOpen(true); };
+    const openAdd = () => {
+        setEditing(null);
+        setFormOpen(true);
+    };
+    const openEdit = (row: ApproverRow) => {
+        setEditing(row);
+        setFormOpen(true);
+    };
 
     return (
         <>
-            <Card>
-                <CardHeader className="bg-primary/5 border-b px-6 py-4">
+            <Card className="py-0">
+                <CardHeader className="bg-primary/5 border-b px-6 pt-7">
                     <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-base">
+                        <CardTitle className="flex items-center text-base">
                             <UserCheck className="h-4 w-4" />
                             Approval Assignments ({approvers.length})
                         </CardTitle>
@@ -1197,57 +1654,110 @@ function ApproversTab() {
                         </Button>
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-4">
                     {apLoading ? (
-                        <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                        <div className="flex justify-center py-10">
+                            <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+                        </div>
                     ) : approvers.length === 0 ? (
-                        <p className="text-muted-foreground py-10 text-center text-sm">No approvers configured yet.</p>
+                        <p className="text-muted-foreground py-10 text-center text-sm">
+                            No approvers configured yet.
+                        </p>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="px-5 py-3 text-xs font-semibold uppercase">Branch</TableHead>
-                                    <TableHead className="px-4 py-3 text-xs font-semibold uppercase">Approver 1</TableHead>
-                                    <TableHead className="px-4 py-3 text-xs font-semibold uppercase">Approver 2</TableHead>
-                                    <TableHead className="px-4 py-3 text-xs font-semibold uppercase text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {approvers.map((row) => (
-                                    <TableRow key={row.id} className="hover:bg-muted/10 transition">
-                                        <TableCell className="px-5 py-3 text-sm font-medium">
-                                            {row.branch_name ?? (
-                                                <span className="text-muted-foreground italic">Global</span>
+                        <div className="space-y-3">
+                            {approvers.map((row) => (
+                                <div
+                                    key={row.id}
+                                    className="bg-muted/10 hover:bg-muted/20 rounded-xl border p-4 transition"
+                                >
+                                    {/* Branch header */}
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="text-muted-foreground h-3.5 w-3.5" />
+                                            <span className="text-sm font-semibold">
+                                                {row.branch_name ?? (
+                                                    <span className="text-muted-foreground font-normal italic">
+                                                        Global — all branches
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-7 text-xs"
+                                                onClick={() => openEdit(row)}
+                                            >
+                                                <Pencil className="mr-1 h-3 w-3" />{" "}
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-7 border-red-500/40 text-xs text-red-400 hover:bg-red-500/10"
+                                                onClick={() =>
+                                                    setDeleteId(row.id)
+                                                }
+                                            >
+                                                <Trash2 className="mr-1 h-3 w-3" />{" "}
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    {/* Approver columns */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="rounded-lg border border-blue-500/15 bg-blue-500/5 px-3 py-2.5">
+                                            <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-blue-400/70 uppercase">
+                                                Approver 1
+                                            </p>
+                                            {row.approver_1_names.length ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {row.approver_1_names.map(
+                                                        (a) => (
+                                                            <Badge
+                                                                key={a.user_id}
+                                                                className="border-0 bg-blue-500/15 text-xs text-blue-300"
+                                                            >
+                                                                {a.name}
+                                                            </Badge>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs italic">
+                                                    Not set
+                                                </span>
                                             )}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3">
-                                            <div className="flex flex-wrap gap-1">
-                                                {row.approver_1_names.length ? row.approver_1_names.map((a) => (
-                                                    <Badge key={a.user_id} className="border-0 bg-blue-500/10 text-xs text-blue-400">{a.name}</Badge>
-                                                )) : <span className="text-muted-foreground text-xs">—</span>}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3">
-                                            <div className="flex flex-wrap gap-1">
-                                                {row.approver_2_names.length ? row.approver_2_names.map((a) => (
-                                                    <Badge key={a.user_id} className="border-0 bg-green-500/10 text-xs text-green-400">{a.name}</Badge>
-                                                )) : <span className="text-muted-foreground text-xs">—</span>}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openEdit(row)}>
-                                                    <Pencil className="mr-1 h-3 w-3" /> Edit
-                                                </Button>
-                                                <Button size="sm" variant="outline" className="h-7 border-red-500/40 text-red-400 text-xs hover:bg-red-500/10" onClick={() => setDeleteId(row.id)}>
-                                                    <Trash2 className="mr-1 h-3 w-3" /> Remove
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                        </div>
+                                        <div className="rounded-lg border border-green-500/15 bg-green-500/5 px-3 py-2.5">
+                                            <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-green-400/70 uppercase">
+                                                Approver 2
+                                            </p>
+                                            {row.approver_2_names.length ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {row.approver_2_names.map(
+                                                        (a) => (
+                                                            <Badge
+                                                                key={a.user_id}
+                                                                className="border-0 bg-green-500/15 text-xs text-green-300"
+                                                            >
+                                                                {a.name}
+                                                            </Badge>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs italic">
+                                                    Not set
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </CardContent>
             </Card>
@@ -1260,21 +1770,31 @@ function ApproversTab() {
                 candidates={candidates}
             />
 
-            <AlertDialog open={deleteId !== null} onOpenChange={(o) => !o && setDeleteId(null)}>
+            <AlertDialog
+                open={deleteId !== null}
+                onOpenChange={(o) => !o && setDeleteId(null)}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Remove this approver?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            Remove this approver?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will remove the approver assignment. Existing approved/disapproved records are not affected.
+                            This will remove the approver assignment. Existing
+                            approved/disapproved records are not affected.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+                            onClick={() =>
+                                deleteId && deleteMutation.mutate(deleteId)
+                            }
                         >
-                            {deleteMutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                            {deleteMutation.isPending && (
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            )}
                             Remove
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -1288,7 +1808,10 @@ function ApproversTab() {
 
 type TargetType = "employee" | "position";
 
-interface PositionRow { id: number; name: string; }
+interface PositionRow {
+    id: number;
+    name: string;
+}
 
 function TabToggleRow({
     tab,
@@ -1299,25 +1822,44 @@ function TabToggleRow({
     enabled: boolean;
     onChange: (enabled: boolean) => void;
 }) {
+    const isApprovalTab = tab.key === "hr_approvals";
     return (
-        <div className="flex items-center justify-between rounded-lg border px-4 py-2.5">
-            <div>
-                <p className="text-sm font-medium">{tab.label}</p>
-                <p className="text-[11px] text-muted-foreground">{tab.section}</p>
-            </div>
-            <button
-                onClick={() => onChange(!enabled)}
-                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                    enabled ? "bg-primary" : "bg-muted"
-                }`}
+        <>
+            <div
+                className={`flex items-center justify-between rounded-lg border px-4 py-2.5 ${isApprovalTab && enabled ? "border-amber-500/40 bg-amber-500/5" : ""}`}
             >
-                <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                        enabled ? "translate-x-4" : "translate-x-0"
+                <div>
+                    <p className="text-sm font-medium">{tab.label}</p>
+                    <p className="text-muted-foreground text-[11px]">
+                        {tab.section}
+                    </p>
+                </div>
+                <button
+                    onClick={() => onChange(!enabled)}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+                        enabled ? "bg-primary" : "bg-muted"
                     }`}
-                />
-            </button>
-        </div>
+                >
+                    <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                            enabled ? "translate-x-4" : "translate-x-0"
+                        }`}
+                    />
+                </button>
+            </div>
+            {isApprovalTab && enabled && (
+                <div className="-mt-0.5 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/8 px-3 py-2">
+                    <span className="mt-0.5 flex-shrink-0 text-xs text-amber-400">
+                        ⚠
+                    </span>
+                    <p className="text-[11px] leading-snug text-amber-400/90">
+                        Tab access alone won't show this menu. The employee must
+                        also be registered as an <strong>Approver</strong> under
+                        the Approvers tab.
+                    </p>
+                </div>
+            )}
+        </>
     );
 }
 
@@ -1325,7 +1867,9 @@ function TabAccessTab() {
     const queryClient = useQueryClient();
     const [targetType, setTargetType] = React.useState<TargetType>("position");
     const [selectedId, setSelectedId] = React.useState<number | null>(null);
-    const [permissions, setPermissions] = React.useState<Record<string, boolean>>({});
+    const [permissions, setPermissions] = React.useState<
+        Record<string, boolean>
+    >({});
     const [dirty, setDirty] = React.useState(false);
     const [saving, setSaving] = React.useState(false);
     const [search, setSearch] = React.useState("");
@@ -1333,7 +1877,9 @@ function TabAccessTab() {
     const { data: users } = useQuery<EmployeeRow[]>({
         queryKey: ["admin-users"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<EmployeeRow[]>>("/api/v2/admin/users");
+            const res = await api.get<ApiResponse<EmployeeRow[]>>(
+                "/api/v2/admin/users",
+            );
             return res.data.data ?? [];
         },
     });
@@ -1341,7 +1887,9 @@ function TabAccessTab() {
     const { data: positions } = useQuery<PositionRow[]>({
         queryKey: ["admin-positions"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<PositionRow[]>>("/api/v2/admin/positions");
+            const res = await api.get<ApiResponse<PositionRow[]>>(
+                "/api/v2/admin/positions",
+            );
             return res.data.data ?? [];
         },
     });
@@ -1362,9 +1910,10 @@ function TabAccessTab() {
         const map: Record<string, boolean> = {};
         ALL_TABS.forEach((t) => {
             const standard = (STANDARD_PERMISSIONS[t.key] ?? 1) === 1;
-            map[t.key] = savedPerms && t.key in savedPerms
-                ? savedPerms[t.key] === 1
-                : standard;
+            map[t.key] =
+                savedPerms && t.key in savedPerms
+                    ? savedPerms[t.key] === 1
+                    : standard;
         });
         setPermissions(map);
         setDirty(false);
@@ -1372,7 +1921,9 @@ function TabAccessTab() {
 
     const handleResetToStandard = () => {
         const map: Record<string, boolean> = {};
-        ALL_TABS.forEach((t) => { map[t.key] = (STANDARD_PERMISSIONS[t.key] ?? 1) === 1; });
+        ALL_TABS.forEach((t) => {
+            map[t.key] = (STANDARD_PERMISSIONS[t.key] ?? 1) === 1;
+        });
         setPermissions(map);
         setDirty(true);
     };
@@ -1387,13 +1938,17 @@ function TabAccessTab() {
         setSaving(true);
         try {
             const payload: Record<string, number> = {};
-            ALL_TABS.forEach((t) => { payload[t.key] = permissions[t.key] ? 1 : 0; });
+            ALL_TABS.forEach((t) => {
+                payload[t.key] = permissions[t.key] ? 1 : 0;
+            });
             await api.post("/api/v2/admin/tab-permissions", {
                 target_type: targetType,
                 target_id: selectedId,
                 permissions: payload,
             });
-            queryClient.invalidateQueries({ queryKey: ["tab-permissions", targetType, selectedId] });
+            queryClient.invalidateQueries({
+                queryKey: ["tab-permissions", targetType, selectedId],
+            });
             queryClient.invalidateQueries({ queryKey: ["me"] });
             setDirty(false);
             toast.success("Tab access saved.");
@@ -1405,25 +1960,33 @@ function TabAccessTab() {
     };
 
     const sections = Array.from(new Set(ALL_TABS.map((t) => t.section)));
-    const allTargets = targetType === "position"
-        ? (positions ?? []).map((p) => ({ id: p.id, label: p.name }))
-        : (users ?? [])
-              .filter((u) => u.role !== "agency_coordinator")
-              .map((u) => ({ id: u.id, label: u.name }));
+    const allTargets =
+        targetType === "position"
+            ? (positions ?? []).map((p) => ({ id: p.id, label: p.name }))
+            : (users ?? [])
+                  .filter((u) => u.role !== "agency_coordinator")
+                  .map((u) => ({ id: u.id, label: u.name }));
 
     const targetList = search.trim()
-        ? allTargets.filter((t) => t.label.toLowerCase().includes(search.trim().toLowerCase()))
+        ? allTargets.filter((t) =>
+              t.label.toLowerCase().includes(search.trim().toLowerCase()),
+          )
         : allTargets;
 
     return (
         <div className="grid gap-5 md:grid-cols-[280px_1fr]">
             {/* Left — target picker */}
             <div className="space-y-3">
-                <div className="flex rounded-lg border p-1 gap-1">
+                <div className="flex gap-1 rounded-lg border p-1">
                     {(["position", "employee"] as TargetType[]).map((t) => (
                         <button
                             key={t}
-                            onClick={() => { setTargetType(t); setSelectedId(null); setDirty(false); setSearch(""); }}
+                            onClick={() => {
+                                setTargetType(t);
+                                setSelectedId(null);
+                                setDirty(false);
+                                setSearch("");
+                            }}
                             className={`flex-1 rounded-md py-1.5 text-xs font-semibold capitalize transition-colors ${
                                 targetType === t
                                     ? "bg-primary text-primary-foreground"
@@ -1435,39 +1998,46 @@ function TabAccessTab() {
                     ))}
                 </div>
 
-                <div className="rounded-lg border overflow-hidden">
-                    <div className="border-b px-3 py-2 flex items-center gap-2">
-                        <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                <div className="overflow-hidden rounded-lg border">
+                    <div className="flex items-center gap-2 border-b px-3 py-2">
+                        <Search className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
                         <input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={`Search ${targetType}s…`}
-                            className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+                            className="placeholder:text-muted-foreground w-full bg-transparent text-xs outline-none"
                         />
                         {search && (
-                            <button onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
+                            <button
+                                onClick={() => setSearch("")}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
                                 <X className="h-3 w-3" />
                             </button>
                         )}
                     </div>
-                    <div className="max-h-[380px] overflow-y-auto divide-y">
+                    <div className="max-h-[380px] divide-y overflow-y-auto">
                         {targetList.length === 0 ? (
-                            <p className="px-4 py-6 text-center text-xs text-muted-foreground">
-                                {search ? "No matches found." : `No ${targetType}s found.`}
+                            <p className="text-muted-foreground px-4 py-6 text-center text-xs">
+                                {search
+                                    ? "No matches found."
+                                    : `No ${targetType}s found.`}
                             </p>
-                        ) : targetList.map((item) => (
-                            <button
-                                key={item.id}
-                                onClick={() => setSelectedId(item.id)}
-                                className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
-                                    selectedId === item.id
-                                        ? "bg-primary/10 text-primary font-semibold"
-                                        : "hover:bg-muted/30 text-foreground"
-                                }`}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
+                        ) : (
+                            targetList.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setSelectedId(item.id)}
+                                    className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                                        selectedId === item.id
+                                            ? "bg-primary/10 text-primary font-semibold"
+                                            : "hover:bg-muted/30 text-foreground"
+                                    }`}
+                                >
+                                    {item.label}
+                                </button>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
@@ -1476,30 +2046,48 @@ function TabAccessTab() {
             <div>
                 {!selectedId ? (
                     <div className="flex h-48 items-center justify-center rounded-xl border border-dashed">
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                             Select a {targetType} to manage tab access
                         </p>
                     </div>
                 ) : isFetching ? (
                     <div className="flex h-48 items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
                     </div>
                 ) : (
                     <div className="space-y-5">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-semibold">
-                                    {targetList.find((t) => t.id === selectedId)?.label}
+                                    {
+                                        targetList.find(
+                                            (t) => t.id === selectedId,
+                                        )?.label
+                                    }
                                 </p>
-                                <p className="text-xs text-muted-foreground capitalize">{targetType}-level permissions · unset tabs follow standard defaults</p>
+                                <p className="text-muted-foreground text-xs capitalize">
+                                    {targetType}-level permissions · unset tabs
+                                    follow standard defaults
+                                </p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button size="sm" variant="outline" onClick={handleResetToStandard} disabled={saving}>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleResetToStandard}
+                                    disabled={saving}
+                                >
                                     Reset to Standard
                                 </Button>
                                 {dirty && (
-                                    <Button size="sm" onClick={handleSave} disabled={saving}>
-                                        {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                    >
+                                        {saving ? (
+                                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                        ) : null}
                                         Save
                                     </Button>
                                 )}
@@ -1508,16 +2096,22 @@ function TabAccessTab() {
 
                         {sections.map((section) => (
                             <div key={section}>
-                                <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                                <p className="text-muted-foreground/50 mb-2 text-[10px] font-semibold tracking-widest uppercase">
                                     {section}
                                 </p>
                                 <div className="space-y-1.5">
-                                    {ALL_TABS.filter((t) => t.section === section).map((tab) => (
+                                    {ALL_TABS.filter(
+                                        (t) => t.section === section,
+                                    ).map((tab) => (
                                         <TabToggleRow
                                             key={tab.key}
                                             tab={tab}
-                                            enabled={permissions[tab.key] ?? true}
-                                            onChange={(v) => handleToggle(tab.key, v)}
+                                            enabled={
+                                                permissions[tab.key] ?? true
+                                            }
+                                            onChange={(v) =>
+                                                handleToggle(tab.key, v)
+                                            }
                                         />
                                     ))}
                                 </div>
@@ -1550,13 +2144,23 @@ function StatTile({
     return (
         <Card>
             <CardContent className="flex items-center gap-4 p-5">
-                <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+                <div
+                    className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${iconBg}`}
+                >
                     <Icon className={`h-5 w-5 ${iconColor}`} />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-muted-foreground text-xs font-medium">{label}</p>
-                    <p className="text-2xl font-bold leading-tight tabular-nums">{value}</p>
-                    {sub && <p className="text-muted-foreground mt-0.5 text-[11px]">{sub}</p>}
+                    <p className="text-muted-foreground text-xs font-medium">
+                        {label}
+                    </p>
+                    <p className="text-2xl leading-tight font-bold tabular-nums">
+                        {value}
+                    </p>
+                    {sub && (
+                        <p className="text-muted-foreground mt-0.5 text-[11px]">
+                            {sub}
+                        </p>
+                    )}
                 </div>
             </CardContent>
         </Card>
@@ -1581,26 +2185,37 @@ function DistributionList({
 
     return (
         <Card className="flex flex-col">
-            <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
-                <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
-                    <Icon className="h-3.5 w-3.5 text-primary" />
+            <div className="border-border flex items-center gap-2 border-b px-5 py-3.5">
+                <div className="bg-primary/15 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg">
+                    <Icon className="text-primary h-3.5 w-3.5" />
                 </div>
                 <span className="text-sm font-semibold">{title}</span>
             </div>
             <CardContent className="flex-1 px-5 py-4">
                 {sorted.length === 0 ? (
-                    <p className="text-muted-foreground py-6 text-center text-xs">{emptyLabel}</p>
+                    <p className="text-muted-foreground py-6 text-center text-xs">
+                        {emptyLabel}
+                    </p>
                 ) : (
                     <ul className="space-y-3">
                         {sorted.map((item) => {
-                            const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
-                            const barPct = max > 0 ? (item.count / max) * 100 : 0;
+                            const pct =
+                                total > 0
+                                    ? Math.round((item.count / total) * 100)
+                                    : 0;
+                            const barPct =
+                                max > 0 ? (item.count / max) * 100 : 0;
                             return (
                                 <li key={item.label}>
                                     <div className="mb-1 flex items-center justify-between gap-2">
-                                        <span className="truncate text-xs font-medium">{item.label || "—"}</span>
+                                        <span className="truncate text-xs font-medium">
+                                            {item.label || "—"}
+                                        </span>
                                         <span className="text-muted-foreground flex-shrink-0 text-xs tabular-nums">
-                                            {item.count} <span className="opacity-50">({pct}%)</span>
+                                            {item.count}{" "}
+                                            <span className="opacity-50">
+                                                ({pct}%)
+                                            </span>
                                         </span>
                                     </div>
                                     <div className="bg-muted/40 h-1.5 w-full overflow-hidden rounded-full">
@@ -1623,33 +2238,51 @@ function OverviewTab() {
     const { data: users = [], isLoading } = useQuery<EmployeeRow[]>({
         queryKey: ["admin-users"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<EmployeeRow[]>>("/api/v2/admin/users");
+            const res = await api.get<ApiResponse<EmployeeRow[]>>(
+                "/api/v2/admin/users",
+            );
             return res.data.data ?? [];
         },
         staleTime: 60 * 1000,
     });
 
     const stats = useMemo(() => {
-        const total          = users.length;
-        const active         = users.filter((u) => String(u.status) === "1").length;
-        const coordinators   = users.filter((u) => u.is_agency_coor  === 1).length;
-        const admins         = users.filter((u) => u.is_admin         === 1).length;
-        const remoteWorkers  = users.filter((u) => u.can_work_remotely === 1).length;
-        const employees      = users.filter((u) => u.is_agency_coor  === 0).length;
+        const total = users.length;
+        const active = users.filter((u) => String(u.status) === "1").length;
+        const coordinators = users.filter((u) => u.is_agency_coor === 1).length;
+        const admins = users.filter((u) => u.is_admin === 1).length;
+        const remoteWorkers = users.filter(
+            (u) => u.can_work_remotely === 1,
+        ).length;
+        const employees = users.filter((u) => u.is_agency_coor === 0).length;
 
         const branchMap: Record<string, number> = {};
         const positionMap: Record<string, number> = {};
         for (const u of users) {
-            const b = u.branch_name   || "No Branch";
+            const b = u.branch_name || "No Branch";
             const p = u.position_name || "No Position";
-            branchMap[b]   = (branchMap[b]   ?? 0) + 1;
+            branchMap[b] = (branchMap[b] ?? 0) + 1;
             positionMap[p] = (positionMap[p] ?? 0) + 1;
         }
 
-        const byBranch   = Object.entries(branchMap).map(([label, count]) => ({ label, count }));
-        const byPosition = Object.entries(positionMap).map(([label, count]) => ({ label, count }));
+        const byBranch = Object.entries(branchMap).map(([label, count]) => ({
+            label,
+            count,
+        }));
+        const byPosition = Object.entries(positionMap).map(
+            ([label, count]) => ({ label, count }),
+        );
 
-        return { total, active, coordinators, admins, remoteWorkers, employees, byBranch, byPosition };
+        return {
+            total,
+            active,
+            coordinators,
+            admins,
+            remoteWorkers,
+            employees,
+            byBranch,
+            byPosition,
+        };
     }, [users]);
 
     if (isLoading) {
@@ -1661,11 +2294,46 @@ function OverviewTab() {
     }
 
     const tiles = [
-        { label: "Total Accounts",  value: stats.total,         icon: Users,      iconBg: "bg-blue-500/10",   iconColor: "text-blue-400",   sub: `${stats.active} active` },
-        { label: "HR Employees",    value: stats.employees,     icon: UserCheck,  iconBg: "bg-teal-500/10",   iconColor: "text-teal-400",   sub: undefined },
-        { label: "Coordinators",    value: stats.coordinators,  icon: Briefcase,  iconBg: "bg-green-500/10",  iconColor: "text-green-400",  sub: undefined },
-        { label: "Admins",          value: stats.admins,        icon: ShieldCheck, iconBg: "bg-violet-500/10", iconColor: "text-violet-400", sub: undefined },
-        { label: "Remote Workers",  value: stats.remoteWorkers, icon: Wifi,       iconBg: "bg-orange-500/10", iconColor: "text-orange-400", sub: undefined },
+        {
+            label: "Total Accounts",
+            value: stats.total,
+            icon: Users,
+            iconBg: "bg-blue-500/10",
+            iconColor: "text-blue-400",
+            sub: `${stats.active} active`,
+        },
+        {
+            label: "HR Employees",
+            value: stats.employees,
+            icon: UserCheck,
+            iconBg: "bg-teal-500/10",
+            iconColor: "text-teal-400",
+            sub: undefined,
+        },
+        {
+            label: "Coordinators",
+            value: stats.coordinators,
+            icon: Briefcase,
+            iconBg: "bg-green-500/10",
+            iconColor: "text-green-400",
+            sub: undefined,
+        },
+        {
+            label: "Admins",
+            value: stats.admins,
+            icon: ShieldCheck,
+            iconBg: "bg-violet-500/10",
+            iconColor: "text-violet-400",
+            sub: undefined,
+        },
+        {
+            label: "Remote Workers",
+            value: stats.remoteWorkers,
+            icon: Wifi,
+            iconBg: "bg-orange-500/10",
+            iconColor: "text-orange-400",
+            sub: undefined,
+        },
     ];
 
     return (
@@ -1697,28 +2365,57 @@ function OverviewTab() {
 
             {/* Role breakdown */}
             <Card>
-                <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
-                        <Users className="h-3.5 w-3.5 text-primary" />
+                <div className="border-border flex items-center gap-2 border-b px-5 py-3.5">
+                    <div className="bg-primary/15 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg">
+                        <Users className="text-primary h-3.5 w-3.5" />
                     </div>
-                    <span className="text-sm font-semibold">Access Overview</span>
+                    <span className="text-sm font-semibold">
+                        Access Overview
+                    </span>
                 </div>
-                <CardContent className="grid gap-px divide-y divide-border/40 p-0">
+                <CardContent className="divide-border/40 grid gap-px divide-y p-0">
                     {[
-                        { label: "Agency Coordinators", count: stats.coordinators, color: "bg-blue-500" },
-                        { label: "Admin Accounts",      count: stats.admins,        color: "bg-violet-500" },
-                        { label: "Remote Work Enabled", count: stats.remoteWorkers, color: "bg-orange-500" },
+                        {
+                            label: "Agency Coordinators",
+                            count: stats.coordinators,
+                            color: "bg-blue-500",
+                        },
+                        {
+                            label: "Admin Accounts",
+                            count: stats.admins,
+                            color: "bg-violet-500",
+                        },
+                        {
+                            label: "Remote Work Enabled",
+                            count: stats.remoteWorkers,
+                            color: "bg-orange-500",
+                        },
                     ].map(({ label, count, color }) => {
-                        const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
+                        const pct =
+                            stats.total > 0
+                                ? Math.round((count / stats.total) * 100)
+                                : 0;
                         return (
-                            <div key={label} className="flex items-center gap-4 px-5 py-3.5">
-                                <div className={`h-2 w-2 flex-shrink-0 rounded-full ${color}/70`} />
+                            <div
+                                key={label}
+                                className="flex items-center gap-4 px-5 py-3.5"
+                            >
+                                <div
+                                    className={`h-2 w-2 flex-shrink-0 rounded-full ${color}/70`}
+                                />
                                 <span className="flex-1 text-sm">{label}</span>
-                                <span className="text-muted-foreground text-xs tabular-nums">{count} of {stats.total}</span>
+                                <span className="text-muted-foreground text-xs tabular-nums">
+                                    {count} of {stats.total}
+                                </span>
                                 <div className="bg-muted/40 h-1.5 w-24 overflow-hidden rounded-full">
-                                    <div className={`${color}/50 h-full rounded-full`} style={{ width: `${pct}%` }} />
+                                    <div
+                                        className={`${color}/50 h-full rounded-full`}
+                                        style={{ width: `${pct}%` }}
+                                    />
                                 </div>
-                                <span className="text-muted-foreground w-8 text-right text-xs tabular-nums">{pct}%</span>
+                                <span className="text-muted-foreground w-8 text-right text-xs tabular-nums">
+                                    {pct}%
+                                </span>
                             </div>
                         );
                     })}
@@ -1737,7 +2434,10 @@ export default function AdminPanel() {
     const { data: me, isLoading } = useMe({
         queryKey: ["me"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<{ id: number; name: string; is_admin?: number }>>("/api/v2/auth/me");
+            const res =
+                await api.get<
+                    ApiResponse<{ id: number; name: string; is_admin?: number }>
+                >("/api/v2/auth/me");
             return res.data.data;
         },
     });

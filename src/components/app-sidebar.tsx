@@ -13,7 +13,7 @@ import {
     IconSchool,
     IconHistory,
 } from "@tabler/icons-react";
-import { Timer, ShieldCheck, Settings2, Wifi } from "lucide-react";
+import { Timer, ShieldCheck, Settings2, Wifi, Receipt } from "lucide-react";
 import { isTabEnabled } from "@/lib/tabs";
 import { useNotifications } from "@/hooks/use-notifications";
 import { NavUser } from "@/components/nav-user";
@@ -95,6 +95,12 @@ function buildSections(
                 title: "Time Records",
                 url: `/${userId ?? ""}`,
                 icon: IconDashboard,
+            });
+        if (ok("payslip"))
+            attendanceItems.push({
+                title: "Payslip",
+                url: `/payslip/${userId ?? ""}`,
+                icon: Receipt,
             });
         if (ok("work_remotely") && canWorkRemotely)
             attendanceItems.push({

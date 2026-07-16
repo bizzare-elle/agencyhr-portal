@@ -15,6 +15,7 @@ export const ALL_TABS: TabDef[] = [
     { key: "trainings",       label: "Trainings",       section: "Learning" },
     { key: "notifications",   label: "Notifications",   section: "Updates" },
     { key: "announcements",   label: "Announcements",   section: "Updates" },
+    { key: "payslip",         label: "Payslip",         section: "Attendance" },
     { key: "schedule",        label: "Schedule",        section: "Management" },
     { key: "forms",           label: "Forms",           section: "Management" },
     { key: "hr_approvals",    label: "HR Approvals",    section: "Management" },
@@ -33,6 +34,7 @@ export const ALL_TABS: TabDef[] = [
  */
 export const STANDARD_PERMISSIONS: Record<string, number> = {
     time_records:   1,
+    payslip:        1,
     work_remotely:  0,
     logoverride:    1,
     overtime:       1,

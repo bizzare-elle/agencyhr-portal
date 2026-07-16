@@ -27,7 +27,7 @@ import EicfForm from "./pages/forms/eicf-form";
 import MrfForm from "./pages/forms/mrf-form";
 import FormsSubmissions from "./pages/forms/forms-submissions";
 import FormsValidation from "./pages/forms/forms-validation";
-import ServiceChargePayslipDashboard from "./pages/payslip/service-charge-payslip-dashboard";
+import PayslipCombined from "./pages/payslip/payslip-combined";
 import Notifications from "./pages/notifications";
 import Announcements from "./pages/announcements";
 import TrainingPage from "./pages/training/training-page";
@@ -193,8 +193,8 @@ const router = createBrowserRouter([
                 children: [
                     {
                         path: ":id",
-                        element: <ServiceChargePayslipDashboard />,
-                        handle: { title: "Service Charge Payslip" },
+                        element: <PayslipCombined />,
+                        handle: { title: "Payslip" },
                     },
                 ],
             },

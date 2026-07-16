@@ -44,6 +44,7 @@ import {
     subMonths,
 } from "date-fns";
 import { PrintSCPayslip } from "@/components/employees/print-service-charge-payslip";
+import { PrintTMPayslip } from "@/components/employees/print-tm-payslip";
 import { cn } from "@/lib/utils";
 import {
     IconReceipt,
@@ -534,18 +535,33 @@ export default function PayslipCombined() {
                                         Monthly chef bonus &amp; downline breakdown
                                     </p>
                                 </div>
-                                <div className="w-full sm:w-auto">
-                                    <label className="mb-1 block text-sm font-medium">Period</label>
-                                    <Select value={tmMonth} onValueChange={setTmMonth}>
-                                        <SelectTrigger className="w-full sm:w-[200px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {MONTH_OPTIONS.map((o) => (
-                                                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                                    <div className="w-full sm:w-auto">
+                                        <label className="mb-1 block text-sm font-medium">Period</label>
+                                        <Select value={tmMonth} onValueChange={setTmMonth}>
+                                            <SelectTrigger className="w-full sm:w-[200px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {MONTH_OPTIONS.map((o) => (
+                                                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="w-full sm:w-auto sm:self-end">
+                                        <PrintTMPayslip
+                                            employeeName={me?.name ?? ""}
+                                            idNumber={me?.id_number ?? null}
+                                            agencyName={me?.agency_name}
+                                            branchName={me?.primary_branch_name}
+                                            monthLabel={MONTH_OPTIONS.find((o) => o.value === tmMonth)?.label ?? tmMonth}
+                                            totalBonus={tmTotalBonus}
+                                            isEligible={tmMonthData?.is_eligible ?? true}
+                                            l1s={tmL1s}
+                                            l2s={tmL2s}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

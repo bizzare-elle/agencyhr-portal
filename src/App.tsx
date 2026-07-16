@@ -37,6 +37,7 @@ import HrApprovals from "./pages/approvals/hr-approvals";
 import AdminPanel from "./pages/admin/admin-panel";
 import RemoteWork from "./pages/remote/remote-work";
 import SystemGuide from "./pages/system-guide";
+import ResetPassword from "./pages/reset-password";
 
 const router = createBrowserRouter([
     {
@@ -50,6 +51,10 @@ const router = createBrowserRouter([
     {
         path: "/maintenance",
         element: <Maintenance />,
+    },
+    {
+        path: "/reset-password/:id",
+        element: <ResetPassword />,
     },
     {
         element: <AuthLayout />,

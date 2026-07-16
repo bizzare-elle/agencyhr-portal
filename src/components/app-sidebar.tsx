@@ -114,12 +114,12 @@ function buildSections(
                 url: `/overtime/${userId ?? ""}`,
                 icon: Timer,
             });
-        if (ok("payslip"))
-            attendanceItems.push({
-                title: "Payslip",
-                url: `/payslip/${userId ?? ""}`,
-                icon: Receipt,
-            });
+        // if (ok("payslip"))
+        //     attendanceItems.push({
+        //         title: "Payslip",
+        //         url: `/payslip/${userId ?? ""}`,
+        //         icon: Receipt,
+        //     });
         if (attendanceItems.length)
             sections.push({ label: "Attendance", items: attendanceItems });
 

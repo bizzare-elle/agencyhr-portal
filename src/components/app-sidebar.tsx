@@ -96,12 +96,6 @@ function buildSections(
                 url: `/${userId ?? ""}`,
                 icon: IconDashboard,
             });
-        if (ok("payslip"))
-            attendanceItems.push({
-                title: "Payslip",
-                url: `/payslip/${userId ?? ""}`,
-                icon: Receipt,
-            });
         if (ok("work_remotely") && canWorkRemotely)
             attendanceItems.push({
                 title: "Work Remotely",
@@ -119,6 +113,12 @@ function buildSections(
                 title: "Overtime",
                 url: `/overtime/${userId ?? ""}`,
                 icon: Timer,
+            });
+        if (ok("payslip"))
+            attendanceItems.push({
+                title: "Payslip",
+                url: `/payslip/${userId ?? ""}`,
+                icon: Receipt,
             });
         if (attendanceItems.length)
             sections.push({ label: "Attendance", items: attendanceItems });

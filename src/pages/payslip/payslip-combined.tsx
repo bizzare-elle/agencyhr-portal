@@ -1,6 +1,6 @@
 import { ParentComponent } from "@/components/parent-container";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import api from "@/lib/axios";
 import {
@@ -82,6 +82,27 @@ interface ScRecord {
     amount_net: string;
 }
 
+interface ScOverpayment {
+    id: string;
+    reason: string;
+    source_cut_off_date: string | null;
+    status: string;
+    amount_owed: string;
+    amount_recovered: string;
+    remaining: number;
+}
+
+interface ScPayslipResponse {
+    sc_data: ScRecord[];
+    sc_percentage: string | null;
+    allocation_name: string | null;
+    overpayments: ScOverpayment[];
+    overpayment_recovery: number;
+    final_payout: number | null;
+    sc_amount_net_month: number | null;
+    adjustments_total: number;
+}
+
 function parseComputation(comp: string | null) {
     if (!comp) return { pool: null, totalHrs: null };
     const match = comp.match(/[₱]([\d,]+\.?\d*)\s*÷\s*([\d,]+\.?\d*)\s*hrs/);
@@ -137,8 +158,8 @@ export default function PayslipCombined() {
     /* SC state */
     const [scPage, setScPage] = useState(1);
     const [scPageSize, setScPageSize] = useState(25);
-    const [scSort, setScSort] = useState("oldest");
-    const [scCutoff, setScCutoff] = useState("all");
+    const [scSort, setScSort] = useState("newest");
+    const [scCutoff, setScCutoff] = useState("");
 
     /* T&M state */
     const [tmMonth, setTmMonth] = useState(MONTH_OPTIONS[1].value);
@@ -155,14 +176,14 @@ export default function PayslipCombined() {
 
     const employeeId = meQuery.data?.hr_id;
 
-    /* SC data */
+    /* SC data — all records (for dropdown) */
     const scQuery = useQuery({
-        queryKey: ["scPayslip", employeeId],
+        queryKey: ["scPayslip", "all", employeeId],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<{ sc_data: ScRecord[] }>>(
+            const res = await api.get<ApiResponse<ScPayslipResponse>>(
                 `/api/v2/sc-payslip-records/${employeeId}`,
             );
-            return res.data.data ?? { sc_data: [] };
+            return res.data.data ?? { sc_data: [], sc_percentage: null, allocation_name: null, overpayments: [], overpayment_recovery: 0, final_payout: null, sc_amount_net_month: null, adjustments_total: 0 };
         },
         enabled: !!employeeId,
     });
@@ -200,22 +221,13 @@ export default function PayslipCombined() {
                 const daysInMonth = getDaysInMonth(new Date(y, m - 1));
                 const pad = (n: number) => String(n).padStart(2, "0");
                 const monthName = format(new Date(y, m - 1), "MMMM");
-
-                const end1 = new Date(y, m - 1, 15);
-                if (!isAfter(addDays(addMonths(end1, 2), 1), today)) {
+                // Visible on the 15th of the month 2 months after (e.g. May → July 15)
+                const visibleFrom = new Date(y, m + 1, 15);
+                if (!isAfter(visibleFrom, today)) {
                     periods.push({
-                        value: `${ym}-1`,
-                        label: `${monthName} 1-15, ${y}`,
+                        value: ym,
+                        label: `${monthName} ${y}`,
                         from: `${ym}-01`,
-                        to: `${ym}-15`,
-                    });
-                }
-                const end2 = new Date(y, m - 1, daysInMonth);
-                if (!isAfter(addDays(addMonths(end2, 2), 1), today)) {
-                    periods.push({
-                        value: `${ym}-2`,
-                        label: `${monthName} 16-${daysInMonth}, ${y}`,
-                        from: `${ym}-16`,
                         to: `${ym}-${pad(daysInMonth)}`,
                     });
                 }
@@ -223,24 +235,44 @@ export default function PayslipCombined() {
         return periods;
     }, [scRecords]);
 
+    // Auto-select the most recent period on first load
+    useEffect(() => {
+        if (cutoffPeriods.length > 0 && !scCutoff) {
+            setScCutoff(cutoffPeriods[0].value);
+        }
+    }, [cutoffPeriods, scCutoff]);
+
     const selectedPeriod = cutoffPeriods.find((p) => p.value === scCutoff);
 
+    /* SC period-specific query — fires when a month is selected */
+    const scPeriodQuery = useQuery({
+        queryKey: ["scPayslip", "period", employeeId, selectedPeriod?.from, selectedPeriod?.to],
+        queryFn: async () => {
+            const res = await api.get<ApiResponse<ScPayslipResponse>>(
+                `/api/v2/sc-payslip-records/${employeeId}`,
+                { params: { from: selectedPeriod!.from, to: selectedPeriod!.to } },
+            );
+            return res.data.data ?? { sc_data: [], sc_percentage: null, allocation_name: null, overpayments: [], overpayment_recovery: 0, final_payout: null, sc_amount_net_month: null, adjustments_total: 0 };
+        },
+        enabled: !!employeeId && !!selectedPeriod,
+    });
+
+    const activeScData = selectedPeriod ? (scPeriodQuery.data ?? null) : null;
+    const scPercentage   = activeScData?.sc_percentage ?? null;
+    const allocationName = activeScData?.allocation_name ?? null;
+    const overpayments: ScOverpayment[] = activeScData?.overpayments ?? [];
+    const overpaymentRecovery = activeScData?.overpayment_recovery ?? 0;
+    const finalPayout         = activeScData?.final_payout ?? null;
+    const hasOverpayments = !!selectedPeriod && overpayments.length > 0;
+
     const scFiltered = useMemo(() => {
-        let data = [...scRecords];
-        if (scCutoff !== "all" && selectedPeriod) {
-            const from = new Date(selectedPeriod.from + "T00:00:00");
-            const to = new Date(selectedPeriod.to + "T00:00:00");
-            data = data.filter((r) => {
-                const d = new Date(r.date + "T00:00:00");
-                return !isBefore(d, from) && !isAfter(d, to);
-            });
-        }
+        let data = selectedPeriod && activeScData ? [...activeScData.sc_data] : [...scRecords];
         if (scSort === "newest") data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         else if (scSort === "oldest") data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         else if (scSort === "highest") data.sort((a, b) => parseFloat(b.sc_amount_gross) - parseFloat(a.sc_amount_gross));
         else if (scSort === "lowest") data.sort((a, b) => parseFloat(a.sc_amount_gross) - parseFloat(b.sc_amount_gross));
         return data;
-    }, [scRecords, scSort, scCutoff, selectedPeriod]);
+    }, [scRecords, activeScData, selectedPeriod, scSort]);
 
     const scTotalNet = useMemo(
         () => scFiltered.reduce((s, r) => s + parseFloat(r.sc_amount_net || "0"), 0),
@@ -358,7 +390,6 @@ export default function PayslipCombined() {
                                                         <SelectValue placeholder="Select cut-off..." />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="all">All Records</SelectItem>
                                                         {cutoffPeriods.map((p) => (
                                                             <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                                                         ))}
@@ -395,9 +426,14 @@ export default function PayslipCombined() {
                                                     idNumber={me?.id_number ?? null}
                                                     agencyName={me?.agency_name}
                                                     branchName={me?.primary_branch_name}
+                                                    allocationName={allocationName}
+                                                    scPercentage={scPercentage}
                                                     queryFrom={selectedPeriod?.from}
                                                     queryTo={selectedPeriod?.to}
                                                     records={scFiltered}
+                                                    overpayments={overpayments}
+                                                    overpaymentRecovery={overpaymentRecovery}
+                                                    finalPayout={finalPayout}
                                                 />
                                             </div>
                                         </div>
@@ -514,6 +550,78 @@ export default function PayslipCombined() {
                                             <Button size="sm" variant="outline" disabled={scPage === 1} onClick={() => setScPage((p) => p - 1)}>Previous</Button>
                                             {renderScPages()}
                                             <Button size="sm" variant="outline" disabled={scPage === scTotalPages || scTotalPages === 0} onClick={() => setScPage((p) => p + 1)}>Next</Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Overpayment / Utang sa Company */}
+                        {hasOverpayments && (
+                            <Card className="mt-4 overflow-hidden border border-red-500/30">
+                                <CardHeader className="bg-red-500/10 border-b border-red-500/20 px-6 py-4">
+                                    <CardTitle className="text-sm font-bold uppercase tracking-wider text-red-400">
+                                        Overpayment
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <div className="overflow-x-auto">
+                                        <Table className="min-w-[700px] text-xs sm:text-sm">
+                                            <TableHeader className="bg-muted/30">
+                                                <TableRow>
+                                                    <TableHead className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider">Reason</TableHead>
+                                                    <TableHead className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Source Cut-off</TableHead>
+                                                    <TableHead className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
+                                                    <TableHead className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Amount Owed</TableHead>
+                                                    <TableHead className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Recovered to Date</TableHead>
+                                                    <TableHead className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Remaining</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {overpayments.map((adj) => (
+                                                    <TableRow key={adj.id}>
+                                                        <TableCell className="px-4 py-3 text-xs">{adj.reason}</TableCell>
+                                                        <TableCell className="px-4 py-3 text-center text-muted-foreground">
+                                                            {adj.source_cut_off_date ? format(new Date(adj.source_cut_off_date + "T00:00:00"), "MMM yyyy") : "—"}
+                                                        </TableCell>
+                                                        <TableCell className="px-4 py-3 text-center">
+                                                            <span className={cn(
+                                                                "rounded px-2 py-0.5 text-[10px] font-semibold uppercase",
+                                                                adj.status === "settled" ? "bg-green-500/10 text-green-400"
+                                                                : adj.status === "partial" ? "bg-yellow-500/10 text-yellow-400"
+                                                                : "bg-red-500/10 text-red-400",
+                                                            )}>
+                                                                {adj.status}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="px-4 py-3 text-right">{formatToPeso(parseFloat(adj.amount_owed))}</TableCell>
+                                                        <TableCell className="px-4 py-3 text-right">{formatToPeso(parseFloat(adj.amount_recovered))}</TableCell>
+                                                        <TableCell className="px-4 py-3 text-right font-semibold text-red-400">{formatToPeso(adj.remaining)}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                            <tfoot>
+                                                <TableRow className="border-t bg-muted/20">
+                                                    <TableCell colSpan={3} className="px-4 py-3 font-bold text-xs uppercase tracking-wider">Total</TableCell>
+                                                    <TableCell className="px-4 py-3 text-right font-bold">{formatToPeso(overpayments.reduce((s, a) => s + parseFloat(a.amount_owed), 0))}</TableCell>
+                                                    <TableCell className="px-4 py-3 text-right font-bold">{formatToPeso(overpayments.reduce((s, a) => s + parseFloat(a.amount_recovered), 0))}</TableCell>
+                                                    <TableCell className="px-4 py-3 text-right font-bold text-red-400">{formatToPeso(overpayments.reduce((s, a) => s + a.remaining, 0))}</TableCell>
+                                                </TableRow>
+                                            </tfoot>
+                                        </Table>
+                                    </div>
+                                    <div className="border-t border-border px-6 py-4 space-y-1 text-sm">
+                                        <div className="flex justify-end gap-12">
+                                            <span className="text-muted-foreground">Net SC (this cut-off)</span>
+                                            <span className="font-semibold w-28 text-right">{formatToPeso(scTotalNet)}</span>
+                                        </div>
+                                        <div className="flex justify-end gap-12">
+                                            <span className="text-muted-foreground">Less: SC Recovery this cut-off</span>
+                                            <span className="font-semibold text-red-400 w-28 text-right">− {formatToPeso(overpaymentRecovery)}</span>
+                                        </div>
+                                        <div className="flex justify-end gap-12 border-t border-border pt-2">
+                                            <span className="font-bold uppercase tracking-wider">Final Payout</span>
+                                            <span className="font-bold text-green-400 text-base w-28 text-right">{formatToPeso(finalPayout ?? scTotalNet)}</span>
                                         </div>
                                     </div>
                                 </CardContent>

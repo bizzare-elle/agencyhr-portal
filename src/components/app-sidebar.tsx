@@ -96,7 +96,7 @@ function buildSections(
                 url: `/${userId ?? ""}`,
                 icon: IconDashboard,
             });
-        if (ok("work_remotely") && canWorkRemotely)
+        if (canWorkRemotely)
             attendanceItems.push({
                 title: "Work Remotely",
                 url: `/remote/${userId ?? ""}`,

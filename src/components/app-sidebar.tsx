@@ -115,12 +115,12 @@ function buildSections(
                 url: `/overtime/${userId ?? ""}`,
                 icon: Timer,
             });
-        // if (ok("payslip"))
-        //     attendanceItems.push({
-        //         title: "Payslip",
-        //         url: `/payslip/${userId ?? ""}`,
-        //         icon: Receipt,
-        //     });
+        if (ok("payslip"))
+            attendanceItems.push({
+                title: "Payslip",
+                url: `/payslip/${userId ?? ""}`,
+                icon: Receipt,
+            });
         if (attendanceItems.length)
             sections.push({ label: "Attendance", items: attendanceItems });
 
@@ -137,12 +137,12 @@ function buildSections(
                 url: `/training-history/${userId ?? ""}`,
                 icon: IconHistory,
             });
-        if (ok("tm_hierarchy"))
-            learningItems.push({
-                title: "Train and Maintain",
-                url: `/downline/${userId ?? ""}`,
-                icon: IconUsersGroup,
-            });
+        // if (ok("tm_hierarchy"))
+        //     learningItems.push({
+        //         title: "Train and Maintain",
+        //         url: `/downline/${userId ?? ""}`,
+        //         icon: IconUsersGroup,
+        //     });
         if (learningItems.length)
             sections.push({ label: "Learning", items: learningItems });
 

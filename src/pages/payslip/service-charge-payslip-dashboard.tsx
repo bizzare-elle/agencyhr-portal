@@ -121,8 +121,11 @@ export default function ServiceChargePayslipDashboard() {
     const employeeIdNumber =  meQuery.data?.id_number ;
     const employeeBranch = meQuery.data?.primary_branch_name;
     const employeeAgency = meQuery.data?.agency_name;
-    const records: ScRecord[] = scQuery.data?.sc_data ?? [];
-    
+    const SC_CUTOFF = "2026-07-01";
+    const records: ScRecord[] = (scQuery.data?.sc_data ?? []).filter(
+        (r) => r.date >= SC_CUTOFF,
+    );
+
     // Build cutoff periods from the actual records (1–15 and 16–end per month)
     const cutoffPeriods = useMemo(() => {
         const months = new Set<string>();

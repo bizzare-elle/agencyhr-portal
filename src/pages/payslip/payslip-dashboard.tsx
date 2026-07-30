@@ -92,7 +92,10 @@ export default function PayslipDashboard() {
         enabled: !!employeeId,
     });
 
-    const records: PayslipRecord[] = payslipQuery.data?.payslips ?? [];
+    const CUTOFF = "2026-07-01";
+    const records: PayslipRecord[] = (payslipQuery.data?.payslips ?? []).filter(
+        (r) => r.period_from >= CUTOFF,
+    );
 
     const selected = useMemo(
         () => (selectedId === "all" ? null : records.find((r) => r.id === selectedId) ?? null),

@@ -1,14 +1,8 @@
 import { ParentComponent } from "@/components/parent-container";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import api from "@/lib/axios";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApiResponse } from "@/index";
 import FullPageLoader from "@/components/page-loader";
@@ -23,13 +17,8 @@ import {
 } from "@/components/ui/select";
 import {
     IconUsersGroup,
-    IconUserCheck,
-    IconMoneybag,
-    IconChevronDown,
-    IconChevronRight,
     IconAlertCircle,
 } from "@tabler/icons-react";
-import { useState as useLocalState } from "react";
 
 interface Downline {
     id: string;
@@ -38,6 +27,8 @@ interface Downline {
     position: string;
     bonus_amount: string;
     is_active: boolean;
+    is_eligible: boolean;
+    ineligible_reason: "ir" | "inactive" | "not_hired" | null;
     layer: 1 | 2;
     mentor_name?: string;
 }
@@ -46,7 +37,6 @@ interface BonusMonth {
     month_year: string;
     total_bonus: string;
     is_eligible: boolean;
-    mentor_name: string;
     l1_count: number;
     l2_count: number;
     downlines: Downline[];
@@ -56,24 +46,233 @@ interface DownlineResponse {
     months: BonusMonth[];
 }
 
+const CUTOFF = "2026-07"; // T&M incentives launched July 2026
+
 function buildMonthOptions() {
     const opts: { value: string; label: string }[] = [];
     const now = new Date();
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 24; i++) {
         const d = subMonths(now, i);
-        opts.push({
-            value: format(d, "yyyy-MM"),
-            label: format(d, "MMMM yyyy"),
-        });
+        const val = format(d, "yyyy-MM");
+        if (val < CUTOFF) break;
+        opts.push({ value: val, label: format(d, "MMMM yyyy") });
     }
     return opts;
 }
 
 const MONTH_OPTIONS = buildMonthOptions();
 
+// ── Tree node components ──────────────────────────────────────────────────────
+
+function RootNode({ name, l1Count, l2Count }: { name: string; l1Count: number; l2Count: number }) {
+    return (
+        <div
+            className="relative rounded-[10px] px-[14px] py-[10px] text-center shadow-sm"
+            style={{
+                background: "linear-gradient(135deg,#1e40af,#2563eb)",
+                border: "2px solid #1e3a8a",
+                minWidth: 210,
+            }}
+        >
+            <div className="mb-1 text-[9.5px] font-bold uppercase tracking-widest text-white/65">
+                ⭐ Chef / Mentor
+            </div>
+            <div className="truncate text-[13.5px] font-bold text-white">{name}</div>
+            <div className="mt-[7px] flex justify-center gap-2">
+                <NodeBadge variant="root">{l1Count} direct</NodeBadge>
+                <NodeBadge variant="root">{l2Count} indirect</NodeBadge>
+            </div>
+        </div>
+    );
+}
+
+function ineligibleBorderColor(reason: Downline["ineligible_reason"]) {
+    if (reason === "ir") return "#fca5a5";
+    return "#cbd5e1";
+}
+
+function L1Node({ dl, children }: { dl: Downline; children?: Downline[] }) {
+    const childCount = children?.length ?? 0;
+    const ok         = dl.is_eligible;
+    const borderCol  = ok ? "#3b82f6" : ineligibleBorderColor(dl.ineligible_reason);
+    return (
+        <div
+            className="relative rounded-[10px] px-[14px] py-[10px] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            style={{
+                background: ok ? "rgba(59,130,246,.1)" : (dl.ineligible_reason === "ir" ? "rgba(239,68,68,.08)" : "rgba(255,255,255,.04)"),
+                border: `1.5px solid ${borderCol}`,
+                minWidth: 165,
+                maxWidth: 200,
+                opacity: ok ? 1 : 0.65,
+            }}
+        >
+            <div
+                className="font-bold text-[12px] truncate"
+                style={{ color: ok ? "var(--card-foreground)" : "var(--muted-foreground)", textDecoration: ok ? "none" : "line-through" }}
+            >
+                {dl.name}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+                <NodeBadge variant="agency">{dl.agency}</NodeBadge>
+                {childCount > 0 && <NodeBadge variant="under">⬡ {childCount}</NodeBadge>}
+                {!ok && dl.ineligible_reason === "ir"       && <NodeBadge variant="ir">⚠ IR</NodeBadge>}
+                {!ok && dl.ineligible_reason === "inactive"  && <NodeBadge variant="inactive">Resigned</NodeBadge>}
+                {!ok && dl.ineligible_reason === "not_hired" && <NodeBadge variant="inactive">Not Hired</NodeBadge>}
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+                <span />
+                <span className="text-[11px] font-bold" style={{ color: ok ? "#60a5fa" : "var(--muted-foreground)" }}>
+                    {formatToPeso(parseFloat(dl.bonus_amount))}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function L2Node({ dl, mentorEligible }: { dl: Downline; mentorEligible: boolean }) {
+    const ok        = dl.is_eligible && mentorEligible;
+    const reason    = !dl.is_eligible ? dl.ineligible_reason : (!mentorEligible ? "mentor" : null);
+    const borderCol = dl.ineligible_reason === "ir" ? "#f87171" : (ok ? "#a78bfa" : "rgba(255,255,255,.15)");
+    return (
+        <div
+            className="relative rounded-[10px] px-[14px] py-[10px] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            style={{
+                background: dl.ineligible_reason === "ir" ? "rgba(239,68,68,.08)" : (ok ? "rgba(139,92,246,.1)" : "rgba(255,255,255,.04)"),
+                border: `1.5px solid ${borderCol}`,
+                minWidth: 150,
+                maxWidth: 185,
+                opacity: ok ? 1 : 0.6,
+            }}
+        >
+            <div
+                className="font-bold truncate"
+                style={{ fontSize: 11.5, color: ok ? "var(--card-foreground)" : "var(--muted-foreground)", textDecoration: ok ? "none" : "line-through" }}
+            >
+                {dl.name}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+                <NodeBadge variant="direct">{dl.agency}</NodeBadge>
+                {reason === "ir"       && <NodeBadge variant="ir">⚠ IR</NodeBadge>}
+                {reason === "inactive"  && <NodeBadge variant="inactive">Resigned</NodeBadge>}
+                {reason === "not_hired" && <NodeBadge variant="inactive">Not Hired</NodeBadge>}
+                {reason === "mentor"    && <NodeBadge variant="inactive">Mentor ✗</NodeBadge>}
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+                <span />
+                <span className="text-[10px] font-bold" style={{ color: ok ? "#a78bfa" : "var(--muted-foreground)" }}>
+                    {formatToPeso(parseFloat(dl.bonus_amount))}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+type BadgeVariant = "root" | "agency" | "direct" | "under" | "inactive" | "ir";
+
+function NodeBadge({ variant, children }: { variant: BadgeVariant; children: React.ReactNode }) {
+    const styles: Record<BadgeVariant, React.CSSProperties> = {
+        root:     { background: "rgba(255,255,255,.18)", color: "#fff",    border: "1px solid rgba(255,255,255,.3)" },
+        agency:   { background: "rgba(59,130,246,.15)",  color: "#93c5fd", border: "1px solid rgba(59,130,246,.3)" },
+        direct:   { background: "rgba(34,197,94,.12)",   color: "#86efac", border: "1px solid rgba(34,197,94,.3)" },
+        under:    { background: "rgba(139,92,246,.15)",  color: "#c4b5fd", border: "1px solid rgba(139,92,246,.3)" },
+        inactive: { background: "rgba(255,255,255,.06)", color: "#94a3b8", border: "1px solid rgba(255,255,255,.12)" },
+        ir:       { background: "rgba(239,68,68,.15)",   color: "#fca5a5", border: "1px solid rgba(239,68,68,.35)" },
+    };
+    return (
+        <span
+            className="inline-flex items-center gap-[3px] whitespace-nowrap rounded-full px-[6px] py-[1px]"
+            style={{ fontSize: 8.5, fontWeight: 700, ...styles[variant] }}
+        >
+            {children}
+        </span>
+    );
+}
+
+// ── Scrollable tree wrapper — centers scroll after paint ─────────────────────
+
+function TreeScroll({ children }: { children: React.ReactNode }) {
+    const ref = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        // rAF ensures the browser has computed the final scrollWidth
+        const id = requestAnimationFrame(() => {
+            el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
+        });
+        return () => cancelAnimationFrame(id);
+    // re-center whenever the tree data changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [children]);
+    return (
+        <div
+            ref={ref}
+            style={{ overflowX: "auto", paddingBottom: 32 }}
+        >
+            <div style={{ width: "max-content", minWidth: "100%" }}>
+                {children}
+            </div>
+        </div>
+    );
+}
+
+// ── Horizontal bar drawn via ResizeObserver + ref ─────────────────────────────
+
+function HRow({ isL2, children }: { isL2?: boolean; children: React.ReactNode }) {
+    const rowRef = useRef<HTMLDivElement>(null);
+    const barRef = useRef<HTMLDivElement>(null);
+
+    const drawBar = useCallback(() => {
+        const row = rowRef.current;
+        if (!row) return;
+        const cols = Array.from(row.children).filter(
+            (el) => (el as HTMLElement).dataset.col === "1"
+        ) as HTMLElement[];
+        if (cols.length < 2) {
+            if (barRef.current) barRef.current.style.display = "none";
+            return;
+        }
+        const rowRect  = row.getBoundingClientRect();
+        const first    = cols[0].getBoundingClientRect();
+        const last     = cols[cols.length - 1].getBoundingClientRect();
+        const left     = first.left - rowRect.left + first.width / 2;
+        const right    = last.left  - rowRect.left + last.width  / 2;
+        const bar      = barRef.current;
+        if (!bar) return;
+        bar.style.left    = `${left}px`;
+        bar.style.width   = `${right - left}px`;
+        bar.style.display = "block";
+    }, []);
+
+    useEffect(() => {
+        drawBar();
+        const el = rowRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(drawBar);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [drawBar]);
+
+    return (
+        <div ref={rowRef} className="relative flex items-start">
+            <div
+                ref={barRef}
+                className="pointer-events-none absolute top-0 hidden"
+                style={{ height: 2, background: isL2 ? "rgba(255,255,255,.15)" : "rgba(255,255,255,.25)" }}
+            />
+            {children}
+        </div>
+    );
+}
+
+function VStem({ height, color }: { height: number; color: string }) {
+    return <div style={{ width: 2, height, background: color, flexShrink: 0 }} />;
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function DownlinePage() {
-    const [selectedMonth, setSelectedMonth] = useState(MONTH_OPTIONS[1].value);
-    const [expandedL1, setExpandedL1] = useLocalState<Set<string>>(new Set());
+    const { id } = useParams<{ id: string }>();
+    const [selectedMonth, setSelectedMonth] = useState(MONTH_OPTIONS[0].value);
 
     const meQuery = useQuery({
         queryKey: ["me"],
@@ -89,7 +288,7 @@ export default function DownlinePage() {
         },
     });
 
-    const employeeId = meQuery.data?.hr_id;
+    const employeeId = id || meQuery.data?.hr_id;
 
     const downlineQuery = useQuery({
         queryKey: ["chef-downlines", employeeId, selectedMonth],
@@ -109,290 +308,214 @@ export default function DownlinePage() {
     const l1s = monthData?.downlines.filter((d) => d.layer === 1) ?? [];
     const l2s = monthData?.downlines.filter((d) => d.layer === 2) ?? [];
 
-    const totalBonus = parseFloat(monthData?.total_bonus ?? "0");
-
-    const toggleL1 = (name: string) => {
-        setExpandedL1((prev) => {
-            const next = new Set(prev);
-            if (next.has(name)) next.delete(name);
-            else next.add(name);
-            return next;
-        });
-    };
+    const totalBonus  = parseFloat(monthData?.total_bonus ?? "0");
+    const me          = meQuery.data;
+    const periodLabel = MONTH_OPTIONS.find((o) => o.value === selectedMonth)?.label;
 
     if (meQuery.isLoading) return <FullPageLoader />;
 
-    const me = meQuery.data;
-
     return (
         <ParentComponent>
-            {/* Header card */}
+            {/* ── Header card ── */}
             <div className="mb-5 w-full px-3 sm:px-0">
-                <Card className="rounded-xl border p-4 shadow-sm sm:p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-center sm:text-left">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-lg font-bold text-yellow-400 sm:h-16 sm:w-16 sm:text-2xl">
+                <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+                    {/* Blue header bar */}
+                    <div
+                        className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                        style={{ background: "linear-gradient(135deg,#1e40af,#2563eb)" }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold text-blue-700"
+                                style={{ background: "rgba(255,255,255,.2)", color: "#fff" }}
+                            >
                                 {me?.name?.charAt(0) ?? "?"}
                             </div>
                             <div>
-                                <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-2">
-                                    <h1 className="text-base font-bold tracking-wide sm:text-lg md:text-xl">
-                                        {me?.name ?? "N/A"}
-                                    </h1>
-                                    {me?.agency_name && (
-                                        <Badge className="text-xs sm:text-sm">{me.agency_name}</Badge>
-                                    )}
-                                    <Badge variant="outline" className="border-yellow-500/40 text-yellow-400 text-xs">
-                                        Chef / Mentor
-                                    </Badge>
+                                <div className="text-[9.5px] font-bold uppercase tracking-widest text-white/65">
+                                    Chef / Mentor
                                 </div>
-                                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                                    ID: {me?.id_number ?? "N/A"} &bull; {me?.primary_branch_name ?? "N/A"}
-                                </p>
+                                <div className="text-base font-bold text-white sm:text-lg">
+                                    {me?.name ?? "N/A"}
+                                </div>
+                                <div className="mt-0.5 text-[10px] text-white/60">
+                                    ID: {me?.id_number ?? "N/A"} · {me?.primary_branch_name ?? "N/A"}
+                                </div>
                             </div>
                         </div>
-                        <div className="flex flex-col items-center sm:items-end">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                                Bonus Earned
-                            </p>
-                            <p className="text-2xl font-bold text-green-400 sm:text-3xl">
-                                {formatToPeso(totalBonus)}
-                            </p>
-                            {monthData && !monthData.is_eligible && (
-                                <p className="mt-1 text-xs font-semibold text-red-400">
-                                    Disqualified — Incident Report
-                                </p>
+                        <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-1">
+                            {me?.agency_name && (
+                                <span
+                                    className="rounded-full border px-[10px] py-[3px] text-[11px] font-semibold"
+                                    style={{ background: "rgba(255,255,255,.18)", color: "#fff", borderColor: "rgba(255,255,255,.3)" }}
+                                >
+                                    {me.agency_name}
+                                </span>
                             )}
                         </div>
                     </div>
-                </Card>
-            </div>
 
-            <div className="w-full px-3 sm:px-0 space-y-5">
-                {/* Period selector */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <h2 className="flex items-center gap-2 text-base font-semibold sm:text-lg">
-                            <IconUsersGroup className="size-5 text-primary" />
-                            My Downline
-                        </h2>
-                        <p className="mt-0.5 text-sm text-muted-foreground">
-                            Chef Train &amp; Maintain bonus breakdown
-                        </p>
-                    </div>
-                    <div className="w-full sm:w-auto">
-                        <label className="mb-1 block text-sm font-medium">Period</label>
-                        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                            <SelectTrigger className="w-full sm:w-[200px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {MONTH_OPTIONS.map((o) => (
-                                    <SelectItem key={o.value} value={o.value}>
-                                        {o.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                {/* KPI tiles */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <KpiTile
-                        label="1st Layer"
-                        value={String(l1s.length)}
-                        sub="₱250 each"
-                        color="blue"
-                    />
-                    <KpiTile
-                        label="2nd Layer"
-                        value={String(l2s.length)}
-                        sub="₱100 each"
-                        color="purple"
-                    />
-                    <KpiTile
-                        label="L1 Total"
-                        value={formatToPeso(l1s.length * 250)}
-                        sub="gross bonus"
-                        color="green"
-                    />
-                    <KpiTile
-                        label="L2 Total"
-                        value={formatToPeso(l2s.length * 100)}
-                        sub="gross bonus"
-                        color="yellow"
-                    />
-                </div>
-
-                {/* Eligibility notice */}
-                {monthData && !monthData.is_eligible && (
-                    <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
-                        <IconAlertCircle className="mt-0.5 size-4 shrink-0" />
-                        <div>
-                            <p className="font-semibold">Disqualified for this period</p>
-                            <p className="mt-0.5 text-red-400/80">
-                                An active Incident Report was filed during this period. No bonus is earned.
-                            </p>
+                    {/* Stats bar */}
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border bg-card px-5 py-3">
+                        <Stat label="1st Layer"  value={String(l1s.length)}   className="text-primary" />
+                        <Stat label="2nd Layer"  value={String(l2s.length)}   className="text-purple-400" />
+                        <Stat label="Total Bonus" value={formatToPeso(totalBonus)} className="text-emerald-400" />
+                        <div className="ml-auto">
+                            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                                <SelectTrigger className="h-7 w-[160px] text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {MONTH_OPTIONS.map((o) => (
+                                        <SelectItem key={o.value} value={o.value} className="text-xs">
+                                            {o.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
-                )}
+                </div>
+            </div>
 
-                {/* Downline list */}
-                {downlineQuery.isLoading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            {/* ── Tree card ── */}
+            <div className="w-full px-3 sm:px-0">
+                <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+                    {/* Card header */}
+                    <div
+                        className="flex flex-wrap items-center justify-between gap-2 px-5 py-3"
+                        style={{ background: "#1e40af" }}
+                    >
+                        <div className="flex items-center gap-2">
+                            <IconUsersGroup className="size-4 text-white" />
+                            <span className="text-sm font-bold text-white">Downline Tree</span>
+                            {periodLabel && (
+                                <span
+                                    className="rounded-full px-[8px] py-[2px] text-[10px] font-semibold"
+                                    style={{ background: "rgba(255,255,255,.18)", color: "#fff" }}
+                                >
+                                    {periodLabel}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <span
+                                className="rounded-full px-[10px] py-[3px] text-[10px] font-semibold"
+                                style={{ background: "rgba(255,255,255,.18)", color: "#fff", border: "1px solid rgba(255,255,255,.3)" }}
+                            >
+                                👥 {l1s.length + l2s.length} total
+                            </span>
+                            <span
+                                className="rounded-full px-[10px] py-[3px] text-[10px] font-semibold"
+                                style={{ background: "#dbeafe", color: "#1e40af", border: "1px solid #93c5fd" }}
+                            >
+                                {l1s.length} 1st layer
+                            </span>
+                            <span
+                                className="rounded-full px-[10px] py-[3px] text-[10px] font-semibold"
+                                style={{ background: "#ede9fe", color: "#6b21a8", border: "1px solid #c4b5fd" }}
+                            >
+                                {l2s.length} 2nd layer
+                            </span>
+                        </div>
                     </div>
-                ) : l1s.length === 0 ? (
-                    <Card className="border bg-card">
-                        <CardContent className="py-12 text-center text-muted-foreground">
-                            <IconUsersGroup className="mx-auto mb-3 size-10 opacity-30" />
-                            <p className="font-medium">No downline data for this period.</p>
-                            <p className="mt-1 text-sm">Bonus data appears once the period is computed.</p>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <Card className="border bg-card">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold">
-                                Downline Breakdown — {MONTH_OPTIONS.find((o) => o.value === selectedMonth)?.label}
-                            </CardTitle>
-                            <CardDescription className="text-xs">
-                                {l1s.length} first-layer &bull; {l2s.length} second-layer downlines
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2 p-3 pt-0">
-                            {l1s.map((l1) => {
-                                const children = l2s.filter(
-                                    (l2) => l2.mentor_name === l1.name,
-                                );
-                                const isOpen = expandedL1.has(l1.name);
 
-                                return (
-                                    <div key={l1.id} className="rounded-lg border border-border overflow-hidden">
-                                        {/* L1 row */}
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleL1(l1.name)}
-                                            className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/10 transition-colors"
-                                        >
-                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-xs font-bold text-blue-400">
-                                                {l1.name.charAt(0)}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                    <span className="text-sm font-semibold truncate">
-                                                        {l1.name}
-                                                    </span>
-                                                    <span className="rounded border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-400">
-                                                        1st Layer
-                                                    </span>
-                                                    {!l1.is_active && (
-                                                        <span className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-400">
-                                                            Excluded
-                                                        </span>
+                    {/* Card body */}
+                    <div className="bg-card px-6 py-6">
+                        {/* Eligibility notice */}
+                        {monthData && !monthData.is_eligible && (
+                            <div
+                                className="mb-5 flex items-start gap-3 rounded-lg border p-3 text-sm"
+                                style={{ background: "#fef2f2", borderColor: "#fca5a5", color: "#991b1b" }}
+                            >
+                                <IconAlertCircle className="mt-0.5 size-4 shrink-0" />
+                                <div>
+                                    <p className="font-semibold">Disqualified for this period</p>
+                                    <p className="mt-0.5 text-xs opacity-80">
+                                        An active Incident Report was filed. No bonus is earned.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {downlineQuery.isLoading ? (
+                            <div className="flex justify-center py-16">
+                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                            </div>
+                        ) : l1s.length === 0 ? (
+                            <div className="py-14 text-center" style={{ color: "#94a3b8" }}>
+                                <IconUsersGroup className="mx-auto mb-3 size-12 opacity-25" />
+                                <p className="font-semibold">No downlines for this period.</p>
+                                <p className="mt-1 text-sm opacity-70">Bonus data appears once the period is computed.</p>
+                            </div>
+                        ) : (
+                            /* ── Visual tree ── */
+                            <TreeScroll>
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 8 }}>
+
+                                    {/* Root node */}
+                                    <RootNode
+                                        name={me?.name ?? ""}
+                                        l1Count={l1s.length}
+                                        l2Count={l2s.length}
+                                    />
+                                    <VStem height={28} color="rgba(255,255,255,.25)" />
+
+                                    {/* L1 row */}
+                                    <HRow>
+                                        {l1s.map((l1) => {
+                                            const children = l2s.filter((l2) => l2.mentor_name === l1.name);
+                                            return (
+                                                <div
+                                                    key={l1.id}
+                                                    data-col="1"
+                                                    style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 12px" }}
+                                                >
+                                                    {/* Bar → L1 stem */}
+                                                    <VStem height={24} color="rgba(255,255,255,.25)" />
+
+                                                    <L1Node dl={l1} children={children} />
+
+                                                    {children.length > 0 && (
+                                                        <>
+                                                            {/* L1 → L2 stem */}
+                                                            <VStem height={20} color="rgba(255,255,255,.15)" />
+
+                                                            {/* L2 row */}
+                                                            <HRow isL2>
+                                                                {children.map((l2) => (
+                                                                    <div
+                                                                        key={l2.id}
+                                                                        data-col="1"
+                                                                        style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 12px" }}
+                                                                    >
+                                                                        <VStem height={20} color="rgba(255,255,255,.15)" />
+                                                                        <L2Node dl={l2} mentorEligible={l1.is_eligible} />
+                                                                    </div>
+                                                                ))}
+                                                            </HRow>
+                                                        </>
                                                     )}
                                                 </div>
-                                                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                                    {l1.position} &bull; {l1.agency}
-                                                    {children.length > 0 && ` &bull; ${children.length} L2`}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-3 shrink-0">
-                                                <span className={`text-sm font-bold ${l1.is_active ? "text-green-400" : "text-muted-foreground line-through"}`}>
-                                                    {formatToPeso(parseFloat(l1.bonus_amount))}
-                                                </span>
-                                                {children.length > 0 ? (
-                                                    isOpen
-                                                        ? <IconChevronDown className="size-4 text-muted-foreground" />
-                                                        : <IconChevronRight className="size-4 text-muted-foreground" />
-                                                ) : (
-                                                    <span className="w-4" />
-                                                )}
-                                            </div>
-                                        </button>
+                                            );
+                                        })}
+                                    </HRow>
 
-                                        {/* L2 children */}
-                                        {isOpen && children.length > 0 && (
-                                            <div className="border-t border-border bg-muted/5">
-                                                {children.map((l2) => (
-                                                    <div
-                                                        key={l2.id}
-                                                        className="flex items-center gap-3 px-4 py-2.5 pl-14 border-b border-border/50 last:border-0"
-                                                    >
-                                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-[10px] font-bold text-purple-400">
-                                                            {l2.name.charAt(0)}
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="flex flex-wrap items-center gap-1.5">
-                                                                <span className="text-xs font-semibold truncate">
-                                                                    {l2.name}
-                                                                </span>
-                                                                <span className="rounded border border-purple-500/30 bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-bold text-purple-400">
-                                                                    2nd Layer
-                                                                </span>
-                                                                {!l2.is_active && (
-                                                                    <span className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-400">
-                                                                        Excluded
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                                                                {l2.position} &bull; {l2.agency}
-                                                            </p>
-                                                        </div>
-                                                        <span className={`text-xs font-bold shrink-0 ${l2.is_active ? "text-green-400" : "text-muted-foreground line-through"}`}>
-                                                            {formatToPeso(parseFloat(l2.bonus_amount))}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-
-                            {/* Grand total */}
-                            <div className="mt-2 flex items-center justify-between rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                    <IconMoneybag className="size-4 text-green-400" />
-                                    <span className="text-sm font-semibold">Total Bonus Earned</span>
                                 </div>
-                                <span className="text-lg font-bold text-green-400">
-                                    {formatToPeso(totalBonus)}
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                            </TreeScroll>
+                        )}
+                    </div>
+                </div>
             </div>
         </ParentComponent>
     );
 }
 
-function KpiTile({
-    label,
-    value,
-    sub,
-    color,
-}: {
-    label: string;
-    value: string;
-    sub: string;
-    color: "blue" | "purple" | "green" | "yellow";
-}) {
-    const colors = {
-        blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-        purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-        green: "bg-green-500/10 text-green-400 border-green-500/20",
-        yellow: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-    };
-
+function Stat({ label, value, className }: { label: string; value: string; className?: string }) {
     return (
-        <div className={`rounded-lg border p-3 text-center ${colors[color]}`}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest opacity-70">{label}</p>
-            <p className="mt-1 text-xl font-bold sm:text-2xl">{value}</p>
-            <p className="mt-0.5 text-[10px] opacity-60">{sub}</p>
+        <div>
+            <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
+            <div className={`text-sm font-bold ${className ?? "text-foreground"}`}>{value}</div>
         </div>
     );
 }

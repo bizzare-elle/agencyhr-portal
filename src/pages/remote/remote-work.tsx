@@ -28,6 +28,7 @@ interface RemoteStatus {
     is_on_break: boolean;
     next_action: ClockType;
     punches: Punch[];
+    work_remotely_days?: string | null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -284,19 +285,42 @@ function CameraModal({ clockType, onConfirm, onCancel }: CameraModalProps) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
+interface NotScheduled {
+    message: string;
+    allowedDays: string[];
+}
+
 export default function RemoteWork() {
     const { id } = useParams<{ id: string }>();
     const queryClient = useQueryClient();
     const [selectedType, setSelectedType] = useState<ClockType | null>(null);
     const [cameraOpen, setCameraOpen] = useState(false);
+    const [notScheduled, setNotScheduled] = useState<NotScheduled | null>(null);
 
     const { data, isLoading } = useQuery<RemoteStatus>({
         queryKey: ["remote-status", id],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<RemoteStatus>>(`/api/v2/remote/status/${id}`);
-            return res.data.data!;
+            try {
+                const res = await api.get<ApiResponse<RemoteStatus>>(`/api/v2/remote/status/${id}`);
+                setNotScheduled(null);
+                return res.data.data!;
+            } catch (err: any) {
+                const status = err?.response?.status;
+                const msg = err?.response?.data?.message ?? "Remote work access not granted.";
+                if (status === 403) {
+                    // Parse allowed days from the message if present, or from work_remotely_days
+                    const days = err?.response?.data?.work_remotely_days as string | null | undefined;
+                    const allowedDays = days
+                        ? days.split(",").map((d: string) => d.trim())
+                        : [];
+                    setNotScheduled({ message: msg, allowedDays });
+                    return null as any;
+                }
+                throw err;
+            }
         },
         refetchInterval: 30_000,
+        retry: false,
     });
 
     const deletePunchMutation = useMutation({
@@ -374,6 +398,45 @@ export default function RemoteWork() {
                     {isLoading ? (
                         <div className="flex justify-center py-16">
                             <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+                        </div>
+                    ) : notScheduled ? (
+                        <div className="rounded-2xl border border-border bg-muted/10 px-6 py-8 text-center space-y-4">
+                            <div className="flex justify-center">
+                                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/30">
+                                    <Wifi className="h-7 w-7 text-muted-foreground/60" />
+                                </div>
+                            </div>
+                            <div>
+                                <p className="font-semibold text-sm">Not scheduled for remote work today</p>
+                                <p className="text-muted-foreground text-xs mt-1">
+                                    {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                                </p>
+                            </div>
+                            {notScheduled.allowedDays.length > 0 && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground mb-2">Your eligible WFH days:</p>
+                                    <div className="flex flex-wrap justify-center gap-1.5">
+                                        {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day) => {
+                                            const eligible = notScheduled.allowedDays.includes(day);
+                                            const isToday = new Date().toLocaleDateString("en-US", { weekday: "long" }) === day;
+                                            return (
+                                                <span
+                                                    key={day}
+                                                    className={`rounded-full px-3 py-0.5 text-xs font-medium border ${
+                                                        !eligible
+                                                            ? "border-border/40 text-muted-foreground/40 bg-transparent"
+                                                            : isToday
+                                                              ? "border-rose-500/40 bg-rose-500/10 text-rose-400"
+                                                              : "border-teal-500/40 bg-teal-500/10 text-teal-400"
+                                                    }`}
+                                                >
+                                                    {day.slice(0, 3)}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : !data ? (
                         <p className="text-muted-foreground text-center text-sm">Unable to load status.</p>

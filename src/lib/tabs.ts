@@ -16,6 +16,7 @@ export const ALL_TABS: TabDef[] = [
     { key: "notifications",   label: "Notifications",   section: "Updates" },
     { key: "announcements",   label: "Announcements",   section: "Updates" },
     { key: "payslip",         label: "Payslip",         section: "Attendance" },
+    { key: "tm_hierarchy",   label: "T&M Hierarchy",   section: "Learning" },
     { key: "schedule",        label: "Schedule",        section: "Management" },
     { key: "forms",           label: "Forms",           section: "Management" },
     { key: "hr_approvals",    label: "HR Approvals",    section: "Management" },
@@ -46,6 +47,7 @@ export const STANDARD_PERMISSIONS: Record<string, number> = {
     schedule:       0,
     forms:          0,
     hr_approvals:   0,
+    tm_hierarchy:   1,
 };
 
 export function isTabEnabled(

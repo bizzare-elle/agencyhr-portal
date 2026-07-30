@@ -12,6 +12,7 @@ import {
     IconSpeakerphone,
     IconSchool,
     IconHistory,
+    IconUsersGroup,
 } from "@tabler/icons-react";
 import { Timer, ShieldCheck, Settings2, Wifi, Receipt } from "lucide-react";
 import { isTabEnabled } from "@/lib/tabs";
@@ -136,6 +137,12 @@ function buildSections(
                 url: `/training-history/${userId ?? ""}`,
                 icon: IconHistory,
             });
+        if (ok("tm_hierarchy"))
+            learningItems.push({
+                title: "Train and Maintain",
+                url: `/downline/${userId ?? ""}`,
+                icon: IconUsersGroup,
+            });
         if (learningItems.length)
             sections.push({ label: "Learning", items: learningItems });
 
@@ -230,6 +237,16 @@ function buildSections(
                         : []),
                 ],
             },
+            {
+                label: "Learning",
+                items: [
+                    {
+                        title: "T&M Hierarchy",
+                        url: `/downline/${userId ?? ""}`,
+                        icon: IconUsersGroup,
+                    },
+                ],
+            },
         ];
         return sections;
     }
@@ -253,6 +270,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     job_level: string;
                     is_admin?: number;
                     can_work_remotely?: number;
+                    work_remotely_days?: string | null;
                     tab_permissions?: Record<string, number>;
                 }>
             >(`/api/v2/auth/me`);
@@ -278,6 +296,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     const isApprover = approverInfo?.is_approver ?? false;
     const isAdmin = (me?.is_admin ?? 0) === 1;
+
     const canWorkRemotely = (me?.can_work_remotely ?? 0) === 1;
 
     const sections = buildSections(

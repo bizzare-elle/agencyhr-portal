@@ -84,6 +84,7 @@ interface EmployeeRow {
     is_agency_coor: number;
     is_admin: number;
     can_work_remotely: number;
+    work_remotely_days: string | null;
     branch_id: number | null;
     branch_name: string | null;
     position_name: string | null;
@@ -714,6 +715,7 @@ function EmployeeDrawer({
     roleMutation,
     adminMutation,
     remoteMutation,
+    remoteDaysMutation,
     branchMutation,
     deleteMutation,
 }: {
@@ -723,10 +725,12 @@ function EmployeeDrawer({
     roleMutation: any;
     adminMutation: any;
     remoteMutation: any;
+    remoteDaysMutation: any;
     branchMutation: any;
     deleteMutation: any;
 }) {
     const [pendingBranch, setPendingBranch] = useState<string>("");
+    const [remoteDays, setRemoteDays] = useState<string[]>([]);
 
     const { data: branches = [] } = useQuery<{ id: number; name: string }[]>({
         queryKey: ["admin-branches"],
@@ -743,6 +747,11 @@ function EmployeeDrawer({
     React.useEffect(() => {
         setPendingBranch(user?.branch_id ? String(user.branch_id) : "");
     }, [user?.id, user?.branch_id]);
+
+    React.useEffect(() => {
+        const raw = user?.work_remotely_days;
+        setRemoteDays(raw ? raw.split(",").map((d) => d.trim()) : []);
+    }, [user?.id, user?.work_remotely_days]);
 
     if (!user) return null;
 
@@ -862,6 +871,72 @@ function EmployeeDrawer({
                             disabled={remoteMutation.isPending}
                             onClick={() => remoteMutation.mutate(user.id)}
                         />
+                        {!!user.can_work_remotely && (
+                            <div className="rounded-xl border border-border/50 bg-muted/20 px-4 py-3">
+                                <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                    Allowed Days
+                                </p>
+                                <p className="mb-3 text-xs text-muted-foreground">
+                                    Leave all unchecked to allow any day.
+                                </p>
+                                <div className="grid grid-cols-2 gap-1 mb-3">
+                                    {[
+                                        "Monday",
+                                        "Tuesday",
+                                        "Wednesday",
+                                        "Thursday",
+                                        "Friday",
+                                        "Saturday",
+                                        "Sunday",
+                                    ].map((day) => (
+                                        <label
+                                            key={day}
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-muted/50"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                className="h-3.5 w-3.5 accent-primary"
+                                                checked={remoteDays.includes(
+                                                    day,
+                                                )}
+                                                onChange={(e) =>
+                                                    setRemoteDays((prev) =>
+                                                        e.target.checked
+                                                            ? [
+                                                                  ...prev.filter(
+                                                                      (d) =>
+                                                                          d !==
+                                                                          day,
+                                                                  ),
+                                                                  day,
+                                                              ]
+                                                            : prev.filter(
+                                                                  (d) =>
+                                                                      d !== day,
+                                                              ),
+                                                    )
+                                                }
+                                            />
+                                            {day}
+                                        </label>
+                                    ))}
+                                </div>
+                                <button
+                                    className="w-full rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                                    disabled={remoteDaysMutation.isPending}
+                                    onClick={() =>
+                                        remoteDaysMutation.mutate({
+                                            id: user.id,
+                                            days: remoteDays,
+                                        })
+                                    }
+                                >
+                                    {remoteDaysMutation.isPending
+                                        ? "Saving…"
+                                        : "Save Days"}
+                                </button>
+                            </div>
+                        )}
 
                         {/* Delete account — not shown for self */}
                         {user.id !== meId && (
@@ -1030,6 +1105,16 @@ function UsersTab({ meId }: { meId: number }) {
             queryClient.invalidateQueries({ queryKey: ["admin-users"] });
         },
         onError: () => toast.error("Failed to update remote access."),
+    });
+
+    const remoteDaysMutation = useMutation({
+        mutationFn: ({ id, days }: { id: number; days: string[] }) =>
+            api.post(`/api/v2/admin/users/${id}/remote-days`, { days }),
+        onSuccess: () => {
+            toast.success("Remote work days saved.");
+            queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+        },
+        onError: () => toast.error("Failed to save remote work days."),
     });
 
     const branchMutation = useMutation({
@@ -1321,6 +1406,7 @@ function UsersTab({ meId }: { meId: number }) {
                 roleMutation={roleMutation}
                 adminMutation={adminMutation}
                 remoteMutation={remoteMutation}
+                remoteDaysMutation={remoteDaysMutation}
                 branchMutation={branchMutation}
                 deleteMutation={deleteUserMutation}
             />

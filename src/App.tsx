@@ -36,6 +36,7 @@ import Maintenance from "./pages/maintenance";
 import HrApprovals from "./pages/approvals/hr-approvals";
 import AdminPanel from "./pages/admin/admin-panel";
 import RemoteWork from "./pages/remote/remote-work";
+import DownlinePage from "./pages/downline/downline-page";
 import SystemGuide from "./pages/system-guide";
 import ResetPassword from "./pages/reset-password";
 
@@ -232,6 +233,11 @@ const router = createBrowserRouter([
                 path: "/remote/:id",
                 element: <RemoteWork />,
                 handle: { title: "Work Remotely" },
+            },
+            {
+                path: "/downline/:id",
+                element: <DownlinePage />,
+                handle: { title: "T&M Hierarchy" },
             },
             {
                 path: "/guide",

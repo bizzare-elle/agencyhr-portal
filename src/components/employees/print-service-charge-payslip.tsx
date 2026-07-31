@@ -29,6 +29,8 @@ interface PrintSCPayslipProps {
     overpayments?: ScOverpayment[];
     overpaymentRecovery?: number;
     finalPayout?: number | null;
+    firstCutoffPayout?: number | null;
+    secondCutoffPayout?: number | null;
 }
 
 function parseComp(comp: string | null): { pool: number | null; totalHrs: number | null } {
@@ -68,6 +70,8 @@ export const PrintSCPayslip: React.FC<PrintSCPayslipProps> = ({
     overpayments = [],
     overpaymentRecovery = 0,
     finalPayout = null,
+    firstCutoffPayout = null,
+    secondCutoffPayout = null,
 }) => {
     const handlePrint = () => {
         const totalEmpHrs = records.reduce((s, r) => s + parseFloat(r.total_billed_hours || "0"), 0);
@@ -183,8 +187,21 @@ export const PrintSCPayslip: React.FC<PrintSCPayslipProps> = ({
             </div>` : "";
 
 
-        const disclaimerHtml = isHrEmployee
-            ? `<div class="disclaimer">Disclaimer: This is not an official document.</div>`
+        const hasCutoffPayouts = firstCutoffPayout !== null || secondCutoffPayout !== null;
+        const cutoffPayoutSectionHtml = hasCutoffPayouts ? `
+            <div style="margin-top:14px;display:flex;gap:10px;">
+                <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:9px 12px;text-align:center;font-size:11px;font-weight:600;color:#166534;">
+                    1st SC PayOut = ${firstCutoffPayout !== null ? peso(firstCutoffPayout) : "—"}
+                </div>
+                <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:9px 12px;text-align:center;font-size:11px;font-weight:600;color:#166534;">
+                    2nd SC PayOut = ${secondCutoffPayout !== null ? peso(secondCutoffPayout) : "—"}
+                </div>
+            </div>` : "";
+
+        const isMay2026Payout = (queryFrom ?? "").startsWith("2026-05") || (queryTo ?? "").startsWith("2026-05");
+
+        const disclaimerHtml = isHrEmployee && isMay2026Payout
+            ? `<div class="disclaimer">Disclaimer: Due to a technical computation issue, adjustments were made to the Service Charge computation. Please refer to the daily SC computation for the detailed breakdown and basis of the corrected computation.</div>`
             : "";
 
         const printWindow = window.open("", "_blank");
@@ -325,6 +342,7 @@ export const PrintSCPayslip: React.FC<PrintSCPayslipProps> = ({
                     </tfoot>
                 </table>
 
+                ${cutoffPayoutSectionHtml}
                 ${overpaymentSectionHtml}
                 ${disclaimerHtml}
 

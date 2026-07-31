@@ -92,6 +92,11 @@ interface ScOverpayment {
     remaining: number;
 }
 
+interface ScPayoutPerCutoff {
+    cut_off_period: string;
+    sc_payout_amount: number;
+}
+
 interface ScPayslipResponse {
     sc_data: ScRecord[];
     sc_percentage: string | null;
@@ -101,6 +106,7 @@ interface ScPayslipResponse {
     final_payout: number | null;
     sc_amount_net_month: number | null;
     adjustments_total: number;
+    sc_payout_per_cutoff: ScPayoutPerCutoff[];
 }
 
 function parseComputation(comp: string | null) {
@@ -183,7 +189,7 @@ export default function PayslipCombined() {
             const res = await api.get<ApiResponse<ScPayslipResponse>>(
                 `/api/v2/sc-payslip-records/${employeeId}`,
             );
-            return res.data.data ?? { sc_data: [], sc_percentage: null, allocation_name: null, overpayments: [], overpayment_recovery: 0, final_payout: null, sc_amount_net_month: null, adjustments_total: 0 };
+            return res.data.data ?? { sc_data: [], sc_percentage: null, allocation_name: null, overpayments: [], overpayment_recovery: 0, final_payout: null, sc_amount_net_month: null, adjustments_total: 0, sc_payout_per_cutoff: [] };
         },
         enabled: !!employeeId,
     });
@@ -216,6 +222,7 @@ export default function PayslipCombined() {
         Array.from(months)
             .sort()
             .reverse()
+            .filter((ym) => ym !== "2026-03")
             .forEach((ym) => {
                 const [y, m] = ym.split("-").map(Number);
                 const daysInMonth = getDaysInMonth(new Date(y, m - 1));
@@ -252,7 +259,7 @@ export default function PayslipCombined() {
                 `/api/v2/sc-payslip-records/${employeeId}`,
                 { params: { from: selectedPeriod!.from, to: selectedPeriod!.to } },
             );
-            return res.data.data ?? { sc_data: [], sc_percentage: null, allocation_name: null, overpayments: [], overpayment_recovery: 0, final_payout: null, sc_amount_net_month: null, adjustments_total: 0 };
+            return res.data.data ?? { sc_data: [], sc_percentage: null, allocation_name: null, overpayments: [], overpayment_recovery: 0, final_payout: null, sc_amount_net_month: null, adjustments_total: 0, sc_payout_per_cutoff: [] };
         },
         enabled: !!employeeId && !!selectedPeriod,
     });
@@ -264,6 +271,9 @@ export default function PayslipCombined() {
     const overpaymentRecovery = activeScData?.overpayment_recovery ?? 0;
     const finalPayout         = activeScData?.final_payout ?? null;
     const hasOverpayments = !!selectedPeriod && overpayments.length > 0;
+    const scPayoutPerCutoff = activeScData?.sc_payout_per_cutoff ?? [];
+    const firstCutoffPayout  = scPayoutPerCutoff[0]?.sc_payout_amount ?? null;
+    const secondCutoffPayout = scPayoutPerCutoff[1]?.sc_payout_amount ?? null;
 
     const scFiltered = useMemo(() => {
         let data = selectedPeriod && activeScData ? [...activeScData.sc_data] : [...scRecords];
@@ -434,6 +444,8 @@ export default function PayslipCombined() {
                                                     overpayments={overpayments}
                                                     overpaymentRecovery={overpaymentRecovery}
                                                     finalPayout={finalPayout}
+                                                    firstCutoffPayout={firstCutoffPayout}
+                                                    secondCutoffPayout={secondCutoffPayout}
                                                 />
                                             </div>
                                         </div>
@@ -454,6 +466,18 @@ export default function PayslipCombined() {
                                                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Days</p>
                                                 <p className="text-lg font-bold">{scFiltered.length}</p>
                                             </div>
+                                            {firstCutoffPayout !== null && (
+                                                <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-2 text-center">
+                                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">1st SC Payout</p>
+                                                    <p className="text-lg font-bold text-green-400">{formatToPeso(firstCutoffPayout)}</p>
+                                                </div>
+                                            )}
+                                            {secondCutoffPayout !== null && (
+                                                <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-2 text-center">
+                                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">2nd SC Payout</p>
+                                                    <p className="text-lg font-bold text-green-400">{formatToPeso(secondCutoffPayout)}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </CardHeader>

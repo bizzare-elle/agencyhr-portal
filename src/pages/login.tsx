@@ -297,7 +297,7 @@ export default function LoginPage() {
                                         rel="noopener noreferrer"
                                         className="text-sm text-white/50 transition hover:text-yellow-400"
                                     >
-                                        Forgot your email?
+                                        Forgot password?
                                     </a>
                                     <a
                                         href="https://support.agencyhr.ph"

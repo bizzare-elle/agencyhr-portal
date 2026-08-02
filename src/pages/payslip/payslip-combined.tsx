@@ -453,37 +453,83 @@ export default function PayslipCombined() {
 
                                     {/* SC summary strip */}
                                     {scFiltered.length > 0 && (
-                                        <div className="mt-4 flex flex-wrap gap-3">
-                                            <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-2 text-center">
-                                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Total Net SC</p>
-                                                <p className="text-lg font-bold text-green-400">{formatToPeso(scTotalNet)}</p>
-                                            </div>
-                                            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-center">
-                                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Total Hours</p>
-                                                <p className="text-lg font-bold text-primary">{scTotalHrs.toFixed(2)}</p>
-                                            </div>
-                                            <div className="rounded-lg border border-border bg-muted/10 px-4 py-2 text-center">
-                                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Days</p>
-                                                <p className="text-lg font-bold">{scFiltered.length}</p>
-                                            </div>
+                                        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                                            <SummaryKpi label="Total Net SC" value={formatToPeso(scTotalNet)} sub="net" color="green" />
+                                            <SummaryKpi label="Total Hours" value={scTotalHrs.toFixed(2)} sub="hrs logged" color="blue" />
+                                            <SummaryKpi label="Days" value={String(scFiltered.length)} sub="recorded" color="slate" />
                                             {firstCutoffPayout !== null && (
-                                                <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-2 text-center">
-                                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">1st SC Payout</p>
-                                                    <p className="text-lg font-bold text-green-400">{formatToPeso(firstCutoffPayout)}</p>
-                                                </div>
+                                                <SummaryKpi label="1st SC Payout" value={formatToPeso(firstCutoffPayout)} sub="1st half" color="green" />
                                             )}
                                             {secondCutoffPayout !== null && (
-                                                <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-4 py-2 text-center">
-                                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">2nd SC Payout</p>
-                                                    <p className="text-lg font-bold text-green-400">{formatToPeso(secondCutoffPayout)}</p>
-                                                </div>
+                                                <SummaryKpi label="2nd SC Payout" value={formatToPeso(secondCutoffPayout)} sub="2nd half" color="green" />
                                             )}
                                         </div>
                                     )}
                                 </CardHeader>
 
                                 <CardContent className="overflow-x-auto">
-                                    <div className="border-border w-full overflow-x-auto rounded-md border">
+                                    {/* Mobile card list — phones get stacked cards instead of a wide scrolling table */}
+                                    <div className="space-y-2 md:hidden">
+                                        {scPaginated.length > 0 ? (
+                                            scPaginated.map((r) => {
+                                                const { pool, totalHrs } = parseComputation(r.computation);
+                                                const weekend = isWeekend(r.date);
+                                                const dayLabel = format(new Date(r.date + "T00:00:00"), "EEE, MMM d");
+                                                return (
+                                                    <div
+                                                        key={r.id}
+                                                        className={cn(
+                                                            "rounded-lg border border-border p-3",
+                                                            weekend ? "bg-yellow-500/5" : "bg-muted/5",
+                                                        )}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div>
+                                                                <p className="text-sm font-semibold">{dayLabel}</p>
+                                                                {weekend && <p className="text-[10px] font-semibold text-yellow-500">weekend</p>}
+                                                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                                                    {r.branch_name && r.branch_name !== "N/A" ? r.branch_name : (me?.agency_name ?? "---")}
+                                                                </p>
+                                                            </div>
+                                                            <p className="shrink-0 text-base font-bold text-green-400">
+                                                                {formatToPeso(parseFloat(r.sc_amount_net))}
+                                                            </p>
+                                                        </div>
+                                                        <div className="mt-2 grid grid-cols-3 gap-2 rounded-md bg-muted/10 p-2 text-center text-xs">
+                                                            <div>
+                                                                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Pool</p>
+                                                                <p className="font-medium text-primary">{pool !== null ? formatToPeso(pool) : "---"}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Day Hrs</p>
+                                                                <p className="font-medium">{totalHrs !== null ? totalHrs.toFixed(2) : "---"}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Your Hrs</p>
+                                                                <p className="font-medium">{parseFloat(r.total_billed_hours).toFixed(2)}</p>
+                                                            </div>
+                                                        </div>
+                                                        {r.computation && (
+                                                            <p className="mt-2 text-[11px] text-muted-foreground">{r.computation}</p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="py-10 text-center text-sm text-muted-foreground">No records found.</div>
+                                        )}
+                                        {scFiltered.length > 0 && (
+                                            <div className="flex items-center justify-between rounded-lg border border-green-500/20 bg-green-500/5 p-3">
+                                                <span className="text-sm font-bold">
+                                                    Total ({scFiltered.length} day{scFiltered.length !== 1 ? "s" : ""})
+                                                </span>
+                                                <span className="text-sm font-bold text-green-400">{formatToPeso(scTotalNet)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Desktop / tablet table */}
+                                    <div className="hidden border-border w-full overflow-x-auto rounded-md border md:block">
                                         <Table id="sc-payslip-table" className="min-w-[920px] text-xs sm:text-sm">
                                             <TableHeader className="bg-muted/50">
                                                 <TableRow>
@@ -699,10 +745,10 @@ export default function PayslipCombined() {
 
                             {/* KPI tiles */}
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                <TmKpi label="1st Layer" value={String(tmL1s.length)} sub="₱250 each" color="blue" />
-                                <TmKpi label="2nd Layer" value={String(tmL2s.length)} sub="₱100 each" color="purple" />
-                                <TmKpi label="L1 Subtotal" value={formatToPeso(tmL1s.length * 250)} sub="gross" color="green" />
-                                <TmKpi label="L2 Subtotal" value={formatToPeso(tmL2s.length * 100)} sub="gross" color="yellow" />
+                                <SummaryKpi label="1st Layer" value={String(tmL1s.length)} sub="₱250 each" color="blue" />
+                                <SummaryKpi label="2nd Layer" value={String(tmL2s.length)} sub="₱100 each" color="purple" />
+                                <SummaryKpi label="L1 Subtotal" value={formatToPeso(tmL1s.length * 250)} sub="gross" color="green" />
+                                <SummaryKpi label="L2 Subtotal" value={formatToPeso(tmL2s.length * 100)} sub="gross" color="yellow" />
                             </div>
 
                             {/* Eligibility alert */}
@@ -857,12 +903,13 @@ export default function PayslipCombined() {
     );
 }
 
-function TmKpi({ label, value, sub, color }: { label: string; value: string; sub: string; color: "blue" | "purple" | "green" | "yellow" }) {
+function SummaryKpi({ label, value, sub, color }: { label: string; value: string; sub: string; color: "blue" | "purple" | "green" | "yellow" | "slate" }) {
     const palette = {
         blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
         purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
         green: "bg-green-500/10 text-green-400 border-green-500/20",
         yellow: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+        slate: "bg-muted/20 text-foreground border-border",
     };
     return (
         <div className={`rounded-lg border p-3 text-center ${palette[color]}`}>

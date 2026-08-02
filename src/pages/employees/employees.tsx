@@ -17,12 +17,43 @@ import {
     PopoverContent,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, FileDown } from "lucide-react";
+import {
+    CalendarIcon,
+    FileDown,
+    KeyRound,
+    MoreHorizontal,
+    FileText,
+    Clock,
+} from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import CustomSelect from "@/components/custom-select";
 import { Employee, TimeRecord, GroupedEmployee } from "@/index";
 import { ConsolidatedTimeRecordsPDF } from "@/components/employees/batch-report-template";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { Link } from "react-router-dom";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+/**
+ * The default handed out by a coordinator reset. Mirrors _default_password()
+ * in api_v2/Auth.php -- shown here only so the coordinator can read it back to
+ * the employee; the server is what actually sets it.
+ */
+const DEFAULT_PASSWORD = `Wildflour@${new Date().getFullYear()}`;
 
 function parseManhours(manhour_conversion: any) {
     try {
@@ -44,7 +75,12 @@ function parseManhours(manhour_conversion: any) {
     }
 }
 
-const columns: TableColumn<Employee>[] = [
+function buildColumns(
+    canResetPassword: boolean,
+    onResetPassword: (employee: Employee) => void,
+    resettingId: string | number | null,
+): TableColumn<Employee>[] {
+    return [
     { name: "ID", selector: (row) => row.id, sortable: true },
     { name: "Name", selector: (row) => row.name, sortable: true },
     { name: "Branch", selector: (row) => row.branch_id },
@@ -70,18 +106,61 @@ const columns: TableColumn<Employee>[] = [
     },
     {
         name: "Action",
+        width: "90px",
         cell: (row) => (
-            <div className="flex flex-col gap-2 p-2">
-                <Button className="btn-sm" variant="secondary">
-                    <Link to={`/employees/${row.id}`}>View Profile</Link>
-                </Button>
-                <Button className="btn-sm" variant="secondary">
-                    <Link to={`/${row.id}`}>View Timesheet</Link>
-                </Button>
-            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label={`Actions for ${row.name}`}
+                        disabled={resettingId === row.id}
+                    >
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                        <Link to={`/employees/${row.id}`}>
+                            <FileText className="h-4 w-4" />
+                            View Profile
+                        </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild>
+                        <Link to={`/${row.id}`}>
+                            <Clock className="h-4 w-4" />
+                            View Timesheet
+                        </Link>
+                    </DropdownMenuItem>
+
+                    {canResetPassword && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                variant="destructive"
+                                // Deferred a tick so the menu finishes closing
+                                // before the dialog grabs focus -- otherwise the
+                                // two focus traps fight and the dialog opens blurred.
+                                onSelect={() =>
+                                    setTimeout(() => onResetPassword(row), 0)
+                                }
+                            >
+                                <KeyRound className="h-4 w-4" />
+                                {resettingId === row.id
+                                    ? "Resetting…"
+                                    : "Reset Password"}
+                            </DropdownMenuItem>
+                        </>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
         ),
     },
-];
+    ];
+}
 
 export default function Employees() {
     const [page, setPage] = useState(1);
@@ -91,6 +170,10 @@ export default function Employees() {
     const [selectedBranch, setSelectedBranch] = useState<string>();
     const [isConsolidating, setIsConsolidating] = useState(false);
     const [pdfKey, setPdfKey] = useState(0);
+    const [resetTarget, setResetTarget] = useState<Employee | null>(null);
+    const [resettingId, setResettingId] = useState<string | number | null>(
+        null,
+    );
 
     const [consolidatedData, setConsolidatedData] = useState<GroupedEmployee[]>(
         [],
@@ -105,6 +188,7 @@ export default function Employees() {
                     name: string;
                     role: string;
                     agency_id: string;
+                    is_admin: number;
                 }>
             >(`/api/v2/auth/me`);
 
@@ -141,6 +225,35 @@ export default function Employees() {
             cutOffDate ? format(cutOffDate, "yyyyMMdd") : "NA"
         }.pdf`;
     }, [cutOffDate]);
+
+    const canResetPassword =
+        meQuery.data?.role === "agency_coordinator" ||
+        Number(meQuery.data?.is_admin) === 1;
+
+    const handleResetPassword = async (employee: Employee) => {
+        setResettingId(employee.id);
+
+        try {
+            await api.post(`/api/v2/auth/admin-reset/${employee.id}`);
+
+            toast.success(`Password reset for ${employee.name}`, {
+                description: `Temporary password: ${DEFAULT_PASSWORD} — they must change it at next login.`,
+                duration: 10000,
+            });
+        } catch (error: any) {
+            toast.error(
+                error?.response?.data?.message || "Failed to reset password.",
+            );
+        } finally {
+            setResettingId(null);
+            setResetTarget(null);
+        }
+    };
+
+    const columns = useMemo(
+        () => buildColumns(canResetPassword, setResetTarget, resettingId),
+        [canResetPassword, resettingId],
+    );
 
     const normalizeEmployeeIds = (ids: any): number[] => {
         if (!ids) return [];
@@ -373,6 +486,56 @@ export default function Employees() {
                     />
                 </CardContent>
             </Card>
+
+            <AlertDialog
+                open={resetTarget !== null}
+                onOpenChange={(open) => {
+                    if (!open) setResetTarget(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Reset password?</AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                            <div className="space-y-2">
+                                <p>
+                                    This replaces{" "}
+                                    <span className="font-semibold text-foreground">
+                                        {resetTarget?.name}
+                                    </span>
+                                    &rsquo;s password with the default{" "}
+                                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
+                                        {DEFAULT_PASSWORD}
+                                    </code>
+                                    .
+                                </p>
+                                <p>
+                                    Their current password stops working
+                                    immediately, and they will be required to
+                                    set a new one the next time they log in.
+                                </p>
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={resettingId !== null}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            disabled={resettingId !== null}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (resetTarget)
+                                    handleResetPassword(resetTarget);
+                            }}
+                        >
+                            {resettingId !== null
+                                ? "Resetting…"
+                                : "Reset password"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

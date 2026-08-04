@@ -67,12 +67,27 @@ function buildSections(
                     },
                 ],
             },
+            {
+                label: "Management",
+                items: [
+                    // Deliberately not behind ok("forms"): me() omits
+                    // tab_permissions for is_agency_coor users, so an admin who
+                    // is also a coordinator would fall back to the forms: 0
+                    // default and never see this entry.
+                    {
+                        title: "Forms",
+                        url: `/forms/${userId ?? ""}`,
+                        icon: IconClipboardList,
+                    },
+                ],
+            },
         ];
     }
 
     const hasScheduleAccess =
         job_level === "Level 5: Supervisory" ||
-        job_level === "Level 6: Managerial";
+        job_level === "Level 6: Managerial" ||
+        job_level === "Level 7: Executive";
 
     if (role === "hr_employee") {
         const sections: NavSection[] = [];
@@ -137,6 +152,12 @@ function buildSections(
                 url: `/training-history/${userId ?? ""}`,
                 icon: IconHistory,
             });
+        // if (ok("forms"))
+        //     learningItems.push({
+        //         title: "Forms",
+        //         url: `/forms/${userId ?? ""}`,
+        //         icon: IconClipboardList,
+        //     });
         // if (ok("tm_hierarchy"))
         //     learningItems.push({
         //         title: "Train and Maintain",
@@ -171,12 +192,16 @@ function buildSections(
                     url: `/schedules/${userId ?? ""}`,
                     icon: IconCalendarCheck,
                 });
-            if (ok("forms"))
-                mgmtItems.push({
-                    title: "Forms",
-                    url: `/forms/${userId ?? ""}`,
-                    icon: IconClipboardList,
-                });
+            // Forms is granted by job level alone (Level 5/6/7, via
+            // hasScheduleAccess) -- deliberately NOT behind ok("forms"). Stored
+            // agency_tab_permissions rows default to is_enabled = 0, and an
+            // explicit 0 beats the code default, so honouring the flag here
+            // would hide Forms from supervisors until each row was toggled.
+            mgmtItems.push({
+                title: "Forms",
+                url: `/forms/${userId ?? ""}`,
+                icon: IconClipboardList,
+            });
             if (ok("hr_approvals") || isApprover)
                 mgmtItems.push({
                     title: "HR Approvals",

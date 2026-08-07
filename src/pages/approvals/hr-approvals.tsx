@@ -92,6 +92,8 @@ interface LogoverrideRecord {
     clock_type: string;
     location: string | null;
     remarks: string | null;
+    /** Free-text detail supplied when remarks === "Offset". */
+    reason: string | null;
     approval_reason: string | null;
     image: string | null;
     is_range: number;
@@ -732,6 +734,12 @@ function LogoverrideDetailsDialog({
                         <DetailRow label="Clock Type" value={row.clock_type} />
                         <DetailRow label="Location" value={row.location} />
                         <DetailRow label="Remarks" value={row.remarks} />
+                        {row.reason && (
+                            <DetailRow
+                                label="Reason for Offset"
+                                value={row.reason}
+                            />
+                        )}
                         {row.status === 2 && (
                             <DetailRow
                                 label="Disapproval Reason"

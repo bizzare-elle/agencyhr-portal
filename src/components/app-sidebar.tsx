@@ -158,12 +158,12 @@ function buildSections(
         //         url: `/forms/${userId ?? ""}`,
         //         icon: IconClipboardList,
         //     });
-        // if (ok("tm_hierarchy"))
-        //     learningItems.push({
-        //         title: "Train and Maintain",
-        //         url: `/downline/${userId ?? ""}`,
-        //         icon: IconUsersGroup,
-        //     });
+        if (ok("tm_hierarchy"))
+            learningItems.push({
+                title: "Train and Maintain",
+                url: `/downline/${userId ?? ""}`,
+                icon: IconUsersGroup,
+            });
         if (learningItems.length)
             sections.push({ label: "Learning", items: learningItems });
 

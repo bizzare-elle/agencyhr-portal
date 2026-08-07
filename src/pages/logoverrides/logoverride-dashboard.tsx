@@ -327,7 +327,7 @@ export default function LogoverrideDashboard() {
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
                                         ID: {employee?.id_number ?? "N/A"} •{" "}
                                         {employee?.branch_name ?? "N/A"}
                                     </p>
@@ -530,15 +530,29 @@ export default function LogoverrideDashboard() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectGroup>
-                                                        <SelectLabel>Created Date</SelectLabel>
-                                                        <SelectItem value="newest">Newest First</SelectItem>
-                                                        <SelectItem value="oldest">Oldest First</SelectItem>
+                                                        <SelectLabel>
+                                                            Created Date
+                                                        </SelectLabel>
+                                                        <SelectItem value="newest">
+                                                            Newest First
+                                                        </SelectItem>
+                                                        <SelectItem value="oldest">
+                                                            Oldest First
+                                                        </SelectItem>
                                                     </SelectGroup>
                                                     <SelectGroup>
-                                                        <SelectLabel>Status</SelectLabel>
-                                                        <SelectItem value="approved">Approved Only</SelectItem>
-                                                        <SelectItem value="pending">Pending Only</SelectItem>
-                                                        <SelectItem value="disapproved">Disapproved Only</SelectItem>
+                                                        <SelectLabel>
+                                                            Status
+                                                        </SelectLabel>
+                                                        <SelectItem value="approved">
+                                                            Approved Only
+                                                        </SelectItem>
+                                                        <SelectItem value="pending">
+                                                            Pending Only
+                                                        </SelectItem>
+                                                        <SelectItem value="disapproved">
+                                                            Disapproved Only
+                                                        </SelectItem>
                                                     </SelectGroup>
                                                 </SelectContent>
                                             </Select>
@@ -593,6 +607,11 @@ export default function LogoverrideDashboard() {
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center capitalize">
                                                             {r.remarks || "N/A"}
+                                                            {r.reason && (
+                                                                <div className="text-muted-foreground mt-0.5 text-xs normal-case">
+                                                                    {r.reason}
+                                                                </div>
+                                                            )}
                                                         </TableCell>
                                                         <TableCell className="px-3 py-4 text-center">
                                                             <Badge
@@ -652,6 +671,14 @@ export default function LogoverrideDashboard() {
                                                                                     label: "Remarks",
                                                                                     value: r.remarks,
                                                                                 },
+                                                                                ...(r.reason
+                                                                                    ? [
+                                                                                          {
+                                                                                              label: "Reason",
+                                                                                              value: r.reason,
+                                                                                          },
+                                                                                      ]
+                                                                                    : []),
                                                                                 {
                                                                                     label: "Branch",
                                                                                     value: r.branch_name,
@@ -772,7 +799,7 @@ export default function LogoverrideDashboard() {
                                                 <TableRow>
                                                     <TableCell
                                                         colSpan={6}
-                                                        className="py-5 text-center text-muted-foreground"
+                                                        className="text-muted-foreground py-5 text-center"
                                                     >
                                                         No records found.
                                                     </TableCell>

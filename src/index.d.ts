@@ -19,6 +19,8 @@ export interface Logoverride {
     image: string;
     is_range: string;
     remarks: string;
+    /** Free-text detail captured when remarks === "Offset"; null otherwise. */
+    reason: string | null;
     is_logoverride: string;
     status: string;
     status_label: string;

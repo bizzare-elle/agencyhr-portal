@@ -14,7 +14,10 @@ import {
     Loader2,
     Briefcase,
     UserCheck,
+    CalendarClock,
+    Check,
 } from "lucide-react";
+import { addDays, format } from "date-fns";
 import api from "@/lib/axios";
 import { ParentComponent } from "@/components/parent-container";
 import { Button } from "@/components/ui/button";
@@ -56,16 +59,39 @@ const mrfSchema = z.object({
     ),
 
     department: z.string().min(1, "Department is required"),
-    headcount: z.string().min(1, "Headcount is required"),
+
+    // Guarded as a positive whole number: a bare .min(1) only checks string
+    // length, so "0" and "-3" both passed before.
+    headcount: z
+        .string()
+        .min(1, "Headcount is required")
+        .refine((v) => /^\d+$/.test(v), "Headcount must be a whole number")
+        .refine((v) => parseInt(v, 10) >= 1, "Headcount must be at least 1"),
+
     immediate_superior: z.string().min(1, "Immediate superior is required"),
     branch_id: z.string().min(1, "Branch is required"),
 
-    justification: z.string().min(1, "Justification is required"),
-    job_description: z.string().optional(),
-    remarks: z.string().optional(),
+    // Trimmed before length checks so a whitespace-only entry is rejected
+    // rather than counting as filled in.
+    justification: z.string().trim().min(1, "Justification is required"),
+    job_description: z.string().trim().optional(),
+    remarks: z.string().trim().optional(),
 });
 
 type MrfValues = z.infer<typeof mrfSchema>;
+
+/**
+ * Required-field marker. aria-hidden because the field's own validation message
+ * is what actually conveys the requirement to assistive tech -- the asterisk is
+ * a visual affordance so requesters can see what they must fill in up front.
+ */
+function Req() {
+    return (
+        <span aria-hidden="true" className="text-destructive ml-0.5">
+            *
+        </span>
+    );
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function MrfForm() {
@@ -81,6 +107,10 @@ export default function MrfForm() {
 
     const employeeName = me?.name ?? "";
     const employeeId = String(me?.hr_id ?? me?.id ?? "");
+
+    // Mirrors the server: Forms.php sets target_start_date to +30 days at save.
+    // Shown so the requester sees the actual date instead of being told a rule.
+    const targetStartDate = format(addDays(new Date(), 30), "MMMM d, yyyy");
 
     // Employee list — shared cache with EmployeeSearchSelect
     const { data: employeeList = [] } = useQuery<
@@ -116,6 +146,16 @@ export default function MrfForm() {
     const [pickerEmpId, setPickerEmpId] = useState<string | undefined>(
         undefined,
     );
+
+    // Radix Select reads value={undefined} as "uncontrolled" and keeps showing
+    // the last picked label, so clearing pickerEmpId alone left the just-added
+    // employee sitting in the picker as if the Add hadn't happened. Bumping this
+    // key remounts the picker to genuinely reset it.
+    const [pickerKey, setPickerKey] = useState(0);
+    const resetPicker = () => {
+        setPickerEmpId(undefined);
+        setPickerKey((k) => k + 1);
+    };
 
     // Auto-fetch the picker employee's profile to resolve their current position
     const { data: pickerEmpProfile, isFetching: pickerProfileLoading } =
@@ -185,29 +225,49 @@ export default function MrfForm() {
                                 </CardTitle>
                                 <CardDescription>
                                     File a request for replacement or additional
-                                    headcount. Target start date is
-                                    automatically set 30 days from submission.
+                                    headcount.
                                 </CardDescription>
                             </div>
                         </div>
 
-                        {/* Filed By */}
+                        {/* Filed By + the date this request will target */}
                         {me && (
-                            <div className="bg-muted/50 mt-4 rounded-lg border px-4 py-3">
-                                <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
-                                    Filed By
-                                </p>
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-muted flex h-7 w-7 items-center justify-center rounded-full">
-                                        <User className="text-muted-foreground h-3.5 w-3.5" />
+                            <div className="bg-muted/50 mt-4 grid gap-3 rounded-lg border px-4 py-3 sm:grid-cols-2 sm:gap-4">
+                                <div>
+                                    <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
+                                        Filed By
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-muted flex h-7 w-7 items-center justify-center rounded-full">
+                                            <User className="text-muted-foreground h-3.5 w-3.5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-medium">
+                                                {employeeName || "—"}
+                                            </p>
+                                            <p className="text-muted-foreground text-xs">
+                                                ID: {employeeId || "—"}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-medium">
-                                            {employeeName || "—"}
-                                        </p>
-                                        <p className="text-muted-foreground text-xs">
-                                            ID: {employeeId || "—"}
-                                        </p>
+                                </div>
+
+                                <div className="border-t pt-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+                                    <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
+                                        Target Start Date
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-muted flex h-7 w-7 items-center justify-center rounded-full">
+                                            <CalendarClock className="text-muted-foreground h-3.5 w-3.5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-medium">
+                                                {targetStartDate}
+                                            </p>
+                                            <p className="text-muted-foreground text-xs">
+                                                Set automatically, 30 days out
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -225,9 +285,14 @@ export default function MrfForm() {
                                         <FormItem>
                                             <FormLabel>
                                                 Nature of Request
+                                                <Req />
                                             </FormLabel>
                                             <FormControl>
-                                                <div className="grid grid-cols-2 gap-3">
+                                                <div
+                                                    role="radiogroup"
+                                                    aria-label="Nature of Request"
+                                                    className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                                                >
                                                     {(
                                                         [
                                                             "Replacement",
@@ -237,6 +302,11 @@ export default function MrfForm() {
                                                         <button
                                                             key={opt}
                                                             type="button"
+                                                            role="radio"
+                                                            aria-checked={
+                                                                field.value ===
+                                                                opt
+                                                            }
                                                             onClick={() => {
                                                                 field.onChange(
                                                                     opt,
@@ -256,14 +326,21 @@ export default function MrfForm() {
                                                                 }
                                                             }}
                                                             className={[
-                                                                "rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all",
+                                                                "flex items-center justify-between gap-2 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all",
+                                                                "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                                                                 field.value ===
                                                                 opt
                                                                     ? "border-green-500 bg-green-500/10 text-green-700 dark:text-green-400"
                                                                     : "border-muted hover:border-muted-foreground/40 text-muted-foreground",
                                                             ].join(" ")}
                                                         >
-                                                            {opt}
+                                                            <span>{opt}</span>
+                                                            {/* Selection also carries a
+                                                                non-colour cue */}
+                                                            {field.value ===
+                                                                opt && (
+                                                                <Check className="h-4 w-4 shrink-0" />
+                                                            )}
                                                         </button>
                                                     ))}
                                                 </div>
@@ -289,7 +366,13 @@ export default function MrfForm() {
                                                             pickerEmpId,
                                                     )
                                                 ) {
-                                                    setPickerEmpId(undefined);
+                                                    // Previously cleared the picker
+                                                    // silently, which read as the Add
+                                                    // button being broken.
+                                                    toast.info(
+                                                        "That employee is already on the list.",
+                                                    );
+                                                    resetPicker();
                                                     return;
                                                 }
                                                 const found = employeeList.find(
@@ -318,7 +401,7 @@ export default function MrfForm() {
                                                             positionName,
                                                     },
                                                 ]);
-                                                setPickerEmpId(undefined);
+                                                resetPicker();
                                             };
                                             const removeEmployee = (
                                                 id: string,
@@ -334,72 +417,104 @@ export default function MrfForm() {
                                                     <FormLabel>
                                                         Employee(s) Being
                                                         Replaced
+                                                        <Req />
                                                     </FormLabel>
 
-                                                    {/* Picker row */}
-                                                    <div className="flex items-start gap-2">
-                                                        <div className="min-w-0 flex-1">
-                                                            <EmployeeSearchSelect
-                                                                apiUrl="api/v2/get_employees"
-                                                                placeholder="Search employee..."
-                                                                value={
-                                                                    pickerEmpId
-                                                                }
-                                                                onChange={(
-                                                                    val,
-                                                                ) =>
-                                                                    setPickerEmpId(
+                                                    {/* Step 1 — search and add.
+                                                        Boxed and labelled so it
+                                                        reads as an input area
+                                                        rather than another row
+                                                        of the list below. */}
+                                                    <div className="bg-muted/30 rounded-lg border border-dashed p-3">
+                                                        <p className="text-muted-foreground mb-2 text-xs">
+                                                            Search an employee,
+                                                            then press{" "}
+                                                            <span className="text-foreground font-medium">
+                                                                Add
+                                                            </span>
+                                                            . Repeat to include
+                                                            more than one.
+                                                        </p>
+                                                        <div className="flex items-start gap-2">
+                                                            <div className="min-w-0 flex-1">
+                                                                <EmployeeSearchSelect
+                                                                    key={
+                                                                        pickerKey
+                                                                    }
+                                                                    apiUrl="api/v2/get_employees"
+                                                                    placeholder="Search employee..."
+                                                                    value={
+                                                                        pickerEmpId
+                                                                    }
+                                                                    onChange={(
                                                                         val,
-                                                                    )
+                                                                    ) =>
+                                                                        setPickerEmpId(
+                                                                            val,
+                                                                        )
+                                                                    }
+                                                                    allowClear={
+                                                                        false
+                                                                    }
+                                                                />
+                                                                {pickerEmpId && (
+                                                                    <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
+                                                                        {pickerProfileLoading ? (
+                                                                            <>
+                                                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                                                <span>
+                                                                                    Loading
+                                                                                    position…
+                                                                                </span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Briefcase className="h-3 w-3" />
+                                                                                <span>
+                                                                                    {pickerEmpProfile?.position_name
+                                                                                        ? pickerEmpProfile.position_name
+                                                                                        : "No position on record"}
+                                                                                </span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="mt-0.5 shrink-0"
+                                                                disabled={
+                                                                    !pickerEmpId ||
+                                                                    pickerProfileLoading
                                                                 }
-                                                                allowClear={
-                                                                    false
+                                                                onClick={
+                                                                    addEmployee
                                                                 }
-                                                            />
-                                                            {pickerEmpId && (
-                                                                <div className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
-                                                                    {pickerProfileLoading ? (
-                                                                        <>
-                                                                            <Loader2 className="h-3 w-3 animate-spin" />
-                                                                            <span>
-                                                                                Loading
-                                                                                position…
-                                                                            </span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Briefcase className="h-3 w-3" />
-                                                                            <span>
-                                                                                {pickerEmpProfile?.position_name
-                                                                                    ? pickerEmpProfile.position_name
-                                                                                    : "No position on record"}
-                                                                            </span>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            >
+                                                                <Plus className="mr-1 h-4 w-4" />
+                                                                Add
+                                                            </Button>
                                                         </div>
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="mt-0.5 shrink-0"
-                                                            disabled={
-                                                                !pickerEmpId ||
-                                                                pickerProfileLoading
-                                                            }
-                                                            onClick={
-                                                                addEmployee
-                                                            }
-                                                        >
-                                                            <Plus className="mr-1 h-4 w-4" />
-                                                            Add
-                                                        </Button>
                                                     </div>
 
-                                                    {/* Selected list */}
-                                                    {list.length > 0 && (
-                                                        <div className="mt-2 space-y-1.5">
+                                                    {/* Step 2 — what has been
+                                                        added so far. Empty state
+                                                        is explicit so a blank
+                                                        area isn't mistaken for a
+                                                        failed Add. */}
+                                                    {list.length === 0 ? (
+                                                        <p className="text-muted-foreground mt-3 text-xs italic">
+                                                            No employees added
+                                                            yet.
+                                                        </p>
+                                                    ) : (
+                                                        <div className="mt-3 space-y-1.5">
+                                                            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                                                                Being replaced (
+                                                                {list.length})
+                                                            </p>
                                                             {list.map((emp) => (
                                                                 <div
                                                                     key={emp.id}
@@ -438,12 +553,14 @@ export default function MrfForm() {
                                                                     </div>
                                                                     <button
                                                                         type="button"
+                                                                        aria-label={`Remove ${emp.name}`}
+                                                                        title={`Remove ${emp.name}`}
                                                                         onClick={() =>
                                                                             removeEmployee(
                                                                                 emp.id,
                                                                             )
                                                                         }
-                                                                        className="text-muted-foreground hover:text-destructive ml-2 shrink-0 transition-colors"
+                                                                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-ring ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                                                     >
                                                                         <X className="h-3.5 w-3.5" />
                                                                     </button>
@@ -472,6 +589,7 @@ export default function MrfForm() {
                                                     <FormItem>
                                                         <FormLabel>
                                                             Department
+                                                            <Req />
                                                         </FormLabel>
                                                         <FormControl>
                                                             <CustomSelect
@@ -501,6 +619,7 @@ export default function MrfForm() {
                                                     <FormItem>
                                                         <FormLabel>
                                                             Headcount Required
+                                                            <Req />
                                                         </FormLabel>
                                                         <FormControl>
                                                             <Input
@@ -523,6 +642,7 @@ export default function MrfForm() {
                                                     <FormItem>
                                                         <FormLabel>
                                                             Branch
+                                                            <Req />
                                                         </FormLabel>
                                                         <FormControl>
                                                             <CustomSelect
@@ -550,6 +670,7 @@ export default function MrfForm() {
                                                                 <UserCheck className="h-3.5 w-3.5" />
                                                                 Immediate
                                                                 Superior
+                                                                <Req />
                                                             </span>
                                                         </FormLabel>
                                                         <FormControl>
@@ -590,6 +711,7 @@ export default function MrfForm() {
                                             <FormLabel>
                                                 Justification / Reason for
                                                 Hiring
+                                                <Req />
                                             </FormLabel>
                                             <FormControl>
                                                 <Textarea

@@ -10,6 +10,7 @@ import CustomSelect from "@/components/custom-select";
 import { ImageUploader } from "@/components/image-dropzone";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
     Form,
     FormField,
@@ -160,45 +161,65 @@ const isDateAllowed = (date: Date) => {
     );
 };
 
-const schema = z.object({
-    branch_id: z.string().min(1, "Select a branch"),
-    clockType: z.string().min(1, "Enter clock type"),
-    dateTime: z
-        .string()
-        .min(1, "Enter date and time")
-        .refine(
-            (val) => {
-                if (!val) return false;
+/** Remark value that requires a free-text reason. Must match the SelectItem
+ *  value below and the server-side check in api_v2/Logoverrides.php. */
+const OFFSET_REMARK = "Offset";
 
-                const selected = new Date(val);
-                if (isNaN(selected.getTime())) return false;
+const schema = z
+    .object({
+        branch_id: z.string().min(1, "Select a branch"),
+        clockType: z.string().min(1, "Enter clock type"),
+        dateTime: z
+            .string()
+            .min(1, "Enter date and time")
+            .refine(
+                (val) => {
+                    if (!val) return false;
 
-                const ranges = getPayrollDateRange(new Date());
+                    const selected = new Date(val);
+                    if (isNaN(selected.getTime())) return false;
 
-                return ranges.some(
-                    ({ minDate, maxDate }) =>
-                        selected >= minDate && selected <= maxDate,
-                );
-            },
-            {
-                message:
-                    "Selected time falls outside the allowed payroll date range.",
-            },
-        ),
-    remarks: z.string().min(1, "Enter remarks"),
-    imageReference: z
-        .any()
-        .refine((file) => file instanceof File, {
-            message: "Image is required",
-        })
-        .refine(
-            (file) =>
-                file instanceof File &&
-                file.size <= 20 * 1024 * 1024 &&
-                ["image/jpeg", "image/png", "image/jpg"].includes(file.type),
-            { message: "File must be JPEG/PNG and under 20MB" },
-        ),
-});
+                    const ranges = getPayrollDateRange(new Date());
+
+                    return ranges.some(
+                        ({ minDate, maxDate }) =>
+                            selected >= minDate && selected <= maxDate,
+                    );
+                },
+                {
+                    message:
+                        "Selected time falls outside the allowed payroll date range.",
+                },
+            ),
+        remarks: z.string().min(1, "Enter remarks"),
+        // Only meaningful for the "Offset" remark; required in that case via the
+        // superRefine below, ignored otherwise.
+        reason: z.string().trim().optional(),
+        imageReference: z
+            .any()
+            .refine((file) => file instanceof File, {
+                message: "Image is required",
+            })
+            .refine(
+                (file) =>
+                    file instanceof File &&
+                    file.size <= 20 * 1024 * 1024 &&
+                    ["image/jpeg", "image/png", "image/jpg"].includes(
+                        file.type,
+                    ),
+                { message: "File must be JPEG/PNG and under 20MB" },
+            ),
+    })
+    .superRefine((val, ctx) => {
+        // "Offset" alone does not tell the approver what is being offset.
+        if (val.remarks === OFFSET_REMARK && !val.reason) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["reason"],
+                message: "Enter what is being offset",
+            });
+        }
+    });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -208,8 +229,11 @@ export default function LogoverrideForm() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
-        defaultValues: { remarks: "", branch_id: "" },
+        defaultValues: { remarks: "", branch_id: "", reason: "" },
     });
+
+    // Drives the conditional Reason field below.
+    const watchedRemarks = form.watch("remarks");
 
     const { data: me } = useQuery({
         queryKey: ["me"],
@@ -228,6 +252,11 @@ export default function LogoverrideForm() {
             formData.append("clockType", formValues.clockType);
             formData.append("dateTime", formValues.dateTime);
             formData.append("remarks", formValues.remarks);
+            // Sent only for Offset so a stale value cannot ride along after
+            // the user switches remark types.
+            if (formValues.remarks === OFFSET_REMARK) {
+                formData.append("reason", formValues.reason ?? "");
+            }
             if (formValues.imageReference)
                 formData.append("image", formValues.imageReference);
 
@@ -384,22 +413,35 @@ export default function LogoverrideForm() {
                                             <FormLabel>Remarks</FormLabel>
                                             <FormControl>
                                                 <Select
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
+                                                    onValueChange={(val) => {
+                                                        field.onChange(val);
+                                                        // Drop any reason typed
+                                                        // for a previous Offset
+                                                        // selection.
+                                                        if (
+                                                            val !==
+                                                            OFFSET_REMARK
+                                                        ) {
+                                                            form.setValue(
+                                                                "reason",
+                                                                "",
+                                                            );
+                                                            form.clearErrors(
+                                                                "reason",
+                                                            );
+                                                        }
+                                                    }}
                                                     value={field.value}
                                                 >
                                                     <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Select reason" />
+                                                        <SelectValue placeholder="Select remark" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="System Maintenance">
                                                             System Maintenance
                                                         </SelectItem>
                                                         <SelectItem value="Offset">
-                                                            Offset (For
-                                                            Corporate Office
-                                                            Only)
+                                                            Offset
                                                         </SelectItem>
                                                         <SelectItem value="No Internet Connection">
                                                             No Internet
@@ -431,6 +473,45 @@ export default function LogoverrideForm() {
                                     )}
                                 />
                             </div>
+
+                            {/* Reason — Offset only. The dropdown says an
+                                offset was filed; this says what it offsets,
+                                which is what the approver actually needs. */}
+                            {watchedRemarks === OFFSET_REMARK && (
+                                <FormField
+                                    control={form.control}
+                                    name="reason"
+                                    render={({ field, fieldState }) => (
+                                        <FormItem className="space-y-2">
+                                            <FormLabel>
+                                                Reason for Offset
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="text-destructive ml-0.5"
+                                                >
+                                                    *
+                                                </span>
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                    placeholder="e.g. Offsetting overtime rendered on Jan 12 (rest day coverage)"
+                                                    className="min-h-[80px]"
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                />
+                                            </FormControl>
+                                            <p className="text-muted-foreground text-xs">
+                                                State which date or hours this
+                                                offsets so the approver can
+                                                verify it.
+                                            </p>
+                                            <FormMessage>
+                                                {fieldState?.error?.message}
+                                            </FormMessage>
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
 
                             <FormField
                                 control={form.control}

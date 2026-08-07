@@ -81,84 +81,93 @@ function buildColumns(
     resettingId: string | number | null,
 ): TableColumn<Employee>[] {
     return [
-    { name: "ID", selector: (row) => row.id, sortable: true },
-    { name: "Name", selector: (row) => row.name, sortable: true },
-    { name: "Branch", selector: (row) => row.branch_id },
-    { name: "Department", selector: (row) => row.department },
-    {
-        name: "Status",
-        cell: (row) => {
-            if (row.employment_status === "Active")
+        { name: "ID", selector: (row) => row.id, sortable: true },
+        { name: "Name", selector: (row) => row.name, sortable: true },
+        { name: "Branch", selector: (row) => row.branch_id },
+        { name: "Department", selector: (row) => row.department },
+        {
+            name: "Status",
+            cell: (row) => {
+                if (row.employment_status === "Active")
+                    return (
+                        <Badge className="bg-green-500/10 text-green-400">
+                            Active
+                        </Badge>
+                    );
+
+                if (row.employment_status === "Resign")
+                    return <Badge variant="destructive">Resigned</Badge>;
+
                 return (
-                    <Badge className="bg-green-500/10 text-green-400">Active</Badge>
+                    <Badge className="bg-muted text-muted-foreground">
+                        Terminated
+                    </Badge>
                 );
-
-            if (row.employment_status === "Resign")
-                return <Badge variant="destructive">Resigned</Badge>;
-
-            return <Badge className="bg-muted text-muted-foreground">Terminated</Badge>;
+            },
         },
-    },
-    {
-        name: "Created At",
-        selector: (row) => row.created_at,
-        format: (row) => formatToMonthDayYear(row.created_at),
-    },
-    {
-        name: "Action",
-        width: "90px",
-        cell: (row) => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        aria-label={`Actions for ${row.name}`}
-                        disabled={resettingId === row.id}
-                    >
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
+        {
+            name: "Created At",
+            selector: (row) => row.created_at,
+            format: (row) => formatToMonthDayYear(row.created_at),
+        },
+        {
+            name: "Action",
+            width: "90px",
+            cell: (row) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label={`Actions for ${row.name}`}
+                            disabled={resettingId === row.id}
+                        >
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                        <Link to={`/employees/${row.id}`}>
-                            <FileText className="h-4 w-4" />
-                            View Profile
-                        </Link>
-                    </DropdownMenuItem>
+                    <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem asChild>
+                            <Link to={`/employees/${row.id}`}>
+                                <FileText className="h-4 w-4" />
+                                View Profile
+                            </Link>
+                        </DropdownMenuItem>
 
-                    <DropdownMenuItem asChild>
-                        <Link to={`/${row.id}`}>
-                            <Clock className="h-4 w-4" />
-                            View Timesheet
-                        </Link>
-                    </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link to={`/${row.id}`}>
+                                <Clock className="h-4 w-4" />
+                                View Timesheet
+                            </Link>
+                        </DropdownMenuItem>
 
-                    {canResetPassword && (
-                        <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                variant="destructive"
-                                // Deferred a tick so the menu finishes closing
-                                // before the dialog grabs focus -- otherwise the
-                                // two focus traps fight and the dialog opens blurred.
-                                onSelect={() =>
-                                    setTimeout(() => onResetPassword(row), 0)
-                                }
-                            >
-                                <KeyRound className="h-4 w-4" />
-                                {resettingId === row.id
-                                    ? "Resetting…"
-                                    : "Reset Password"}
-                            </DropdownMenuItem>
-                        </>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
-        ),
-    },
+                        {canResetPassword && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    // Deferred a tick so the menu finishes closing
+                                    // before the dialog grabs focus -- otherwise the
+                                    // two focus traps fight and the dialog opens blurred.
+                                    onSelect={() =>
+                                        setTimeout(
+                                            () => onResetPassword(row),
+                                            0,
+                                        )
+                                    }
+                                >
+                                    <KeyRound className="h-4 w-4" />
+                                    {resettingId === row.id
+                                        ? "Resetting…"
+                                        : "Reset Password"}
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ),
+        },
     ];
 }
 
@@ -500,11 +509,11 @@ export default function Employees() {
                             <div className="space-y-2">
                                 <p>
                                     This replaces{" "}
-                                    <span className="font-semibold text-foreground">
+                                    <span className="text-foreground font-semibold">
                                         {resetTarget?.name}
                                     </span>
                                     &rsquo;s password with the default{" "}
-                                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
+                                    <code className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono">
                                         {DEFAULT_PASSWORD}
                                     </code>
                                     .

@@ -403,7 +403,6 @@ export default function LogoverrideForm() {
                                     </FormItem>
                                 )}
                             />
-
                             <div>
                                 <Controller
                                     name="remarks"

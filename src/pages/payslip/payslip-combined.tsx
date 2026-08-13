@@ -228,8 +228,8 @@ export default function PayslipCombined() {
                 const daysInMonth = getDaysInMonth(new Date(y, m - 1));
                 const pad = (n: number) => String(n).padStart(2, "0");
                 const monthName = format(new Date(y, m - 1), "MMMM");
-                // Visible on the 15th of the month 2 months after (e.g. May → July 15)
-                const visibleFrom = new Date(y, m + 1, 15);
+                // Visible on the 13th of the month 2 months after (e.g. May → July 13)
+                const visibleFrom = new Date(y, m + 1, 13);
                 if (!isAfter(visibleFrom, today)) {
                     periods.push({
                         value: ym,

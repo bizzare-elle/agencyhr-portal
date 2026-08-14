@@ -11,6 +11,7 @@ import { ImageUploader } from "@/components/image-dropzone";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
     Form,
     FormField,
@@ -165,6 +166,25 @@ const isDateAllowed = (date: Date) => {
  *  value below and the server-side check in api_v2/Logoverrides.php. */
 const OFFSET_REMARK = "Offset";
 
+/** Local-time YYYY-MM-DD. toISOString() would shift the date near midnight,
+ *  since PH is UTC+8 and that call converts to UTC first. */
+function toISODate(d: Date) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function todayISO() {
+    return toISODate(new Date());
+}
+
+/** Newest date an offset may reference. Today is excluded -- an offset can only
+ *  point at hours already fully rendered. */
+function maxOffsetISO() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return toISODate(d);
+}
+
 const schema = z
     .object({
         branch_id: z.string().min(1, "Select a branch"),
@@ -195,6 +215,9 @@ const schema = z
         // Only meaningful for the "Offset" remark; required in that case via the
         // superRefine below, ignored otherwise.
         reason: z.string().trim().optional(),
+        // Past date whose hours are being offset. Same conditional rules as
+        // reason -- required for Offset, ignored otherwise.
+        offset_date: z.string().trim().optional(),
         imageReference: z
             .any()
             .refine((file) => file instanceof File, {
@@ -212,11 +235,29 @@ const schema = z
     })
     .superRefine((val, ctx) => {
         // "Offset" alone does not tell the approver what is being offset.
-        if (val.remarks === OFFSET_REMARK && !val.reason) {
+        if (val.remarks !== OFFSET_REMARK) return;
+
+        if (!val.reason) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["reason"],
                 message: "Enter what is being offset",
+            });
+        }
+
+        if (!val.offset_date) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["offset_date"],
+                message: "Select the date being offset",
+            });
+        } else if (val.offset_date >= todayISO()) {
+            // Mirrors the server check. The input's max attribute blocks the
+            // picker, but a typed date can still get past it.
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["offset_date"],
+                message: "The offset date must be before today",
             });
         }
     });
@@ -229,7 +270,12 @@ export default function LogoverrideForm() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
-        defaultValues: { remarks: "", branch_id: "", reason: "" },
+        defaultValues: {
+            remarks: "",
+            branch_id: "",
+            reason: "",
+            offset_date: "",
+        },
     });
 
     // Drives the conditional Reason field below.
@@ -256,6 +302,7 @@ export default function LogoverrideForm() {
             // the user switches remark types.
             if (formValues.remarks === OFFSET_REMARK) {
                 formData.append("reason", formValues.reason ?? "");
+                formData.append("offset_date", formValues.offset_date ?? "");
             }
             if (formValues.imageReference)
                 formData.append("image", formValues.imageReference);
@@ -425,9 +472,14 @@ export default function LogoverrideForm() {
                                                                 "reason",
                                                                 "",
                                                             );
-                                                            form.clearErrors(
-                                                                "reason",
+                                                            form.setValue(
+                                                                "offset_date",
+                                                                "",
                                                             );
+                                                            form.clearErrors([
+                                                                "reason",
+                                                                "offset_date",
+                                                            ]);
                                                         }
                                                     }}
                                                     value={field.value}
@@ -476,6 +528,45 @@ export default function LogoverrideForm() {
                             {/* Reason — Offset only. The dropdown says an
                                 offset was filed; this says what it offsets,
                                 which is what the approver actually needs. */}
+                            {/* Offset date — the past date being offset. max
+                                blocks future picks; the schema re-checks it
+                                because the attribute is only an input hint. */}
+                            {watchedRemarks === OFFSET_REMARK && (
+                                <FormField
+                                    control={form.control}
+                                    name="offset_date"
+                                    render={({ field, fieldState }) => (
+                                        <FormItem className="space-y-2">
+                                            <FormLabel>
+                                                Date Being Offset
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="text-destructive ml-0.5"
+                                                >
+                                                    *
+                                                </span>
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="date"
+                                                    max={maxOffsetISO()}
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                />
+                                            </FormControl>
+                                            <p className="text-muted-foreground text-xs">
+                                                The date the hours were
+                                                originally rendered. Must be
+                                                before today.
+                                            </p>
+                                            <FormMessage>
+                                                {fieldState?.error?.message}
+                                            </FormMessage>
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+
                             {watchedRemarks === OFFSET_REMARK && (
                                 <FormField
                                     control={form.control}

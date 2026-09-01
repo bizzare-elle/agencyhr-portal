@@ -8,7 +8,8 @@ interface TmDownline {
     agency: string;
     position: string;
     bonus_amount: string;
-    is_active: boolean;
+    is_eligible: boolean;
+    ineligible_reason: "ir" | "inactive" | "not_hired" | null;
     layer: 1 | 2;
     mentor_name?: string;
 }
@@ -41,10 +42,10 @@ export const PrintTMPayslip: React.FC<PrintTMPayslipProps> = ({
     l2s,
 }) => {
     const handlePrint = () => {
-        const activeL1 = l1s.filter((d) => d.is_active);
-        const activeL2 = l2s.filter((d) => d.is_active);
-        const l1Total  = activeL1.length * 250;
-        const l2Total  = activeL2.length * 100;
+        const activeL1 = l1s.filter((d) => d.is_eligible);
+        const activeL2 = l2s.filter((d) => d.is_eligible);
+        const l1Total  = activeL1.reduce((s, d) => s + parseFloat(d.bonus_amount || "0"), 0);
+        const l2Total  = activeL2.reduce((s, d) => s + parseFloat(d.bonus_amount || "0"), 0);
 
         const earningsRows = `
             <tr>
@@ -62,19 +63,19 @@ export const PrintTMPayslip: React.FC<PrintTMPayslipProps> = ({
             const children = l2s.filter((l2) => l2.mentor_name === d.name);
             const childHtml = children.map((l2) => `
                 <tr>
-                    <td class="indent">↳ ${l2.name}${!l2.is_active ? " (excluded)" : ""}</td>
+                    <td class="indent">↳ ${l2.name}${!l2.is_eligible ? " (excluded)" : ""}</td>
                     <td class="c">L2</td>
                     <td>${l2.position}</td>
                     <td>${l2.agency}</td>
-                    <td class="r ${l2.is_active ? "" : "strike"}">${ph(parseFloat(l2.bonus_amount))}</td>
+                    <td class="r ${l2.is_eligible ? "" : "strike"}">${ph(parseFloat(l2.bonus_amount))}</td>
                 </tr>`).join("");
             return `
                 <tr>
-                    <td><strong>${d.name}</strong>${!d.is_active ? " (excluded)" : ""}</td>
+                    <td><strong>${d.name}</strong>${!d.is_eligible ? " (excluded)" : ""}</td>
                     <td class="c">L1</td>
                     <td>${d.position}</td>
                     <td>${d.agency}</td>
-                    <td class="r ${d.is_active ? "" : "strike"}">${ph(parseFloat(d.bonus_amount))}</td>
+                    <td class="r ${d.is_eligible ? "" : "strike"}">${ph(parseFloat(d.bonus_amount))}</td>
                 </tr>${childHtml}`;
         }).join("");
 

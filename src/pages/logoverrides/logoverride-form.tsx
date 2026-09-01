@@ -11,7 +11,7 @@ import { ImageUploader } from "@/components/image-dropzone";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input"; // offset date parked
 import {
     Form,
     FormField,
@@ -166,24 +166,29 @@ const isDateAllowed = (date: Date) => {
  *  value below and the server-side check in api_v2/Logoverrides.php. */
 const OFFSET_REMARK = "Offset";
 
-/** Local-time YYYY-MM-DD. toISOString() would shift the date near midnight,
- *  since PH is UTC+8 and that call converts to UTC first. */
-function toISODate(d: Date) {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function todayISO() {
-    return toISODate(new Date());
-}
-
-/** Newest date an offset may reference. Today is excluded -- an offset can only
- *  point at hours already fully rendered. */
-function maxOffsetISO() {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return toISODate(d);
-}
+// ── Offset date — parked ──────────────────────────────────────────────────
+// The "Date Being Offset" field is disabled for now; only the free-text reason
+// is collected for the Offset remark. Everything needed to switch it back on is
+// commented out in place, here and at the marked spots below.
+//
+// /** Local-time YYYY-MM-DD. toISOString() would shift the date near midnight,
+//  *  since PH is UTC+8 and that call converts to UTC first. */
+// function toISODate(d: Date) {
+//     const pad = (n: number) => String(n).padStart(2, "0");
+//     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// }
+//
+// function todayISO() {
+//     return toISODate(new Date());
+// }
+//
+// /** Newest date an offset may reference. Today is excluded -- an offset can
+//  *  only point at hours already fully rendered. */
+// function maxOffsetISO() {
+//     const d = new Date();
+//     d.setDate(d.getDate() - 1);
+//     return toISODate(d);
+// }
 
 const schema = z
     .object({
@@ -215,9 +220,8 @@ const schema = z
         // Only meaningful for the "Offset" remark; required in that case via the
         // superRefine below, ignored otherwise.
         reason: z.string().trim().optional(),
-        // Past date whose hours are being offset. Same conditional rules as
-        // reason -- required for Offset, ignored otherwise.
-        offset_date: z.string().trim().optional(),
+        // Offset date parked -- see the note by the date helpers above.
+        // offset_date: z.string().trim().optional(),
         imageReference: z
             .any()
             .refine((file) => file instanceof File, {
@@ -245,21 +249,20 @@ const schema = z
             });
         }
 
-        if (!val.offset_date) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["offset_date"],
-                message: "Select the date being offset",
-            });
-        } else if (val.offset_date >= todayISO()) {
-            // Mirrors the server check. The input's max attribute blocks the
-            // picker, but a typed date can still get past it.
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["offset_date"],
-                message: "The offset date must be before today",
-            });
-        }
+        // Offset date parked:
+        // if (!val.offset_date) {
+        //     ctx.addIssue({
+        //         code: z.ZodIssueCode.custom,
+        //         path: ["offset_date"],
+        //         message: "Select the date being offset",
+        //     });
+        // } else if (val.offset_date >= todayISO()) {
+        //     ctx.addIssue({
+        //         code: z.ZodIssueCode.custom,
+        //         path: ["offset_date"],
+        //         message: "The offset date must be before today",
+        //     });
+        // }
     });
 
 type FormValues = z.infer<typeof schema>;
@@ -274,7 +277,7 @@ export default function LogoverrideForm() {
             remarks: "",
             branch_id: "",
             reason: "",
-            offset_date: "",
+            // offset_date: "",
         },
     });
 
@@ -302,7 +305,7 @@ export default function LogoverrideForm() {
             // the user switches remark types.
             if (formValues.remarks === OFFSET_REMARK) {
                 formData.append("reason", formValues.reason ?? "");
-                formData.append("offset_date", formValues.offset_date ?? "");
+                // formData.append("offset_date", formValues.offset_date ?? "");
             }
             if (formValues.imageReference)
                 formData.append("image", formValues.imageReference);
@@ -472,14 +475,9 @@ export default function LogoverrideForm() {
                                                                 "reason",
                                                                 "",
                                                             );
-                                                            form.setValue(
-                                                                "offset_date",
-                                                                "",
-                                                            );
-                                                            form.clearErrors([
+                                                            form.clearErrors(
                                                                 "reason",
-                                                                "offset_date",
-                                                            ]);
+                                                            );
                                                         }
                                                     }}
                                                     value={field.value}
@@ -528,9 +526,9 @@ export default function LogoverrideForm() {
                             {/* Reason — Offset only. The dropdown says an
                                 offset was filed; this says what it offsets,
                                 which is what the approver actually needs. */}
-                            {/* Offset date — the past date being offset. max
-                                blocks future picks; the schema re-checks it
-                                because the attribute is only an input hint. */}
+                            {/* Offset date — parked. Restore together with the
+                                commented schema/helper blocks above.
+
                             {watchedRemarks === OFFSET_REMARK && (
                                 <FormField
                                     control={form.control}
@@ -566,6 +564,8 @@ export default function LogoverrideForm() {
                                     )}
                                 />
                             )}
+
+                            */}
 
                             {watchedRemarks === OFFSET_REMARK && (
                                 <FormField

@@ -132,7 +132,8 @@ interface TmDownline {
     agency: string;
     position: string;
     bonus_amount: string;
-    is_active: boolean;
+    is_eligible: boolean;
+    ineligible_reason: "ir" | "inactive" | "not_hired" | null;
     layer: 1 | 2;
     mentor_name?: string;
 }
@@ -747,8 +748,8 @@ export default function PayslipCombined() {
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                 <SummaryKpi label="1st Layer" value={String(tmL1s.length)} sub="₱250 each" color="blue" />
                                 <SummaryKpi label="2nd Layer" value={String(tmL2s.length)} sub="₱100 each" color="purple" />
-                                <SummaryKpi label="L1 Subtotal" value={formatToPeso(tmL1s.length * 250)} sub="gross" color="green" />
-                                <SummaryKpi label="L2 Subtotal" value={formatToPeso(tmL2s.length * 100)} sub="gross" color="yellow" />
+                                <SummaryKpi label="L1 Subtotal" value={formatToPeso(tmL1s.reduce((s, d) => s + parseFloat(d.bonus_amount || "0"), 0))} sub="gross" color="green" />
+                                <SummaryKpi label="L2 Subtotal" value={formatToPeso(tmL2s.reduce((s, d) => s + parseFloat(d.bonus_amount || "0"), 0))} sub="gross" color="yellow" />
                             </div>
 
                             {/* Eligibility alert */}
@@ -807,7 +808,7 @@ export default function PayslipCombined() {
                                                                 <span className="rounded border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-bold text-blue-400">
                                                                     1st Layer
                                                                 </span>
-                                                                {!l1.is_active && (
+                                                                {!l1.is_eligible && (
                                                                     <span className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-400">
                                                                         Excluded
                                                                     </span>
@@ -819,7 +820,7 @@ export default function PayslipCombined() {
                                                             </p>
                                                         </div>
                                                         <div className="flex shrink-0 items-center gap-2">
-                                                            <span className={`text-sm font-bold ${l1.is_active ? "text-green-400" : "text-muted-foreground line-through"}`}>
+                                                            <span className={`text-sm font-bold ${l1.is_eligible ? "text-green-400" : "text-muted-foreground line-through"}`}>
                                                                 {formatToPeso(parseFloat(l1.bonus_amount))}
                                                             </span>
                                                             {children.length > 0 ? (
@@ -843,7 +844,7 @@ export default function PayslipCombined() {
                                                                             <span className="rounded border border-purple-500/30 bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-bold text-purple-400">
                                                                                 2nd Layer
                                                                             </span>
-                                                                            {!l2.is_active && (
+                                                                            {!l2.is_eligible && (
                                                                                 <span className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold text-red-400">
                                                                                     Excluded
                                                                                 </span>
@@ -853,7 +854,7 @@ export default function PayslipCombined() {
                                                                             {l2.position} &bull; {l2.agency}
                                                                         </p>
                                                                     </div>
-                                                                    <span className={`shrink-0 text-xs font-bold ${l2.is_active ? "text-green-400" : "text-muted-foreground line-through"}`}>
+                                                                    <span className={`shrink-0 text-xs font-bold ${l2.is_eligible ? "text-green-400" : "text-muted-foreground line-through"}`}>
                                                                         {formatToPeso(parseFloat(l2.bonus_amount))}
                                                                     </span>
                                                                 </div>

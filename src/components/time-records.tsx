@@ -54,14 +54,12 @@ export default function TimeRecords() {
         },
     });
 
-    const employeeId = isHrEmployee
-        ? meQuery.data?.hr_id
-        : routeEmployeeId || meQuery.data?.hr_id;
+    const employeeId = routeEmployeeId || meQuery.data?.hr_id;
 
     const employeeNameView = fetchEmployeeName.data;
-    const employeeName = isHrEmployee
-        ? meQuery.data?.name
-        : employeeNameView || "Employee";
+    const employeeName = routeEmployeeId
+        ? employeeNameView || "Employee"
+        : meQuery.data?.name || "Employee";
 
     const queryFrom = datesToRender[0]
         ? moment(datesToRender[0]).format("YYYY-MM-DD")

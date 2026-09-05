@@ -74,7 +74,10 @@ export default function TimeRecords() {
         queryKey: ["time-records", employeeId, queryFrom, queryTo],
         queryFn: async () => {
             const response = await api.get<
-                ApiResponse<{ time_records: TimeRecord[] }>
+                ApiResponse<{
+                    time_records: TimeRecord[];
+                    period_branch_name: string | null;
+                }>
             >(
                 `/api/v2/time-records/${employeeId}?from=${queryFrom}&to=${queryTo}`,
             );
@@ -159,10 +162,12 @@ export default function TimeRecords() {
         return "No Agency";
     }, [records]);
 
+    // Mirrors resolve_employee_branch_as_of() in the backoffice print view: the
+    // employee's home branch as of the END of the printed period (transfer-aware),
+    // not just whichever record happens to be first in the fetched range.
     const branchName = useMemo(() => {
-        if (records.length > 0) return records[0]?.branch_name || "No Branch";
-        return "No Branch";
-    }, [records]);
+        return data?.period_branch_name || "No Branch";
+    }, [data]);
 
     const idNumber = useMemo(() => {
         if (records.length > 0) return records[0]?.id_number || "No ID Number";

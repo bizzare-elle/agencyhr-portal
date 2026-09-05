@@ -79,7 +79,21 @@ const CATEGORY_PRIORITY: Record<string, number> = {
     "Regular Day": 0,
 };
 
-type SummaryEntry = { days: number; ot: number; nd: number; ot_nd: number };
+const HOLIDAY_CATEGORIES = new Set([
+    "Legal Holiday",
+    "Legal Holiday on Rest Day",
+    "Legal Holiday (Day Off) 100%",
+    "Special Holiday",
+    "Special Holiday on Rest Day",
+]);
+
+type SummaryEntry = {
+    days: number;
+    base: number;
+    ot: number;
+    nd: number;
+    ot_nd: number;
+};
 type BranchSummary = Record<string, SummaryEntry>;
 type BranchLU = {
     late_days: number;
@@ -132,7 +146,7 @@ export const PrintTimeRecords: React.FC<
         const blankSummary = (): BranchSummary => {
             const s: BranchSummary = {};
             SUMMARY_ORDER.forEach((t) => {
-                s[t] = { days: 0, ot: 0, nd: 0, ot_nd: 0 };
+                s[t] = { days: 0, base: 0, ot: 0, nd: 0, ot_nd: 0 };
             });
             return s;
         };
@@ -141,9 +155,9 @@ export const PrintTimeRecords: React.FC<
         const branchLU: Record<string, BranchLU> = {};
 
         records.forEach((rec: any) => {
-            // Raw API records use clock_in_branch / clock_out_branch
+            // Mirrors backoffice's row_branch_id = branch_id ?? branch_clock_in ?? branch_clock_out
             const branchKey: string =
-                rec.clock_in_branch || rec.branch_timeIn || "Unassigned";
+                rec.branch_name || rec.clock_in_branch || rec.clock_out_branch || "Unassigned";
 
             if (!branchSummaries[branchKey]) {
                 branchSummaries[branchKey] = blankSummary();
@@ -155,23 +169,6 @@ export const PrintTimeRecords: React.FC<
                     billable: 0,
                 };
             }
-
-            // Raw API field names: total_hrs_late, total_hrs_break_late, total_undertime_hrs, total_hrs
-            const late =
-                Number(rec.total_hrs_late ?? rec.late ?? 0) +
-                Number(rec.total_hrs_break_late ?? rec.late_break ?? 0);
-            const under = Number(rec.total_undertime_hrs ?? rec.undertime ?? 0);
-            if (late > 0) {
-                branchLU[branchKey].late_days++;
-                branchLU[branchKey].late_hrs += late;
-            }
-            if (under > 0) {
-                branchLU[branchKey].under_days++;
-                branchLU[branchKey].under_hrs += under;
-            }
-            branchLU[branchKey].billable += Number(
-                rec.total_hrs ?? rec.hours ?? 0,
-            );
 
             // Parse manhour_conversion → {category: hours}
             let manhours: Record<string, number> = {};
@@ -198,6 +195,34 @@ export const PrintTimeRecords: React.FC<
                     dayCategory = cat;
                 }
             });
+
+            // Late/undertime hours are zeroed out on holiday-type days -- those hours
+            // are already broken out in their own Legal/Special Holiday attendance
+            // row, so counting them again here would double-charge the employee for
+            // the same day. Mirrors $is_holiday_day in the PHP print view.
+            const isHolidayDay = dayCategory
+                ? HOLIDAY_CATEGORIES.has(dayCategory)
+                : false;
+
+            const late = isHolidayDay
+                ? 0
+                : Number(rec.total_hrs_late ?? rec.late ?? 0) +
+                  Number(rec.total_hrs_break_late ?? rec.late_break ?? 0);
+            const under = isHolidayDay
+                ? 0
+                : Number(rec.total_undertime_hrs ?? rec.undertime ?? 0);
+            if (late > 0) {
+                branchLU[branchKey].late_days++;
+                branchLU[branchKey].late_hrs += late;
+            }
+            if (under > 0) {
+                branchLU[branchKey].under_days++;
+                branchLU[branchKey].under_hrs += under;
+            }
+            branchLU[branchKey].billable += Number(
+                rec.total_hrs ?? rec.hours ?? 0,
+            );
+
             if (!dayCategory) return;
 
             branchSummaries[branchKey][dayCategory].days++;
@@ -216,6 +241,9 @@ export const PrintTimeRecords: React.FC<
                         Number(hours);
                 else if (isND)
                     branchSummaries[branchKey][dayCategory!].nd +=
+                        Number(hours);
+                else
+                    branchSummaries[branchKey][dayCategory!].base +=
                         Number(hours);
             });
         });
@@ -238,6 +266,7 @@ export const PrintTimeRecords: React.FC<
                     if (
                         !d ||
                         (d.days === 0 &&
+                            d.base === 0 &&
                             d.ot === 0 &&
                             d.nd === 0 &&
                             d.ot_nd === 0)
@@ -246,9 +275,21 @@ export const PrintTimeRecords: React.FC<
                     const otD = floorHalf(d.ot);
                     const ndD = floorHalf(d.nd);
                     const otNdD = floorHalf(d.ot_nd);
+                    // Matrix is Excel-style overlapping: base incl. ND, ot incl. ot_nd.
+                    // "Regular Day" shows a day count; every other (holiday/rest-day)
+                    // category shows accumulated base hours instead, mirroring the PHP
+                    // print view's $days_cell logic.
+                    const daysCell =
+                        type === "Regular Day"
+                            ? d.days > 0
+                                ? `${d.days} Day/s`
+                                : ""
+                            : d.base > 0
+                              ? fmt2(d.base)
+                              : "";
                     return `<tr>
                         <td style="text-align:left;">${type}</td>
-                        <td>${d.days > 0 ? d.days : ""}</td>
+                        <td>${daysCell}</td>
                         <td>${otD > 0 ? fmt2(otD) : ""}</td>
                         <td>${ndD > 0 ? fmt2(ndD) : ""}</td>
                         <td>${otNdD > 0 ? fmt2(otNdD) : ""}</td>
@@ -259,9 +300,8 @@ export const PrintTimeRecords: React.FC<
                     bu.late_hrs > 0
                         ? `<tr>
                         <td style="text-align:left;">Late(s) / Hour(s)</td>
-                        <td>${bu.late_days}</td>
                         <td>${fmt2(bu.late_hrs)}</td>
-                        <td></td><td></td>
+                        <td></td><td></td><td></td>
                     </tr>`
                         : "";
 
@@ -269,9 +309,8 @@ export const PrintTimeRecords: React.FC<
                     bu.under_hrs > 0
                         ? `<tr>
                         <td style="text-align:left;">Undertime / Hour(s)</td>
-                        <td>${bu.under_days}</td>
                         <td>${fmt2(bu.under_hrs)}</td>
-                        <td></td><td></td>
+                        <td></td><td></td><td></td>
                     </tr>`
                         : "";
 
@@ -285,7 +324,7 @@ export const PrintTimeRecords: React.FC<
                             </tr>
                             <tr>
                                 <th style="text-align:left; width:44%;">Work Type</th>
-                                <th>Days</th>
+                                <th>Days / Hours</th>
                                 <th>OT</th>
                                 <th>ND</th>
                                 <th>OT + ND</th>
@@ -320,10 +359,32 @@ export const PrintTimeRecords: React.FC<
                 </tr>
             </tfoot>`;
 
-        const printContent = table.outerHTML.replace(
+        // ── Mark overnight clock-outs (Time Out < Time In on the same cutoff) ──
+        // Mirrors the PHP print view's `$row['clock_out'] < $row['clock_in']` check.
+        // Operates on a detached clone so the on-screen table is left untouched.
+        const clonedTable = table.cloneNode(true) as HTMLTableElement;
+        let hasOvernight = false;
+        const clonedRows = clonedTable.querySelectorAll("tbody tr");
+        clonedRows.forEach((row, idx) => {
+            const rec = records[idx];
+            if (!rec) return;
+            const clockIn = rec.clock_in || rec.timeIn;
+            const clockOut = rec.clock_out || rec.timeOut;
+            if (!clockIn || !clockOut || clockOut >= clockIn) return;
+            const timeOutCell = row.querySelectorAll("td")[6];
+            if (!timeOutCell) return;
+            timeOutCell.textContent = `${(timeOutCell.textContent || "").trim()} *`;
+            hasOvernight = true;
+        });
+
+        const printContent = clonedTable.outerHTML.replace(
             "</table>",
             tfootHtml + "</table>",
         );
+
+        const overnightNoteHtml = hasOvernight
+            ? `<div style="font-size:9px; margin-top:3px;">* Time Out marked with * indicates next-day clock-out (overnight shift)</div>`
+            : "";
 
         const disclaimerHtml = isHrEmployee
             ? `<div class="footer"><strong>Disclaimer:</strong> This is not an official document.</div>`
@@ -402,6 +463,7 @@ export const PrintTimeRecords: React.FC<
 
                 <!-- Main timesheet table (with injected tfoot) -->
                 ${printContent}
+                ${overnightNoteHtml}
 
                 <!-- Per-branch attendance breakdown -->
                 <div class="breakdown-wrapper" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; margin-top:10px;">

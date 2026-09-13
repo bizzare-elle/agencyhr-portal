@@ -22,6 +22,9 @@ import ScheduleDashboard from "./pages/schedules/schedule-dashboard";
 import { ParentComponent } from "./components/parent-container";
 import { useIdleLogout } from "./hooks/use-idle";
 import ScheduleUpload from "./pages/schedules/schedules-upload";
+import LeaveDashboard from "./pages/leave-forms/leave-dashboard";
+import LeaveForm from "./pages/leave-forms/leave-form";
+import MyLeaveForms from "./pages/leave-forms/my-leave-forms";
 import FormsHub from "./pages/forms/forms-hub";
 import EicfForm from "./pages/forms/eicf-form";
 import MrfForm from "./pages/forms/mrf-form";
@@ -188,6 +191,26 @@ const router = createBrowserRouter([
                         handle: { title: "Schedule Upload" },
                     },
                 ],
+            },
+            {
+                path: "/leave-forms",
+                children: [
+                    {
+                        index: true,
+                        element: <LeaveDashboard />,
+                        handle: { title: "Leave Forms" },
+                    },
+                    {
+                        path: "form",
+                        element: <LeaveForm />,
+                        handle: { title: "File Leave Form" },
+                    },
+                ],
+            },
+            {
+                path: "/my-leave-forms/:id",
+                element: <MyLeaveForms />,
+                handle: { title: "Leave Forms" },
             },
             {
                 path: "/payslip",

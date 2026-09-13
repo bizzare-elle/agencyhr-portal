@@ -13,6 +13,7 @@ import {
     IconSchool,
     IconHistory,
     IconUsersGroup,
+    IconCalendarOff,
 } from "@tabler/icons-react";
 import { Timer, ShieldCheck, Settings2, Wifi, Receipt } from "lucide-react";
 import { isTabEnabled } from "@/lib/tabs";
@@ -136,6 +137,12 @@ function buildSections(
                 url: `/payslip/${userId ?? ""}`,
                 icon: Receipt,
             });
+        if (ok("leave_forms"))
+            attendanceItems.push({
+                title: "Leave Forms",
+                url: `/my-leave-forms/${userId ?? ""}`,
+                icon: IconCalendarOff,
+            });
         if (attendanceItems.length)
             sections.push({ label: "Attendance", items: attendanceItems });
 
@@ -250,6 +257,11 @@ function buildSections(
                         title: "Schedule",
                         url: `/schedules/${userId ?? ""}`,
                         icon: IconCalendarCheck,
+                    },
+                    {
+                        title: "Leave Forms",
+                        url: "/leave-forms",
+                        icon: IconCalendarOff,
                     },
                     ...(isApprover
                         ? [

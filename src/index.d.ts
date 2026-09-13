@@ -133,6 +133,28 @@ export interface Employee {
     gross_pay: string | null;
 }
 
+export interface LeaveForm {
+    id: string;
+    employee_id: number;
+    employee_name: string;
+    employee_no: string;
+    filed_by_name?: string;
+    leave_type: "SL" | "VL";
+    leave_type_label: string;
+    is_paid: string;
+    date_start: string;
+    date_end: string;
+    days_count: number;
+    daily_cost: string | null;
+    total_cost: string | null;
+    remarks: string | null;
+    attachment_url: string | null;
+    created_by: string;
+    created_at: string;
+    updated_at: string | null;
+    deleted_at: string | null;
+}
+
 export interface Schedule {
     id: string;
     emp_sched_date_id: string;

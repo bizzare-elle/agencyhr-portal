@@ -100,6 +100,7 @@ const createSchema = z.object({
         .string()
         .regex(timeRegex, { message: "End time is required (HH:mm)" }),
     totalOt: z.string().min(1, { message: "Overtime hours cannot be empty" }),
+    remarks: z.string().min(1, { message: "Remarks are required" }),
     imageReference: imageValidator,
 });
 

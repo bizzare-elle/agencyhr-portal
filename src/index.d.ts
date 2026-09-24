@@ -276,3 +276,41 @@ export interface GroupedEmployee {
         manhourArray: { category: string; hours: number }[];
     }[];
 }
+
+export type SecurityRosterStatus = "pending" | "claimed" | "inactive";
+
+export interface SecurityRosterEntry {
+    id: number;
+    full_name: string;
+    license_number: string;
+    mobile_number: string;
+    branch_id: number | null;
+    branch_name: string | null;
+    schedule_type_id: number | null;
+    schedule_name: string | null;
+    status: SecurityRosterStatus;
+    claimed_at: string | null;
+    created_at: string | null;
+    can_edit: boolean;
+    can_deactivate: boolean;
+    can_reactivate: boolean;
+    can_delete: boolean;
+}
+
+export interface SecurityRosterTotals {
+    pending: number;
+    claimed: number;
+    inactive: number;
+    total: number;
+}
+
+export interface SecurityRosterOptions {
+    branches: { id: string; name: string }[];
+    schedules: { id: string; name: string }[];
+}
+
+export interface SecurityRosterImportResult {
+    inserted: number;
+    skipped: number;
+    details: string[];
+}

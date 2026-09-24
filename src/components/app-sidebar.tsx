@@ -14,6 +14,7 @@ import {
     IconHistory,
     IconUsersGroup,
     IconCalendarOff,
+    IconShieldCheck,
 } from "@tabler/icons-react";
 import { Timer, ShieldCheck, Settings2, Wifi, Receipt } from "lucide-react";
 import { isTabEnabled } from "@/lib/tabs";
@@ -54,6 +55,7 @@ function buildSections(
     isAdmin?: boolean,
     canWorkRemotely?: boolean,
     tabPerms?: Record<string, number>,
+    isSecurityAgency?: boolean,
 ): NavSection[] {
     const ok = (key: string) => isTabEnabled(key, tabPerms);
     if (isAdmin) {
@@ -263,6 +265,15 @@ function buildSections(
                         url: "/leave-forms",
                         icon: IconCalendarOff,
                     },
+                    ...(isSecurityAgency
+                        ? [
+                              {
+                                  title: "Security Roster",
+                                  url: "/security-roster",
+                                  icon: IconShieldCheck,
+                              },
+                          ]
+                        : []),
                     ...(isApprover
                         ? [
                               {
@@ -309,6 +320,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     can_work_remotely?: number;
                     work_remotely_days?: string | null;
                     tab_permissions?: Record<string, number>;
+                    is_security_agency?: number;
                 }>
             >(`/api/v2/auth/me`);
             return response.data.data;
@@ -346,6 +358,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isAdmin,
         canWorkRemotely,
         me?.tab_permissions,
+        (me?.is_security_agency ?? 0) === 1,
     );
 
     const renderItem = (item: NavItem) => (

@@ -19,7 +19,8 @@ interface Option {
 
 interface CustomSelectProps {
     label?: string;
-    apiUrl: string;
+    apiUrl?: string;
+    options?: Option[];
     value?: string;
     onChange: (value: string | undefined) => void;
     placeholder?: string;
@@ -30,6 +31,7 @@ interface CustomSelectProps {
 export default function CustomSelect({
     label,
     apiUrl,
+    options: providedOptions,
     value,
     onChange,
     placeholder = "Select an option...",
@@ -40,8 +42,9 @@ export default function CustomSelect({
 
     const { data, isLoading, isError, error } = useQuery<Option[]>({
         queryKey: ["custom-select", apiUrl],
+        enabled: !providedOptions && !!apiUrl,
         queryFn: async () => {
-            const res = await api.get(apiUrl);
+            const res = await api.get(apiUrl!);
             const payload = res.data?.data ?? res.data;
             return Array.isArray(payload) ? payload : [];
         },
@@ -49,7 +52,10 @@ export default function CustomSelect({
         refetchOnWindowFocus: false,
     });
 
-    const options = data ?? [];
+    const options = useMemo(
+        () => providedOptions ?? data ?? [],
+        [providedOptions, data],
+    );
 
     const filteredOptions = useMemo(() => {
         if (!search) return options;

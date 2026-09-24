@@ -13,6 +13,7 @@ import {
     IconSchool,
     IconHistory,
     IconShieldLock,
+    IconShieldCheck,
     IconBook2,
     IconChevronDown,
     IconChevronRight,
@@ -233,6 +234,29 @@ const SECTIONS: Section[] = [
         tips: [
             "EICF submissions are validated by HR before being finalized.",
             "MRF forms require branch and position details — have these ready before starting.",
+        ],
+    },
+    {
+        id: "security-roster",
+        icon: IconShieldCheck,
+        iconBg: "bg-yellow-500/15",
+        iconColor: "text-yellow-400",
+        label: "Security Roster",
+        description: "List the security guards your agency is posting to Wildflour branches, and set where and when each one works. Available to security agency coordinators only.",
+        steps: [
+            { text: "Open Security Roster under Management." },
+            { text: "The tiles at the top count your guards by status: Pending (on the roster, not yet registered), Claimed (registered on the branch tablet), and Inactive (posting cancelled)." },
+            { text: "Click Add Guard and enter the guard's full name, security license number, and mobile number. You can set the branch and schedule now or later." },
+            { text: "To set or change a posting, click the pencil icon on a Pending guard and choose the branch and schedule. Only branches with an attendance tablet are listed." },
+            { text: "Once a guard's branch and schedule are both set, they register on that branch's tablet using their license number. After that, their status changes to Claimed." },
+            { text: "To add many guards at once, click Import, download the blank template, fill in one guard per row, and upload it. Rows with problems are skipped and listed so you can fix and re-upload them." },
+            { text: "Click Export to download your whole roster as an Excel file." },
+        ],
+        tips: [
+            "Each license number can only appear once on your roster. A duplicate row in an import is skipped, never overwritten.",
+            "Deactivate a Pending guard whose posting is cancelled. You can reactivate them later if they never registered.",
+            "Only Pending postings can be edited, and only guards who have not registered yet can be deleted. Once a guard has registered, Atlas HR manages their record — contact HR for changes.",
+            "Branch and Schedule in the import template must match the names on the template's Field Reference sheet exactly.",
         ],
     },
     {

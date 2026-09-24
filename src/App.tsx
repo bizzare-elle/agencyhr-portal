@@ -42,6 +42,8 @@ import RemoteWork from "./pages/remote/remote-work";
 import DownlinePage from "./pages/downline/downline-page";
 import SystemGuide from "./pages/system-guide";
 import ResetPassword from "./pages/reset-password";
+import SecurityRoster from "./pages/security-roster/security-roster";
+import SecurityRosterForm from "./pages/security-roster/security-roster-form";
 
 const router = createBrowserRouter([
     {
@@ -204,6 +206,26 @@ const router = createBrowserRouter([
                         path: "form",
                         element: <LeaveForm />,
                         handle: { title: "File Leave Form" },
+                    },
+                ],
+            },
+            {
+                path: "/security-roster",
+                children: [
+                    {
+                        index: true,
+                        element: <SecurityRoster />,
+                        handle: { title: "Security Roster" },
+                    },
+                    {
+                        path: "form",
+                        element: <SecurityRosterForm />,
+                        handle: { title: "Add Guard to Roster" },
+                    },
+                    {
+                        path: "form/:rosterId",
+                        element: <SecurityRosterForm />,
+                        handle: { title: "Edit Roster Entry" },
                     },
                 ],
             },

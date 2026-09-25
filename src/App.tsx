@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
     createBrowserRouter,
     redirect,
@@ -44,6 +45,11 @@ import SystemGuide from "./pages/system-guide";
 import ResetPassword from "./pages/reset-password";
 import SecurityRoster from "./pages/security-roster/security-roster";
 import SecurityRosterForm from "./pages/security-roster/security-roster-form";
+// Lazy-loaded: pulls in @vladmandic/face-api + its TensorFlow.js runtime,
+// which is only needed by agency coordinators on this one page.
+const FaceEnrollmentPage = lazy(
+    () => import("./pages/face-enrollment/face-enrollment"),
+);
 
 const router = createBrowserRouter([
     {
@@ -228,6 +234,15 @@ const router = createBrowserRouter([
                         handle: { title: "Edit Roster Entry" },
                     },
                 ],
+            },
+            {
+                path: "/face-enrollment",
+                element: (
+                    <Suspense fallback={<FullPageLoader />}>
+                        <FaceEnrollmentPage />
+                    </Suspense>
+                ),
+                handle: { title: "Face Enrollment" },
             },
             {
                 path: "/my-leave-forms/:id",

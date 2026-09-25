@@ -96,8 +96,8 @@ export default function ScheduleDashboard() {
 
     const data = scheduleQuery.data;
     const employee = data?.info?.[0];
-    const recentSchedules = data?.recent ?? [];
-    const schedules = data?.schedules ?? [];
+    const recentSchedules = Array.isArray(data?.recent) ? data.recent : [];
+    const schedules = Array.isArray(data?.schedules) ? data.schedules : [];
     const initialLetter =
         employee?.employee_name?.charAt(0)?.toUpperCase() ?? "?";
 

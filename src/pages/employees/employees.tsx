@@ -24,6 +24,7 @@ import {
     MoreHorizontal,
     FileText,
     Clock,
+    ScanFace,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -79,7 +80,32 @@ function buildColumns(
     canResetPassword: boolean,
     onResetPassword: (employee: Employee) => void,
     resettingId: string | number | null,
+    showFaceEnrollment: boolean,
+    enrolledIds: Set<number>,
 ): TableColumn<Employee>[] {
+    const faceColumn: TableColumn<Employee>[] = showFaceEnrollment
+        ? [
+              {
+                  name: "Face Enrollment",
+                  cell: (row) =>
+                      enrolledIds.has(Number(row.id)) ? (
+                          <Badge className="bg-green-500/10 text-green-400">
+                              Enrolled
+                          </Badge>
+                      ) : (
+                          <Link
+                              to={`/face-enrollment?employee=${row.id}`}
+                              className="text-yellow-400 hover:underline"
+                          >
+                              <Badge className="cursor-pointer bg-yellow-500/10 text-yellow-400">
+                                  Not enrolled — Enroll now
+                              </Badge>
+                          </Link>
+                      ),
+              },
+          ]
+        : [];
+
     return [
         { name: "ID", selector: (row) => row.id, sortable: true },
         { name: "Name", selector: (row) => row.name, sortable: true },
@@ -105,6 +131,7 @@ function buildColumns(
                 );
             },
         },
+        ...faceColumn,
         {
             name: "Created At",
             selector: (row) => row.created_at,
@@ -141,6 +168,19 @@ function buildColumns(
                                 View Timesheet
                             </Link>
                         </DropdownMenuItem>
+
+                        {showFaceEnrollment && (
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    to={`/face-enrollment?employee=${row.id}`}
+                                >
+                                    <ScanFace className="h-4 w-4" />
+                                    {enrolledIds.has(Number(row.id))
+                                        ? "Re-enroll Face"
+                                        : "Enroll Face"}
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
 
                         {canResetPassword && (
                             <>
@@ -239,6 +279,31 @@ export default function Employees() {
         meQuery.data?.role === "agency_coordinator" ||
         Number(meQuery.data?.is_admin) === 1;
 
+    const isCoordinator = meQuery.data?.role === "agency_coordinator";
+
+    // Face Enrollment is coordinator-only (see Face_enrollment api_v2
+    // controller) — only fetch this list for coordinators, never for
+    // hr_employee viewers of this same page.
+    const faceEnrollmentQuery = useQuery({
+        queryKey: ["face-enrollments"],
+        queryFn: async () => {
+            const response = await api.get<ApiResponse<{ id: number; enrolled: boolean }[]>>(
+                "/api/v2/face-enrollments",
+            );
+            return response.data.data;
+        },
+        enabled: isCoordinator,
+        staleTime: 60 * 1000,
+    });
+
+    const enrolledIds = useMemo(() => {
+        const ids = new Set<number>();
+        (faceEnrollmentQuery.data ?? []).forEach((row) => {
+            if (row.enrolled) ids.add(Number(row.id));
+        });
+        return ids;
+    }, [faceEnrollmentQuery.data]);
+
     const handleResetPassword = async (employee: Employee) => {
         setResettingId(employee.id);
 
@@ -260,8 +325,15 @@ export default function Employees() {
     };
 
     const columns = useMemo(
-        () => buildColumns(canResetPassword, setResetTarget, resettingId),
-        [canResetPassword, resettingId],
+        () =>
+            buildColumns(
+                canResetPassword,
+                setResetTarget,
+                resettingId,
+                isCoordinator,
+                enrolledIds,
+            ),
+        [canResetPassword, resettingId, isCoordinator, enrolledIds],
     );
 
     const normalizeEmployeeIds = (ids: any): number[] => {

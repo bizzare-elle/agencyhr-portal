@@ -15,6 +15,7 @@ import {
     IconUsersGroup,
     IconCalendarOff,
     IconShieldCheck,
+    IconFaceId,
 } from "@tabler/icons-react";
 import { Timer, ShieldCheck, Settings2, Wifi, Receipt } from "lucide-react";
 import { isTabEnabled } from "@/lib/tabs";
@@ -283,18 +284,23 @@ function buildSections(
                               },
                           ]
                         : []),
-                ],
-            },
-            {
-                label: "Learning",
-                items: [
                     {
-                        title: "T&M Hierarchy",
-                        url: `/downline/${userId ?? ""}`,
-                        icon: IconUsersGroup,
+                        title: "Face Enrollment",
+                        url: "/face-enrollment",
+                        icon: IconFaceId,
                     },
                 ],
             },
+            // {
+            //     label: "Learning",
+            //     items: [
+            //         {
+            //             title: "T&M Hierarchy",
+            //             url: `/downline/${userId ?? ""}`,
+            //             icon: IconUsersGroup,
+            //         },
+            //     ],
+            // },
         ];
         return sections;
     }

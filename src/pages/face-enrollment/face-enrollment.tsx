@@ -935,8 +935,8 @@ function EnrollDialog({
                                 className="text-muted-foreground text-sm font-normal"
                             >
                                 I confirm the employee has been informed and
-                                consents to this biometric face enrollment,
-                                used for attendance purposes only.
+                                consents to this biometric face enrollment, used
+                                for attendance purposes only.
                             </Label>
                         </div>
                     )}
@@ -984,9 +984,7 @@ function EnrollDialog({
                     </Button>
                     <Button
                         disabled={
-                            !captured ||
-                            !consentGiven ||
-                            saveMutation.isPending
+                            !captured || !consentGiven || saveMutation.isPending
                         }
                         onClick={() => saveMutation.mutate(false)}
                         className="bg-yellow-500 text-white hover:bg-yellow-600"
@@ -1121,8 +1119,7 @@ function HistoryDialog({
                     )}
                     {!isLoading && versions.length === 0 && (
                         <p className="text-muted-foreground py-6 text-center text-sm">
-                            No prior versions — this is the original
-                            enrollment.
+                            No prior versions — this is the original enrollment.
                         </p>
                     )}
                     {versions.map((v) => (

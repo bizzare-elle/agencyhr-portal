@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import FullPageLoader from "@/components/page-loader";
+import { PropagateLoader } from "react-spinners";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -227,6 +228,10 @@ export default function Employees() {
     const [consolidatedData, setConsolidatedData] = useState<GroupedEmployee[]>(
         [],
     );
+    const [consolidateStage, setConsolidateStage] = useState<
+        "idle" | "consolidating" | "fetching" | "building"
+    >("idle");
+    const [fetchProgress, setFetchProgress] = useState({ done: 0, total: 0 });
 
     const meQuery = useQuery({
         queryKey: ["me"],
@@ -346,6 +351,12 @@ export default function Employees() {
         return [Number(ids)];
     };
 
+    // Batch size for the bulk time-records fetch below -- keeps each request
+    // (and the backend's own per-chunk batching) to a bounded size instead of
+    // sending every processed employee id in one request, and gives the
+    // loading indicator real progress increments to report.
+    const CONSOLIDATE_FETCH_CHUNK_SIZE = 50;
+
     const handleConsolidate = async () => {
         if (!cutOffDate) {
             toast.error("Please select a cut off date");
@@ -353,6 +364,8 @@ export default function Employees() {
         }
 
         setIsConsolidating(true);
+        setConsolidateStage("consolidating");
+        setFetchProgress({ done: 0, total: 0 });
 
         try {
             const agency_id = meQuery.data?.agency_id;
@@ -380,32 +393,72 @@ export default function Employees() {
             const month = cutOffDate.getMonth() + 1;
             const year = cutOffDate.getFullYear();
             const lastDay = new Date(year, month, 0).getDate();
+            // Zero-padded so 'YYYY-MM-DD' sorts/compares correctly as a plain
+            // string against consolidated_time_records.cut_off (also stored
+            // zero-padded) -- an unpadded "2026-9-16" string-compares as
+            // GREATER than "2026-09-16" and silently excludes real rows.
+            const monthStr = String(month).padStart(2, "0");
 
             const date_from =
-                day > 15 ? `${year}-${month}-16` : `${year}-${month}-01`;
+                day > 15
+                    ? `${year}-${monthStr}-16`
+                    : `${year}-${monthStr}-01`;
 
             const date_to =
                 day > 15
-                    ? `${year}-${month}-${lastDay}`
-                    : `${year}-${month}-15`;
+                    ? `${year}-${monthStr}-${String(lastDay).padStart(2, "0")}`
+                    : `${year}-${monthStr}-15`;
 
-            const responses = await Promise.all(
-                employeeIds.map((id) =>
-                    api
-                        .get<
-                            ApiResponse<{ time_records: TimeRecord[] }>
-                        >(`/api/v2/time-records/${id}?from=${date_from}&to=${date_to}`)
-                        .then((res) => res.data.data.time_records || []),
-                ),
-            );
+            // One bulk request per chunk of employees instead of one HTTP
+            // request per employee -- was `Promise.all(employeeIds.map(...))`,
+            // which fired e.g. 300 parallel requests for a 300-employee agency.
+            setConsolidateStage("fetching");
+            setFetchProgress({ done: 0, total: employeeIds.length });
 
-            const allRecords: TimeRecord[] = responses.flat();
+            const allRecords: TimeRecord[] = [];
+
+            for (
+                let i = 0;
+                i < employeeIds.length;
+                i += CONSOLIDATE_FETCH_CHUNK_SIZE
+            ) {
+                const chunk = employeeIds.slice(
+                    i,
+                    i + CONSOLIDATE_FETCH_CHUNK_SIZE,
+                );
+
+                const { data: bulkResponse } = await api.post<
+                    ApiResponse<{
+                        time_records_by_employee: Record<
+                            string,
+                            TimeRecord[]
+                        >;
+                    }>
+                >("/api/v2/time-records/bulk", {
+                    employee_ids: chunk,
+                    from: date_from,
+                    to: date_to,
+                });
+
+                const byEmployee =
+                    bulkResponse.data?.time_records_by_employee || {};
+                Object.values(byEmployee).forEach((records) => {
+                    allRecords.push(...records);
+                });
+
+                setFetchProgress((prev) => ({
+                    done: Math.min(prev.done + chunk.length, employeeIds.length),
+                    total: employeeIds.length,
+                }));
+            }
 
             if (!allRecords.length) {
                 toast.info("No time records found.");
                 setConsolidatedData([]);
                 return;
             }
+
+            setConsolidateStage("building");
 
             const grouped: Record<number, GroupedEmployee> = {};
 
@@ -454,8 +507,38 @@ export default function Employees() {
             toast.error("Consolidation failed.");
         } finally {
             setIsConsolidating(false);
+            setConsolidateStage("idle");
         }
     };
+
+    const CONSOLIDATE_STEPS = [
+        { key: "consolidating", label: "Consolidate records" },
+        { key: "fetching", label: "Fetch timesheets" },
+        { key: "building", label: "Build printable report" },
+    ] as const;
+
+    const consolidateStepIndex = CONSOLIDATE_STEPS.findIndex(
+        (s) => s.key === consolidateStage,
+    );
+
+    const consolidateLoaderMessage = useMemo(() => {
+        switch (consolidateStage) {
+            case "consolidating":
+                return "Consolidating time records for the selected cut-off...";
+            case "fetching":
+                return fetchProgress.total
+                    ? `Fetching timesheets — ${fetchProgress.done} of ${fetchProgress.total} employees`
+                    : "Fetching timesheets...";
+            case "building":
+                return "Building the printable report...";
+            default:
+                return undefined;
+        }
+    }, [consolidateStage, fetchProgress]);
+
+    const fetchProgressPercent = fetchProgress.total
+        ? Math.round((fetchProgress.done / fetchProgress.total) * 100)
+        : 0;
 
     if (isLoading) return <FullPageLoader />;
 
@@ -476,6 +559,68 @@ export default function Employees() {
 
     return (
         <div className="mx-auto w-full max-w-[1600px] space-y-8 p-6">
+            {isConsolidating && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-card border-border w-full max-w-sm rounded-lg border p-6 shadow-xl">
+                        <div className="flex justify-center">
+                            <PropagateLoader size={12} color="#eab308" />
+                        </div>
+
+                        <p className="mt-5 text-center text-sm font-medium">
+                            {consolidateLoaderMessage}
+                        </p>
+
+                        {consolidateStage === "fetching" && (
+                            <div className="mt-4">
+                                <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+                                    <div
+                                        className="h-full rounded-full bg-yellow-500 transition-all duration-300"
+                                        style={{
+                                            width: `${fetchProgressPercent}%`,
+                                        }}
+                                    />
+                                </div>
+                                <p className="text-muted-foreground mt-1 text-center text-xs">
+                                    {fetchProgressPercent}%
+                                </p>
+                            </div>
+                        )}
+
+                        <ol className="mt-5 space-y-2">
+                            {CONSOLIDATE_STEPS.map((step, i) => {
+                                const isDone = i < consolidateStepIndex;
+                                const isActive = i === consolidateStepIndex;
+                                return (
+                                    <li
+                                        key={step.key}
+                                        className={`flex items-center gap-2 text-xs ${
+                                            isActive
+                                                ? "text-foreground font-medium"
+                                                : isDone
+                                                  ? "text-muted-foreground"
+                                                  : "text-muted-foreground/50"
+                                        }`}
+                                    >
+                                        <span
+                                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                                                isDone
+                                                    ? "bg-green-500/20 text-green-500"
+                                                    : isActive
+                                                      ? "bg-yellow-500/20 text-yellow-500"
+                                                      : "bg-muted"
+                                            }`}
+                                        >
+                                            {isDone ? "✓" : i + 1}
+                                        </span>
+                                        {step.label}
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-1">
                 <h3 className="text-lg font-semibold">Employees</h3>
                 <span className="text-sm text-white/50">
@@ -515,14 +660,12 @@ export default function Employees() {
                         apiUrl="api/v2/get_branch"
                         value={selectedBranch}
                         onChange={setSelectedBranch}
-                        placeholder="Select branch..."
+                        placeholder="All branches"
                     />
 
                     <Button
                         onClick={handleConsolidate}
-                        disabled={
-                            !cutOffDate || !selectedBranch || isConsolidating
-                        }
+                        disabled={!cutOffDate || isConsolidating}
                     >
                         {isConsolidating ? "Consolidating..." : "Consolidate"}
                     </Button>

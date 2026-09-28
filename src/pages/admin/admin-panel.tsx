@@ -24,6 +24,7 @@ import {
     LayoutDashboard,
     Building2,
     Briefcase,
+    Activity,
 } from "lucide-react";
 import {
     Sheet,
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/popover";
 import api from "@/lib/axios";
 import { ApiResponse } from "@/index";
+import { formatToDateTime } from "@/helpers/formatDates";
 import { ParentComponent } from "@/components/parent-container";
 import FullPageLoader from "@/components/page-loader";
 import { Badge } from "@/components/ui/badge";
@@ -2320,6 +2322,195 @@ function DistributionList({
     );
 }
 
+// ── Activity Logs ────────────────────────────────────────────────────────────
+
+const ACTIVITY_PAGE_SIZE = 25;
+
+interface ActivityLogRow {
+    id: string;
+    affected_id: string;
+    affected_table: string;
+    action: string;
+    remarks: string | null;
+    extra_tag: string | null;
+    icon: string | null;
+    created_at: string;
+    created_by: string | null;
+    created_by_name: string;
+}
+
+interface ActivityLogsResponse {
+    status: number;
+    data: ActivityLogRow[];
+    meta: {
+        total: number;
+        page: number;
+        per_page: number;
+        last_page: number;
+    };
+}
+
+const ACTIVITY_TAG_STYLES: Record<string, string> = {
+    success: "bg-green-500/10 text-green-400",
+    warning: "bg-yellow-500/10 text-yellow-400",
+    danger: "bg-red-500/10 text-red-400",
+};
+
+function ActivityLogsTab() {
+    const [page, setPage] = useState(1);
+    const [search, setSearch] = useState("");
+
+    const { data, isLoading, isFetching } = useQuery({
+        queryKey: ["admin-activity-logs", page, search],
+        queryFn: async () => {
+            const params = new URLSearchParams({
+                page: String(page),
+                limit: String(ACTIVITY_PAGE_SIZE),
+            });
+            if (search) params.set("search", search);
+
+            const res = await api.get<ActivityLogsResponse>(
+                `/api/v2/admin/activity-logs?${params.toString()}`,
+            );
+            return res.data;
+        },
+        placeholderData: (prev) => prev,
+    });
+
+    const rows = data?.data ?? [];
+    const meta = data?.meta;
+    const totalPages = meta?.last_page ?? 1;
+
+    const handleSearch = (v: string) => {
+        setSearch(v);
+        setPage(1);
+    };
+
+    if (isLoading) return <FullPageLoader />;
+
+    return (
+        <Card className="py-0">
+            <CardHeader className="bg-primary/5 border-b px-6 py-7">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <Activity className="h-4 w-4" />
+                        Recent Activity{meta ? ` (${meta.total})` : ""}
+                    </CardTitle>
+                </div>
+                <p className="text-muted-foreground mt-1 text-xs">
+                    Record changes across the system, most recent first.
+                    Read-only views are not shown.
+                </p>
+
+                <div className="relative mt-3">
+                    <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+                    <input
+                        className="border-input bg-background focus:ring-primary w-full rounded-md border py-2 pr-3 pl-8 text-sm focus:ring-1 focus:outline-none"
+                        placeholder="Search by table or description…"
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                    />
+                    {search && (
+                        <button
+                            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                            onClick={() => handleSearch("")}
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
+            </CardHeader>
+
+            <CardContent className="p-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="px-5 py-3 text-xs font-semibold uppercase">
+                                When
+                            </TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase">
+                                Who
+                            </TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase">
+                                Action
+                            </TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase">
+                                Table
+                            </TableHead>
+                            <TableHead className="px-4 py-3 text-xs font-semibold uppercase">
+                                Details
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rows.length === 0 ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={5}
+                                    className="text-muted-foreground py-10 text-center text-sm"
+                                >
+                                    No recent activity found.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            rows.map((r) => (
+                                <TableRow key={r.id}>
+                                    <TableCell className="text-muted-foreground px-5 py-3 text-xs whitespace-nowrap">
+                                        {formatToDateTime(r.created_at)}
+                                    </TableCell>
+                                    <TableCell className="px-4 py-3 text-sm">
+                                        {r.created_by_name}
+                                    </TableCell>
+                                    <TableCell className="px-4 py-3">
+                                        <Badge
+                                            className={
+                                                ACTIVITY_TAG_STYLES[
+                                                    r.extra_tag ?? ""
+                                                ] ??
+                                                "bg-muted text-muted-foreground"
+                                            }
+                                        >
+                                            {r.action}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground px-4 py-3 text-xs">
+                                        {r.affected_table}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground max-w-xs truncate px-4 py-3 text-sm">
+                                        {r.remarks || "—"}
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+
+                {totalPages > 1 && (
+                    <div className="border-border/40 flex items-center justify-between border-t px-5 py-3">
+                        <button
+                            disabled={page === 1 || isFetching}
+                            onClick={() => setPage((p) => p - 1)}
+                            className="text-muted-foreground hover:text-foreground text-xs disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                            ← Prev
+                        </button>
+                        <span className="text-muted-foreground text-xs">
+                            Page {page} / {totalPages}
+                        </span>
+                        <button
+                            disabled={page === totalPages || isFetching}
+                            onClick={() => setPage((p) => p + 1)}
+                            className="text-muted-foreground hover:text-foreground text-xs disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                            Next →
+                        </button>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 function OverviewTab() {
     const { data: users = [], isLoading } = useQuery<EmployeeRow[]>({
         queryKey: ["admin-users"],
@@ -2574,6 +2765,10 @@ export default function AdminPanel() {
                             <Settings className="mr-1.5 h-3.5 w-3.5" />
                             Tab Access
                         </TabsTrigger>
+                        <TabsTrigger value="activity">
+                            <Activity className="mr-1.5 h-3.5 w-3.5" />
+                            Activity
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="overview">
@@ -2594,6 +2789,10 @@ export default function AdminPanel() {
 
                     <TabsContent value="tab-access">
                         <TabAccessTab />
+                    </TabsContent>
+
+                    <TabsContent value="activity">
+                        <ActivityLogsTab />
                     </TabsContent>
                 </Tabs>
             </div>

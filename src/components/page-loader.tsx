@@ -9,16 +9,20 @@ type FullPageLoaderProps = {
 };
 
 export default function FullPageLoader({
+    message,
     size = 20,
     color = "#ffffffff",
 }: FullPageLoaderProps) {
     return (
         <div
-            className={`fixed inset-0 z-50 flex items-center justify-center`}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3"
             aria-live="polite"
             aria-label="Loading"
         >
             <PropagateLoader size={size} color={color} />
+            {message && (
+                <p className="text-sm font-medium text-white">{message}</p>
+            )}
         </div>
     );
 }

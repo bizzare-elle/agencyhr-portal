@@ -32,6 +32,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import CustomSelect from "../custom-select";
 
 export interface TimeLog {
     id: string;
@@ -91,6 +92,10 @@ const columns: TableColumn<TimeLog>[] = [
             const [selectedType, setSelectedType] = useState<string | null>(
                 null,
             );
+            const [branchDialogOpen, setBranchDialogOpen] = useState(false);
+            const [selectedBranch, setSelectedBranch] = useState<
+                string | undefined
+            >(undefined);
 
             const handleWithdraw = async () => {
                 try {
@@ -117,6 +122,23 @@ const columns: TableColumn<TimeLog>[] = [
                     const message =
                         error?.response?.data?.message ||
                         "Failed to update clock type.";
+                    toast.error(message);
+                }
+            };
+
+            const handleChangeBranch = async (branchId: string) => {
+                try {
+                    await api.post(`/api/v2/change_branch/${row.id}`, {
+                        branch_id: branchId,
+                    });
+                    toast.success("Branch updated successfully!");
+                    queryClient.invalidateQueries({
+                        queryKey: ["employee-time-logs"],
+                    });
+                } catch (error: any) {
+                    const message =
+                        error?.response?.data?.message ||
+                        "Failed to update branch.";
                     toast.error(message);
                 }
             };
@@ -160,6 +182,17 @@ const columns: TableColumn<TimeLog>[] = [
                                     )}
                                 </DropdownMenuItem>
                             ))}
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem
+                                onSelect={(e) => {
+                                    e.preventDefault();
+                                    setBranchDialogOpen(true);
+                                }}
+                            >
+                                Update Branch
+                            </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
 
@@ -224,6 +257,56 @@ const columns: TableColumn<TimeLog>[] = [
                                         if (selectedType) {
                                             handleChangeClockType(selectedType);
                                             setSelectedType(null);
+                                        }
+                                    }}
+                                >
+                                    Confirm
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
+                    <AlertDialog
+                        open={branchDialogOpen}
+                        onOpenChange={(open) => {
+                            setBranchDialogOpen(open);
+                            if (!open) setSelectedBranch(undefined);
+                        }}
+                    >
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Update Branch
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Current branch:{" "}
+                                    <strong>
+                                        {row.branch_name || "—"}
+                                    </strong>
+                                    . Select the correct branch for this log.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <CustomSelect
+                                apiUrl="api/v2/get_branch"
+                                value={selectedBranch}
+                                onChange={setSelectedBranch}
+                                placeholder="Select branch..."
+                            />
+
+                            <AlertDialogFooter>
+                                <AlertDialogCancel
+                                    onClick={() => setSelectedBranch(undefined)}
+                                >
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    disabled={!selectedBranch}
+                                    onClick={() => {
+                                        if (selectedBranch) {
+                                            handleChangeBranch(selectedBranch);
+                                            setSelectedBranch(undefined);
+                                            setBranchDialogOpen(false);
                                         }
                                     }}
                                 >

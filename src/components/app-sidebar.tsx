@@ -16,6 +16,7 @@ import {
     IconCalendarOff,
     IconShieldCheck,
     IconFaceId,
+    IconBook2,
 } from "@tabler/icons-react";
 import { Timer, ShieldCheck, Settings2, Wifi, Receipt } from "lucide-react";
 import { isTabEnabled } from "@/lib/tabs";
@@ -82,6 +83,16 @@ function buildSections(
                         title: "Forms",
                         url: `/forms/${userId ?? ""}`,
                         icon: IconClipboardList,
+                    },
+                ],
+            },
+            {
+                label: "Help",
+                items: [
+                    {
+                        title: "User Guide",
+                        url: "/guide",
+                        icon: IconBook2,
                     },
                 ],
             },
@@ -233,6 +244,17 @@ function buildSections(
             });
         }
 
+        sections.push({
+            label: "Help",
+            items: [
+                {
+                    title: "User Guide",
+                    url: "/guide",
+                    icon: IconBook2,
+                },
+            ],
+        });
+
         return sections;
     }
 
@@ -301,6 +323,16 @@ function buildSections(
             //         },
             //     ],
             // },
+            {
+                label: "Help",
+                items: [
+                    {
+                        title: "User Guide",
+                        url: "/guide",
+                        icon: IconBook2,
+                    },
+                ],
+            },
         ];
         return sections;
     }

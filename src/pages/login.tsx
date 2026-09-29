@@ -126,10 +126,16 @@ export default function LoginPage() {
 
     const onReset = (values: ResetValues) => {
         resetMutation.mutate(values, {
-            onSuccess: async () => {
-                const token = useAuthStore.getState().token;
-                if (token) {
-                    const user = await loadUser(token);
+            onSuccess: async (response) => {
+                // The server just revoked every prior token for this account
+                // as part of the reset (a stale token must not survive a
+                // password change) and mints a fresh one in this same
+                // response -- the old token in the store is dead the instant
+                // this request completes, so it must never be reused here.
+                const freshToken = response?.data?.token;
+                if (freshToken) {
+                    setToken(freshToken);
+                    const user = await loadUser(freshToken);
                     if (user?.id) {
                         navigateHome(user);
                         return;

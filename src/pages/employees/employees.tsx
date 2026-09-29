@@ -26,7 +26,17 @@ import {
     FileText,
     Clock,
     ScanFace,
+    Copy,
+    Check,
 } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -49,13 +59,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-/**
- * The default handed out by a coordinator reset. Mirrors _default_password()
- * in api_v2/Auth.php -- shown here only so the coordinator can read it back to
- * the employee; the server is what actually sets it.
- */
-const DEFAULT_PASSWORD = `Wildflour@${new Date().getFullYear()}`;
 
 function parseManhours(manhour_conversion: any) {
     try {
@@ -224,6 +227,11 @@ export default function Employees() {
     const [resettingId, setResettingId] = useState<string | number | null>(
         null,
     );
+    const [resetResult, setResetResult] = useState<{
+        name: string;
+        password: string;
+    } | null>(null);
+    const [passwordCopied, setPasswordCopied] = useState(false);
 
     const [consolidatedData, setConsolidatedData] = useState<GroupedEmployee[]>(
         [],
@@ -292,9 +300,9 @@ export default function Employees() {
     const faceEnrollmentQuery = useQuery({
         queryKey: ["face-enrollments"],
         queryFn: async () => {
-            const response = await api.get<ApiResponse<{ id: number; enrolled: boolean }[]>>(
-                "/api/v2/face-enrollments",
-            );
+            const response = await api.get<
+                ApiResponse<{ id: number; enrolled: boolean }[]>
+            >("/api/v2/face-enrollments");
             return response.data.data;
         },
         enabled: isCoordinator,
@@ -313,12 +321,29 @@ export default function Employees() {
         setResettingId(employee.id);
 
         try {
-            await api.post(`/api/v2/auth/admin-reset/${employee.id}`);
+            const res = await api.post<
+                ApiResponse<{ employee_id: number; password: string }>
+            >(`/api/v2/auth/admin-reset/${employee.id}`);
 
-            toast.success(`Password reset for ${employee.name}`, {
-                description: `Temporary password: ${DEFAULT_PASSWORD} — they must change it at next login.`,
-                duration: 10000,
-            });
+            // The server generates a fresh single-use password per reset (see
+            // _default_password() in api_v2/Auth.php) and returns it exactly
+            // once here -- there is no fixed/predictable default to fall back
+            // on, so surfacing anything other than this value would hand the
+            // coordinator a password that doesn't actually work.
+            const password = res.data?.data?.password;
+
+            if (!password) {
+                toast.error(
+                    "Password was reset, but the server didn't return it. Ask the employee to use Forgot Password instead.",
+                );
+                return;
+            }
+
+            // A toast alone is too easy to lose (small text, auto-dismisses,
+            // no way to copy) for a value the coordinator has to relay
+            // accurately and that's shown exactly once. Surface it in a
+            // dialog that stays open until they explicitly close it.
+            setResetResult({ name: employee.name, password });
         } catch (error: any) {
             toast.error(
                 error?.response?.data?.message || "Failed to reset password.",
@@ -326,6 +351,17 @@ export default function Employees() {
         } finally {
             setResettingId(null);
             setResetTarget(null);
+        }
+    };
+
+    const handleCopyPassword = async () => {
+        if (!resetResult) return;
+        try {
+            await navigator.clipboard.writeText(resetResult.password);
+            setPasswordCopied(true);
+            setTimeout(() => setPasswordCopied(false), 2000);
+        } catch {
+            toast.error("Couldn't copy automatically — select and copy manually.");
         }
     };
 
@@ -400,9 +436,7 @@ export default function Employees() {
             const monthStr = String(month).padStart(2, "0");
 
             const date_from =
-                day > 15
-                    ? `${year}-${monthStr}-16`
-                    : `${year}-${monthStr}-01`;
+                day > 15 ? `${year}-${monthStr}-16` : `${year}-${monthStr}-01`;
 
             const date_to =
                 day > 15
@@ -429,10 +463,7 @@ export default function Employees() {
 
                 const { data: bulkResponse } = await api.post<
                     ApiResponse<{
-                        time_records_by_employee: Record<
-                            string,
-                            TimeRecord[]
-                        >;
+                        time_records_by_employee: Record<string, TimeRecord[]>;
                     }>
                 >("/api/v2/time-records/bulk", {
                     employee_ids: chunk,
@@ -447,7 +478,10 @@ export default function Employees() {
                 });
 
                 setFetchProgress((prev) => ({
-                    done: Math.min(prev.done + chunk.length, employeeIds.length),
+                    done: Math.min(
+                        prev.done + chunk.length,
+                        employeeIds.length,
+                    ),
                     total: employeeIds.length,
                 }));
             }
@@ -723,15 +757,12 @@ export default function Employees() {
                         <AlertDialogDescription asChild>
                             <div className="space-y-2">
                                 <p>
-                                    This replaces{" "}
+                                    This generates a new single-use password for{" "}
                                     <span className="text-foreground font-semibold">
                                         {resetTarget?.name}
                                     </span>
-                                    &rsquo;s password with the default{" "}
-                                    <code className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono">
-                                        {DEFAULT_PASSWORD}
-                                    </code>
-                                    .
+                                    , shown once after you confirm so you can
+                                    relay it to them.
                                 </p>
                                 <p>
                                     Their current password stops working
@@ -760,6 +791,61 @@ export default function Employees() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <Dialog
+                open={resetResult !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setResetResult(null);
+                        setPasswordCopied(false);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Password reset complete</DialogTitle>
+                        <DialogDescription>
+                            One-time temporary password for{" "}
+                            <span className="text-foreground font-semibold">
+                                {resetResult?.name}
+                            </span>
+                            . This is shown once — copy it now and relay it to
+                            them. They must change it at next login.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex items-center gap-2">
+                        <code className="border-input bg-muted flex-1 rounded-md border px-4 py-3 text-center text-lg font-bold tracking-widest select-all">
+                            {resetResult?.password}
+                        </code>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleCopyPassword}
+                            aria-label="Copy password"
+                            className="h-11 w-11 shrink-0"
+                        >
+                            {passwordCopied ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                                <Copy className="h-4 w-4" />
+                            )}
+                        </Button>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            onClick={() => {
+                                setResetResult(null);
+                                setPasswordCopied(false);
+                            }}
+                        >
+                            Done
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

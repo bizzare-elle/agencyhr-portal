@@ -42,7 +42,6 @@ import AdminPanel from "./pages/admin/admin-panel";
 import RemoteWork from "./pages/remote/remote-work";
 import DownlinePage from "./pages/downline/downline-page";
 import SystemGuide from "./pages/system-guide";
-import ResetPassword from "./pages/reset-password";
 import SecurityRoster from "./pages/security-roster/security-roster";
 import SecurityRosterForm from "./pages/security-roster/security-roster-form";
 // Lazy-loaded: pulls in @vladmandic/face-api + its TensorFlow.js runtime,
@@ -63,10 +62,6 @@ const router = createBrowserRouter([
     {
         path: "/maintenance",
         element: <Maintenance />,
-    },
-    {
-        path: "/reset-password/:id",
-        element: <ResetPassword />,
     },
     {
         element: <AuthLayout />,

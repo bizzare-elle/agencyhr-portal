@@ -9,6 +9,8 @@ export const TEMPLATE_HEADERS = [
     "Full Name",
     "License Number",
     "Mobile Number",
+    "Gender",
+    "Personal Email Address",
 ];
 
 const STATUS_LABEL: Record<string, string> = {
@@ -54,6 +56,8 @@ export async function downloadRosterTemplate(options: SecurityRosterOptions) {
         "Juan Dela Cruz",
         "SG-2026-00001",
         "09171234567",
+        "Male",
+        "juan.delacruz@example.com",
     ]);
     sheet.addRow([
         branch,
@@ -61,6 +65,8 @@ export async function downloadRosterTemplate(options: SecurityRosterOptions) {
         "Maria Santos",
         "SG-2026-00002",
         "09171234568",
+        "Female",
+        "maria.santos@example.com",
     ]);
     sheet.addRow([
         "The two rows above are samples — delete them before uploading.",
@@ -69,7 +75,7 @@ export async function downloadRosterTemplate(options: SecurityRosterOptions) {
     sheet.getColumn(5).numFmt = "@";
 
     const reference = workbook.addWorksheet("Field Reference");
-    reference.columns = [{ width: 18 }, { width: 80 }];
+    reference.columns = [{ width: 24 }, { width: 80 }];
     styleHeader(reference.addRow(["Column", "Must contain"]));
     reference.addRow([
         "Branch",
@@ -82,6 +88,14 @@ export async function downloadRosterTemplate(options: SecurityRosterOptions) {
     reference.addRow([
         "License Number",
         "Must be unique for your agency — a duplicate is skipped, not overwritten.",
+    ]);
+    reference.addRow([
+        "Gender",
+        `Optional. One of: ${options.genders.map((g) => g.name).join(", ")}`,
+    ]);
+    reference.addRow([
+        "Personal Email Address",
+        "Optional. The guard's own email; it must not already belong to another employee or guard.",
     ]);
     reference.addRow([]);
     styleHeader(reference.addRow(["Branches", ""]));
@@ -103,6 +117,8 @@ export async function exportRoster(rows: SecurityRosterEntry[]) {
         { width: 34 },
         { width: 12 },
         { width: 20 },
+        { width: 22 },
+        { width: 32 },
     ];
     styleHeader(
         sheet.addRow([
@@ -114,6 +130,8 @@ export async function exportRoster(rows: SecurityRosterEntry[]) {
             "Schedule",
             "Status",
             "Added",
+            "Gender",
+            "Personal Email Address",
         ]),
     );
 
@@ -127,6 +145,8 @@ export async function exportRoster(rows: SecurityRosterEntry[]) {
             r.schedule_name ?? "",
             STATUS_LABEL[r.status] ?? r.status,
             r.created_at ?? "",
+            r.gender_label ?? "",
+            r.personal_email_address ?? "",
         ]),
     );
     sheet.getColumn(4).numFmt = "@";

@@ -10,6 +10,7 @@ import {
     ArrowUpDown,
     Camera,
     Check,
+    DatabaseZap,
     ChevronLeft,
     ChevronRight,
     Eye,
@@ -70,7 +71,13 @@ import {
 import { useFaceCapture } from "@/hooks/use-face-capture";
 
 interface EmployeeEnrollmentRow {
-    id: number;
+    // null for a security guard who has no employee record until their face is enrolled
+    id: number | null;
+    roster_id?: number | null;
+    can_enroll?: boolean;
+    enroll_blocked_reason?: string | null;
+    // security guards only: their employee record carries the roster details
+    hr_synced?: boolean;
     name: string;
     enrollment_id: number | null;
     enrolled_at: string | null;
@@ -467,7 +474,13 @@ export default function FaceEnrollmentPage() {
                                         </TableRow>
                                     )}
                                     {paged.map((row) => (
-                                        <TableRow key={row.id}>
+                                        <TableRow
+                                            key={
+                                                row.roster_id
+                                                    ? `r${row.roster_id}`
+                                                    : `e${row.id}`
+                                            }
+                                        >
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
                                                     <div
@@ -479,7 +492,16 @@ export default function FaceEnrollmentPage() {
                                                     >
                                                         {initialsOf(row.name)}
                                                     </div>
-                                                    <span>{row.name}</span>
+                                                    <div className="flex flex-col">
+                                                        <span>{row.name}</span>
+                                                        {row.enroll_blocked_reason && (
+                                                            <span className="text-muted-foreground text-xs">
+                                                                {
+                                                                    row.enroll_blocked_reason
+                                                                }
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -491,6 +513,15 @@ export default function FaceEnrollmentPage() {
                                                     ) : (
                                                         <Badge className="bg-yellow-500/10 text-yellow-400">
                                                             Not enrolled
+                                                        </Badge>
+                                                    )}
+                                                    {row.hr_synced && (
+                                                        <Badge
+                                                            className="bg-blue-500/10 text-blue-400"
+                                                            title="The roster details are saved on this guard's employee record."
+                                                        >
+                                                            <DatabaseZap className="mr-1 h-3 w-3" />
+                                                            Synced to HR
                                                         </Badge>
                                                     )}
                                                     {row.offboarding_flagged && (
@@ -522,6 +553,14 @@ export default function FaceEnrollmentPage() {
                                                             row.enrolled
                                                                 ? ""
                                                                 : "bg-yellow-500 text-white hover:bg-yellow-600"
+                                                        }
+                                                        disabled={
+                                                            row.can_enroll ===
+                                                            false
+                                                        }
+                                                        title={
+                                                            row.enroll_blocked_reason ??
+                                                            undefined
                                                         }
                                                         onClick={() =>
                                                             setEnrollTarget(row)
@@ -724,7 +763,12 @@ function EnrollDialog({
     const saveMutation = useMutation({
         mutationFn: async (confirmDuplicate: boolean) => {
             const form = new FormData();
-            form.append("employee_id", String(employee.id));
+            if (employee.roster_id) {
+                form.append("roster_id", String(employee.roster_id));
+            }
+            if (employee.id) {
+                form.append("employee_id", String(employee.id));
+            }
             if (employee.enrollment_id) {
                 form.append("id", String(employee.enrollment_id));
             }
@@ -740,8 +784,30 @@ function EnrollDialog({
             }
             return api.post("/api/v2/face-enrollments", form);
         },
-        onSuccess: () => {
-            toast.success("Face enrollment saved.");
+        onSuccess: (res) => {
+            const sync = res.data?.data?.hr_sync as
+                | {
+                      synced: boolean;
+                      employee_id: number;
+                      employee_created: boolean;
+                      message: string;
+                  }
+                | null
+                | undefined;
+
+            if (!sync) {
+                toast.success("Face enrollment saved.");
+            } else if (sync.synced) {
+                toast.success("Face enrollment saved and synced to HR.", {
+                    description: sync.employee_created
+                        ? `A new employee record (#${sync.employee_id}) was created from the security roster.`
+                        : `Employee record #${sync.employee_id} was updated from the security roster.`,
+                });
+            } else {
+                toast.warning("Face enrollment saved, but not synced to HR.", {
+                    description: sync.message,
+                });
+            }
             onSaved();
         },
         onError: (err: any) => {

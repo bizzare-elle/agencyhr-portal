@@ -284,6 +284,9 @@ export interface SecurityRosterEntry {
     full_name: string;
     license_number: string;
     mobile_number: string;
+    gender: number | null;
+    gender_label: string | null;
+    personal_email_address: string | null;
     branch_id: number | null;
     branch_name: string | null;
     schedule_type_id: number | null;
@@ -306,6 +309,7 @@ export interface SecurityRosterTotals {
 
 export interface SecurityRosterOptions {
     branches: { id: string; name: string }[];
+    genders: { id: string; name: string }[];
     schedules: { id: string; name: string }[];
 }
 

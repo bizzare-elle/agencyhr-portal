@@ -41,6 +41,8 @@ export default function SecurityRosterForm() {
     const [fullName, setFullName] = useState("");
     const [licenseNumber, setLicenseNumber] = useState("");
     const [mobileNumber, setMobileNumber] = useState("");
+    const [gender, setGender] = useState<string | undefined>();
+    const [personalEmail, setPersonalEmail] = useState("");
     const [branchId, setBranchId] = useState<string | undefined>();
     const [scheduleId, setScheduleId] = useState<string | undefined>();
 
@@ -74,6 +76,8 @@ export default function SecurityRosterForm() {
         setFullName(entry.full_name);
         setLicenseNumber(entry.license_number);
         setMobileNumber(entry.mobile_number);
+        setGender(entry.gender ? String(entry.gender) : undefined);
+        setPersonalEmail(entry.personal_email_address ?? "");
         setBranchId(entry.branch_id ? String(entry.branch_id) : undefined);
         setScheduleId(
             entry.schedule_type_id ? String(entry.schedule_type_id) : undefined,
@@ -90,6 +94,8 @@ export default function SecurityRosterForm() {
                     full_name: fullName,
                     license_number: licenseNumber,
                     mobile_number: mobileNumber,
+                    gender: gender ?? "",
+                    personal_email_address: personalEmail,
                     branch_id: branchId ?? "",
                     schedule_type_id: scheduleId ?? "",
                 },
@@ -198,7 +204,7 @@ export default function SecurityRosterForm() {
                         </div>
                         <div>
                             <Label className="mb-1 block text-sm font-medium">
-                                Mobile No. *
+                                Mobile / Contact No. *
                             </Label>
                             <Input
                                 value={mobileNumber}
@@ -207,6 +213,43 @@ export default function SecurityRosterForm() {
                                 disabled={locked}
                                 onChange={(e) =>
                                     setMobileNumber(e.target.value)
+                                }
+                            />
+                        </div>
+                        <div>
+                            <Label className="mb-1 block text-sm font-medium">
+                                Gender
+                            </Label>
+                            <Select
+                                value={gender}
+                                onValueChange={setGender}
+                                disabled={locked || optionsQuery.isPending}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select gender..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(optionsQuery.data?.genders ?? []).map(
+                                        (g) => (
+                                            <SelectItem key={g.id} value={g.id}>
+                                                {g.name}
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label className="mb-1 block text-sm font-medium">
+                                Personal Email Address
+                            </Label>
+                            <Input
+                                type="email"
+                                value={personalEmail}
+                                maxLength={150}
+                                disabled={locked}
+                                onChange={(e) =>
+                                    setPersonalEmail(e.target.value)
                                 }
                             />
                         </div>

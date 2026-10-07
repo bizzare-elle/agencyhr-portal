@@ -87,7 +87,12 @@ export function useFaceCapture(active: boolean): UseFaceCaptureResult {
     // face: too small (far away), off-center, or too dark. Never blocks
     // capture — just tells the coordinator why a shot might not match later.
     const assessQuality = useCallback(
-        (video: HTMLVideoElement, box: { x: number; y: number; width: number; height: number }, frameW: number, frameH: number) => {
+        (
+            video: HTMLVideoElement,
+            box: { x: number; y: number; width: number; height: number },
+            frameW: number,
+            frameH: number,
+        ) => {
             const sizeRatio = box.width / frameW;
             if (sizeRatio < 0.18) {
                 return "Face looks far away — move closer.";
@@ -115,11 +120,19 @@ export function useFaceCapture(active: boolean): UseFaceCaptureResult {
             if (sctx) {
                 sctx.drawImage(video, 0, 0, sampleSize, sampleSize);
                 try {
-                    const { data } = sctx.getImageData(0, 0, sampleSize, sampleSize);
+                    const { data } = sctx.getImageData(
+                        0,
+                        0,
+                        sampleSize,
+                        sampleSize,
+                    );
                     let total = 0;
                     for (let i = 0; i < data.length; i += 4) {
                         // Perceived luminance
-                        total += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                        total +=
+                            0.299 * data[i] +
+                            0.587 * data[i + 1] +
+                            0.114 * data[i + 2];
                     }
                     const avgLuminance = total / (data.length / 4);
                     if (avgLuminance < 60) {
@@ -166,7 +179,10 @@ export function useFaceCapture(active: boolean): UseFaceCaptureResult {
                 frameCountRef.current += 1;
                 if (dets.length === 0) {
                     setQualityWarning(null);
-                } else if (frameCountRef.current % QUALITY_CHECK_INTERVAL === 0) {
+                } else if (
+                    frameCountRef.current % QUALITY_CHECK_INTERVAL ===
+                    0
+                ) {
                     const largest = dets.reduce((a, b) =>
                         a.box.width * a.box.height > b.box.width * b.box.height
                             ? a
@@ -235,7 +251,9 @@ export function useFaceCapture(active: boolean): UseFaceCaptureResult {
             .withFaceDescriptor();
 
         if (!det) {
-            setStatusMessage("No face detected. Center the face and try again.");
+            setStatusMessage(
+                "No face detected. Center the face and try again.",
+            );
             return;
         }
 

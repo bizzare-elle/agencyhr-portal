@@ -44,8 +44,14 @@ const resetSchema = z
         path: ["confirm"],
     });
 
-// Same public site key and hostname-gated approach as the Atlas backoffice login.
-const CAPTCHA_HOSTS = ["agencyhr.ph", "www.agencyhr.ph", "staging.agencyhr.ph"];
+// Off unless a build lists the hostnames its reCAPTCHA key is registered for
+// (VITE_CAPTCHA_HOSTS=host1,host2). Google shows "Invalid domain for site key"
+// on any other host, and with Sign In disabled until the box is ticked that
+// would lock everyone out.
+const CAPTCHA_HOSTS = (import.meta.env.VITE_CAPTCHA_HOSTS ?? "")
+    .split(",")
+    .map((host: string) => host.trim())
+    .filter(Boolean);
 const RECAPTCHA_SITE_KEY = CAPTCHA_HOSTS.includes(window.location.hostname)
     ? "6LeK5BosAAAAABnHD1U3hU9P183J-cGG7KRZHRus"
     : undefined;

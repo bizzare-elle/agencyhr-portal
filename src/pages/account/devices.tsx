@@ -110,6 +110,17 @@ function DevicesCard() {
                 </p>
             )}
 
+            {!sessionsQuery.isLoading &&
+                !sessionsQuery.isError &&
+                sessions.length === 0 && (
+                    <p className="rounded-lg border p-3 text-sm">
+                        No sign-in sessions were found for your account. This
+                        can happen if you signed in before this page was set up.
+                        Sign out and sign in again, and this device will appear
+                        here.
+                    </p>
+                )}
+
             <ul className="space-y-2">
                 {sessions.map((session) => {
                     const mobile = /Android|iOS/.test(session.device);

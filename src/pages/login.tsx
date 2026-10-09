@@ -44,17 +44,21 @@ const resetSchema = z
         path: ["confirm"],
     });
 
-// Off unless a build lists the hostnames its reCAPTCHA key is registered for
-// (VITE_CAPTCHA_HOSTS=host1,host2). Google shows "Invalid domain for site key"
-// on any other host, and with Sign In disabled until the box is ticked that
-// would lock everyone out.
+// reCAPTCHA is off unless the build sets both:
+//   VITE_CAPTCHA_HOSTS=agencyhr.ph,staging.agencyhr.ph   hostnames to show it on
+//   VITE_RECAPTCHA_SITE_KEY=<v2 checkbox site key>        a key registered for them
+// Google rejects a key on any domain it was not registered for ("Invalid domain
+// for site key"), and Sign In stays disabled until the box is ticked, so showing
+// it on an unregistered host would lock everyone out.
 const CAPTCHA_HOSTS = (import.meta.env.VITE_CAPTCHA_HOSTS ?? "")
     .split(",")
     .map((host: string) => host.trim())
     .filter(Boolean);
-const RECAPTCHA_SITE_KEY = CAPTCHA_HOSTS.includes(window.location.hostname)
-    ? "6LeK5BosAAAAABnHD1U3hU9P183J-cGG7KRZHRus"
-    : undefined;
+const RECAPTCHA_SITE_KEY: string | undefined =
+    CAPTCHA_HOSTS.includes(window.location.hostname) &&
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY
+        ? import.meta.env.VITE_RECAPTCHA_SITE_KEY
+        : undefined;
 
 type LoginValues = z.infer<typeof loginSchema>;
 type ResetValues = z.infer<typeof resetSchema>;

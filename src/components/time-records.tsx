@@ -325,7 +325,12 @@ export default function TimeRecords() {
                 </div>
             </div>
 
-            <AttendanceSummary employeeId={employeeId} />
+            <AttendanceSummary
+                records={records}
+                from={queryFrom}
+                to={queryTo}
+                loading={isLoading}
+            />
 
             {isFetching && !isLoading && (
                 <div

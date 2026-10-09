@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +44,12 @@ const resetSchema = z
         path: ["confirm"],
     });
 
+// Same public site key and hostname-gated approach as the Atlas backoffice login.
+const CAPTCHA_HOSTS = ["agencyhr.ph", "www.agencyhr.ph", "staging.agencyhr.ph"];
+const RECAPTCHA_SITE_KEY = CAPTCHA_HOSTS.includes(window.location.hostname)
+    ? "6LeK5BosAAAAABnHD1U3hU9P183J-cGG7KRZHRus"
+    : undefined;
+
 type LoginValues = z.infer<typeof loginSchema>;
 type ResetValues = z.infer<typeof resetSchema>;
 
@@ -59,6 +66,9 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const setToken = useAuthStore((s) => s.setToken);
     const loadUser = useAuthStore((s) => s.loadUser);
+
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     const [showPassword, setShowPassword] = useState(false);
     const [showNew, setShowNew] = useState(false);
@@ -103,7 +113,7 @@ export default function LoginPage() {
                 const token = response?.data?.token;
                 if (!token) return;
 
-                setToken(token);
+                setToken(token, response?.data?.refresh_token);
                 const user = await loadUser(token);
 
                 if (!user?.id) {
@@ -120,6 +130,8 @@ export default function LoginPage() {
             },
             onError: (err: any) => {
                 toast.error(err?.response?.data?.message || "Login failed");
+                recaptchaRef.current?.reset();
+                setCaptchaToken(null);
             },
         });
     };
@@ -134,7 +146,7 @@ export default function LoginPage() {
                 // this request completes, so it must never be reused here.
                 const freshToken = response?.data?.token;
                 if (freshToken) {
-                    setToken(freshToken);
+                    setToken(freshToken, response?.data?.refresh_token);
                     const user = await loadUser(freshToken);
                     if (user?.id) {
                         navigateHome(user);
@@ -151,44 +163,51 @@ export default function LoginPage() {
         });
     };
 
+    const inputCls =
+        "h-12 rounded-lg border-white/10 bg-white/5 text-white placeholder:text-white/30 focus-visible:border-yellow-500 focus-visible:ring-yellow-500/20 md:text-base";
+    const labelCls = "text-sm font-semibold text-white/80";
+    const submitCls =
+        "mt-1 h-12 w-full rounded-lg bg-yellow-500 text-base font-semibold text-white shadow-sm hover:bg-yellow-600 disabled:bg-white/10 disabled:text-white/30 disabled:shadow-none disabled:opacity-100";
+    const eyeCls =
+        "absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition hover:text-white/80";
+
     return (
         <div
-            className="relative flex min-h-screen items-center justify-center p-4"
+            className="relative flex min-h-screen bg-zinc-950"
             style={{
                 backgroundImage: `url(${bgImg})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
             }}
         >
-            <div className="absolute inset-0 bg-black/70" />
-
-            <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="relative z-10 w-full max-w-md"
-            >
-                {/* Branding */}
-                <div className="mb-8 text-center">
-                    <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-500 shadow-lg shadow-yellow-500/30">
-                        {pendingReset ? (
-                            <ShieldCheck className="h-6 w-6 text-white" />
-                        ) : (
-                            <LogIn className="h-6 w-6 text-white" />
-                        )}
+            <div className="absolute inset-0 bg-black/80" />
+            <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="login-card w-full max-w-[460px] rounded-2xl bg-zinc-900/90 p-6 shadow-2xl ring-1 shadow-black/40 ring-white/10 backdrop-blur-sm sm:p-10"
+                >
+                    <div className="mb-7 text-center">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-500 shadow-lg shadow-yellow-500/20">
+                            {pendingReset ? (
+                                <ShieldCheck className="h-7 w-7 text-white" />
+                            ) : (
+                                <LogIn className="h-7 w-7 text-white" />
+                            )}
+                        </div>
+                        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                            {pendingReset
+                                ? "Set a new password"
+                                : "Welcome back"}
+                        </h1>
+                        <p className="mt-2 text-base text-white/60">
+                            {pendingReset
+                                ? "One more step before you continue"
+                                : "Sign in to your Agency HR account"}
+                        </p>
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tight text-white">
-                        Agency HR
-                    </h1>
-                    <p className="mt-1 text-sm text-white/50">
-                        {pendingReset
-                            ? "Set a new password to continue"
-                            : "Sign in to your account"}
-                    </p>
-                </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
                     <AnimatePresence mode="wait">
                         {!pendingReset ? (
                             <motion.div
@@ -210,7 +229,9 @@ export default function LoginPage() {
                                             name="email"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-sm font-medium text-white/70">
+                                                    <FormLabel
+                                                        className={labelCls}
+                                                    >
                                                         Email address
                                                     </FormLabel>
                                                     <FormControl>
@@ -222,10 +243,10 @@ export default function LoginPage() {
                                                             disabled={
                                                                 loginMutation.isPending
                                                             }
-                                                            className="border-white/10 bg-white/10 text-white placeholder:text-white/30 focus-visible:border-yellow-500/50 focus-visible:ring-yellow-500/20"
+                                                            className={inputCls}
                                                         />
                                                     </FormControl>
-                                                    <FormMessage className="text-red-300" />
+                                                    <FormMessage className="text-red-400" />
                                                 </FormItem>
                                             )}
                                         />
@@ -234,9 +255,21 @@ export default function LoginPage() {
                                             name="password"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-sm font-medium text-white/70">
-                                                        Password
-                                                    </FormLabel>
+                                                    <div className="flex items-center justify-between">
+                                                        <FormLabel
+                                                            className={labelCls}
+                                                        >
+                                                            Password
+                                                        </FormLabel>
+                                                        <a
+                                                            href="https://backoffice.wildflour.com.ph/forgot_email_agency"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-sm font-medium text-yellow-500 transition hover:text-yellow-400"
+                                                        >
+                                                            Forgot password?
+                                                        </a>
+                                                    </div>
                                                     <FormControl>
                                                         <div className="relative">
                                                             <Input
@@ -251,7 +284,7 @@ export default function LoginPage() {
                                                                 disabled={
                                                                     loginMutation.isPending
                                                                 }
-                                                                className="border-white/10 bg-white/10 pr-10 text-white placeholder:text-white/30 focus-visible:border-yellow-500/50 focus-visible:ring-yellow-500/20"
+                                                                className={`${inputCls} pr-10`}
                                                             />
                                                             <button
                                                                 type="button"
@@ -265,7 +298,9 @@ export default function LoginPage() {
                                                                         !showPassword,
                                                                     )
                                                                 }
-                                                                className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition hover:text-white/80"
+                                                                className={
+                                                                    eyeCls
+                                                                }
                                                             >
                                                                 {showPassword ? (
                                                                     <EyeOff className="h-4 w-4" />
@@ -275,14 +310,39 @@ export default function LoginPage() {
                                                             </button>
                                                         </div>
                                                     </FormControl>
-                                                    <FormMessage className="text-red-300" />
+                                                    <FormMessage className="text-red-400" />
                                                 </FormItem>
                                             )}
                                         />
+                                        {RECAPTCHA_SITE_KEY && (
+                                            <div className="flex w-full justify-center overflow-hidden">
+                                                <div className="origin-center max-[420px]:scale-[0.85]">
+                                                    <ReCAPTCHA
+                                                        ref={recaptchaRef}
+                                                        sitekey={
+                                                            RECAPTCHA_SITE_KEY
+                                                        }
+                                                        theme="dark"
+                                                        onChange={
+                                                            setCaptchaToken
+                                                        }
+                                                        onExpired={() =>
+                                                            setCaptchaToken(
+                                                                null,
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                         <Button
                                             type="submit"
-                                            disabled={loginMutation.isPending}
-                                            className="mt-2 w-full bg-yellow-500 font-semibold text-white hover:bg-yellow-600 disabled:opacity-60"
+                                            disabled={
+                                                loginMutation.isPending ||
+                                                (!!RECAPTCHA_SITE_KEY &&
+                                                    !captchaToken)
+                                            }
+                                            className={submitCls}
                                         >
                                             {loginMutation.isPending ? (
                                                 <span className="flex items-center gap-2">
@@ -296,24 +356,17 @@ export default function LoginPage() {
                                     </form>
                                 </Form>
 
-                                <div className="mt-6 flex flex-col items-center gap-3 border-t border-white/10 pt-6">
-                                    <a
-                                        href="https://backoffice.wildflour.com.ph/forgot_email_agency"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-white/50 transition hover:text-yellow-400"
-                                    >
-                                        Forgot password?
-                                    </a>
+                                <p className="mt-8 text-center text-sm text-white/50">
+                                    Need help?{" "}
                                     <a
                                         href="https://support.agencyhr.ph"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-white/50 transition hover:text-white/80"
+                                        className="font-medium text-white/80 underline-offset-4 transition hover:text-yellow-400 hover:underline"
                                     >
-                                        Need help? Submit a support ticket
+                                        Submit a support ticket
                                     </a>
-                                </div>
+                                </p>
                             </motion.div>
                         ) : (
                             <motion.div
@@ -323,15 +376,19 @@ export default function LoginPage() {
                                 exit={{ opacity: 0, x: 12 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <div className="mb-5 rounded-xl border border-yellow-500/20 bg-yellow-500/8 px-4 py-3">
+                                <div className="mb-5 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3">
                                     <p className="text-sm font-semibold text-yellow-400">
                                         System-prompted password reset
                                     </p>
-                                    <p className="mt-1 text-xs leading-relaxed text-white/50">
-                                        Your account has been issued a temporary password. For your security, the system requires you to set a new personal password before you can continue. This is a one-time requirement.
+                                    <p className="mt-1 text-xs leading-relaxed text-white/60">
+                                        Your account has been issued a temporary
+                                        password. For your security, the system
+                                        requires you to set a new personal
+                                        password before you can continue. This
+                                        is a one-time requirement.
                                     </p>
                                 </div>
-                                <div className="mb-5 grid grid-cols-2 gap-1.5">
+                                <div className="mb-6 grid grid-cols-2 gap-2">
                                     {[
                                         "12+ characters",
                                         "Uppercase letter",
@@ -340,9 +397,14 @@ export default function LoginPage() {
                                         "Special character",
                                         "Not a recent password",
                                     ].map((r) => (
-                                        <div key={r} className="flex items-center gap-1.5">
-                                            <span className="h-1 w-1 flex-shrink-0 rounded-full bg-white/20" />
-                                            <span className="text-[11px] text-white/40">{r}</span>
+                                        <div
+                                            key={r}
+                                            className="flex items-center gap-1.5"
+                                        >
+                                            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-yellow-500" />
+                                            <span className="text-xs text-white/50">
+                                                {r}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -358,7 +420,9 @@ export default function LoginPage() {
                                             name="newPassword"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-sm font-medium text-white/70">
+                                                    <FormLabel
+                                                        className={labelCls}
+                                                    >
                                                         New password
                                                     </FormLabel>
                                                     <FormControl>
@@ -375,16 +439,23 @@ export default function LoginPage() {
                                                                 disabled={
                                                                     resetMutation.isPending
                                                                 }
-                                                                className="border-white/10 bg-white/10 pr-10 text-white placeholder:text-white/30 focus-visible:border-yellow-500/50 focus-visible:ring-yellow-500/20"
+                                                                className={`${inputCls} pr-10`}
                                                             />
                                                             <button
                                                                 type="button"
+                                                                aria-label={
+                                                                    showNew
+                                                                        ? "Hide password"
+                                                                        : "Show password"
+                                                                }
                                                                 onClick={() =>
                                                                     setShowNew(
                                                                         !showNew,
                                                                     )
                                                                 }
-                                                                className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition hover:text-white/80"
+                                                                className={
+                                                                    eyeCls
+                                                                }
                                                             >
                                                                 {showNew ? (
                                                                     <EyeOff className="h-4 w-4" />
@@ -394,7 +465,7 @@ export default function LoginPage() {
                                                             </button>
                                                         </div>
                                                     </FormControl>
-                                                    <FormMessage className="text-red-300" />
+                                                    <FormMessage className="text-red-400" />
                                                 </FormItem>
                                             )}
                                         />
@@ -403,7 +474,9 @@ export default function LoginPage() {
                                             name="confirm"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-sm font-medium text-white/70">
+                                                    <FormLabel
+                                                        className={labelCls}
+                                                    >
                                                         Confirm new password
                                                     </FormLabel>
                                                     <FormControl>
@@ -420,16 +493,23 @@ export default function LoginPage() {
                                                                 disabled={
                                                                     resetMutation.isPending
                                                                 }
-                                                                className="border-white/10 bg-white/10 pr-10 text-white placeholder:text-white/30 focus-visible:border-yellow-500/50 focus-visible:ring-yellow-500/20"
+                                                                className={`${inputCls} pr-10`}
                                                             />
                                                             <button
                                                                 type="button"
+                                                                aria-label={
+                                                                    showConfirm
+                                                                        ? "Hide password"
+                                                                        : "Show password"
+                                                                }
                                                                 onClick={() =>
                                                                     setShowConfirm(
                                                                         !showConfirm,
                                                                     )
                                                                 }
-                                                                className="absolute top-1/2 right-3 -translate-y-1/2 text-white/40 transition hover:text-white/80"
+                                                                className={
+                                                                    eyeCls
+                                                                }
                                                             >
                                                                 {showConfirm ? (
                                                                     <EyeOff className="h-4 w-4" />
@@ -439,14 +519,14 @@ export default function LoginPage() {
                                                             </button>
                                                         </div>
                                                     </FormControl>
-                                                    <FormMessage className="text-red-300" />
+                                                    <FormMessage className="text-red-400" />
                                                 </FormItem>
                                             )}
                                         />
                                         <Button
                                             type="submit"
                                             disabled={resetMutation.isPending}
-                                            className="mt-2 w-full bg-yellow-500 font-semibold text-white hover:bg-yellow-600 disabled:opacity-60"
+                                            className={submitCls}
                                         >
                                             {resetMutation.isPending ? (
                                                 <span className="flex items-center gap-2">
@@ -462,8 +542,8 @@ export default function LoginPage() {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
-            </motion.div>
+                </motion.div>
+            </main>
         </div>
     );
 }

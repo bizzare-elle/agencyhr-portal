@@ -33,9 +33,7 @@ import { useAuthStore } from "@/hooks/use-auth";
 // regardless of what the client validates.
 const passwordSchema = z
     .object({
-        currentPassword: z
-            .string()
-            .min(1, "Your current password is required"),
+        currentPassword: z.string().min(1, "Your current password is required"),
         password: z
             .string()
             .min(12, "Minimum 12 characters required")
@@ -82,7 +80,7 @@ export default function ResetPasswordModal({
     const resetMutation = useMutation({
         mutationFn: async (data: ResetValues) => {
             const response = await api.post<
-                ApiResponse<{ token?: string }>
+                ApiResponse<{ token?: string; refresh_token?: string }>
             >(`/api/v2/auth/reset/${employeeId}`, {
                 password: data.password,
                 current_password: data.currentPassword,
@@ -97,7 +95,7 @@ export default function ResetPasswordModal({
             // would fail with "Session has been revoked."
             const freshToken = response?.data?.token;
             if (freshToken) {
-                setToken(freshToken);
+                setToken(freshToken, response?.data?.refresh_token);
                 await loadUser(freshToken);
             }
             toast.success("Password reset successfully!");

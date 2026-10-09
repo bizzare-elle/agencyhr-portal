@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import api from "@/lib/axios";
 import { ApiResponse } from "..";
-import FullPageLoader from "./page-loader";
+import { TableSkeletonRows } from "./table-skeleton";
+import { EmptyState } from "./empty-state";
+import { AttendanceSummary } from "./attendance-summary";
 import { CardTitle } from "./ui/card";
 import {
     Table,
@@ -15,7 +17,7 @@ import {
 } from "./ui/table";
 import { DateRangePicker } from "./ui/date-range-picker";
 import { Button } from "./ui/button";
-import { Download, Printer } from "lucide-react";
+import { CalendarX, Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -323,7 +325,15 @@ export default function TimeRecords() {
                 </div>
             </div>
 
-            {(isLoading || isFetching) && <FullPageLoader />}
+            <AttendanceSummary employeeId={employeeId} />
+
+            {isFetching && !isLoading && (
+                <div
+                    role="progressbar"
+                    aria-label="Refreshing"
+                    className="h-0.5 w-full animate-pulse rounded bg-yellow-500"
+                />
+            )}
 
             <div
                 id="time-records-table"
@@ -374,7 +384,9 @@ export default function TimeRecords() {
                     </TableHeader>
 
                     <TableBody>
-                        {tableData.length ? (
+                        {isLoading ? (
+                            <TableSkeletonRows rows={8} cols={13} />
+                        ) : tableData.length ? (
                             tableData.map((row, i) => (
                                 <TableRow key={i} className="hover:bg-muted/10">
                                     <TableCell className="px-2 py-4 capitalize">
@@ -496,11 +508,12 @@ export default function TimeRecords() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell
-                                    colSpan={13}
-                                    className="text-muted-foreground py-6 text-center"
-                                >
-                                    No time records found for this range.
+                                <TableCell colSpan={13}>
+                                    <EmptyState
+                                        icon={CalendarX}
+                                        title="No time records for this range"
+                                        description="Try a different date range. Records appear here once your punches are synced."
+                                    />
                                 </TableCell>
                             </TableRow>
                         )}

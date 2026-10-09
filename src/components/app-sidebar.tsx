@@ -17,6 +17,7 @@ import {
     IconShieldCheck,
     IconFaceId,
     IconBook2,
+    IconFileText,
 } from "@tabler/icons-react";
 import { Timer, ShieldCheck, Settings2, Wifi, Receipt } from "lucide-react";
 import { isTabEnabled } from "@/lib/tabs";
@@ -157,8 +158,26 @@ function buildSections(
                 url: `/my-leave-forms/${userId ?? ""}`,
                 icon: IconCalendarOff,
             });
+        if (ok("my_schedule"))
+            attendanceItems.push({
+                title: "My Schedule",
+                url: "/my-schedule",
+                icon: IconCalendarCheck,
+            });
         if (attendanceItems.length)
             sections.push({ label: "Attendance", items: attendanceItems });
+
+        if (ok("documents"))
+            sections.push({
+                label: "Requests",
+                items: [
+                    {
+                        title: "Documents",
+                        url: "/documents",
+                        icon: IconFileText,
+                    },
+                ],
+            });
 
         const learningItems: NavItem[] = [];
         if (ok("training_files"))
@@ -287,6 +306,11 @@ function buildSections(
                         title: "Leave Forms",
                         url: "/leave-forms",
                         icon: IconCalendarOff,
+                    },
+                    {
+                        title: "Document Requests",
+                        url: "/document-requests",
+                        icon: IconFileText,
                     },
                     ...(isSecurityAgency
                         ? [

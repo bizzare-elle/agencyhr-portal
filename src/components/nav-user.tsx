@@ -5,6 +5,7 @@ import {
     IconLockCode,
     IconFileAnalytics,
     IconHeadset,
+    IconDevices,
 } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -94,7 +95,10 @@ export function NavUser({
             await queryClient.invalidateQueries({ queryKey: ["me"] });
             toast.success("Profile photo updated.");
         } catch (err: any) {
-            const msg = err?.response?.data?.message ?? err?.message ?? "Upload failed.";
+            const msg =
+                err?.response?.data?.message ??
+                err?.message ??
+                "Upload failed.";
             toast.error(msg);
         } finally {
             setUploading(false);
@@ -121,7 +125,10 @@ export function NavUser({
                             >
                                 <div
                                     className="relative cursor-pointer"
-                                    onClick={(e) => { e.stopPropagation(); handleAvatarClick(); }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAvatarClick();
+                                    }}
                                     title="Change profile photo"
                                 >
                                     <Avatar className="h-8 w-8 rounded-lg">
@@ -129,14 +136,23 @@ export function NavUser({
                                             src={user.avatar}
                                             alt={user.name}
                                         />
-                                        <AvatarFallback className="rounded-2xl bg-primary/20 text-primary font-semibold">
+                                        <AvatarFallback className="bg-primary/20 text-primary rounded-2xl font-semibold">
                                             {uploading ? "…" : initials}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                            <circle cx="12" cy="13" r="4"/>
+                                    <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-3.5 w-3.5 text-white"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                            <circle cx="12" cy="13" r="4" />
                                         </svg>
                                     </span>
                                 </div>
@@ -161,17 +177,20 @@ export function NavUser({
                             {/* Header */}
                             <DropdownMenuLabel className="p-0 font-normal">
                                 <div className="flex items-center gap-3 px-3 py-3">
-                                    <Avatar className="h-10 w-10 rounded-xl flex-shrink-0">
-                                        <AvatarImage src={user.avatar} alt={user.name} />
-                                        <AvatarFallback className="rounded-xl bg-primary/20 text-primary font-semibold text-sm">
+                                    <Avatar className="h-10 w-10 flex-shrink-0 rounded-xl">
+                                        <AvatarImage
+                                            src={user.avatar}
+                                            alt={user.name}
+                                        />
+                                        <AvatarFallback className="bg-primary/20 text-primary rounded-xl text-sm font-semibold">
                                             {initials}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">
-                                        <p className="truncate text-sm font-semibold leading-tight">
+                                        <p className="truncate text-sm leading-tight font-semibold">
                                             {user.name}
                                         </p>
-                                        <p className="text-muted-foreground truncate text-xs mt-0.5">
+                                        <p className="text-muted-foreground mt-0.5 truncate text-xs">
                                             {user.email}
                                         </p>
                                     </div>
@@ -181,23 +200,41 @@ export function NavUser({
                             <DropdownMenuSeparator />
 
                             <DropdownMenuGroup>
-                                <DropdownMenuItem onClick={handleResetClick} className="cursor-pointer gap-2.5">
-                                    <IconLockCode className="h-4 w-4 text-muted-foreground" />
+                                <DropdownMenuItem
+                                    onClick={handleResetClick}
+                                    className="cursor-pointer gap-2.5"
+                                >
+                                    <IconLockCode className="text-muted-foreground h-4 w-4" />
                                     Reset Password
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild className="cursor-pointer gap-2.5">
+                                <DropdownMenuItem
+                                    asChild
+                                    className="cursor-pointer gap-2.5"
+                                >
+                                    <NavLink to="/account/devices">
+                                        <IconDevices className="text-muted-foreground h-4 w-4" />
+                                        Signed-in devices
+                                    </NavLink>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    asChild
+                                    className="cursor-pointer gap-2.5"
+                                >
                                     <NavLink to="/guide">
-                                        <IconFileAnalytics className="h-4 w-4 text-muted-foreground" />
+                                        <IconFileAnalytics className="text-muted-foreground h-4 w-4" />
                                         View System Guide
                                     </NavLink>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild className="cursor-pointer gap-2.5">
+                                <DropdownMenuItem
+                                    asChild
+                                    className="cursor-pointer gap-2.5"
+                                >
                                     <a
                                         href="https://support.agencyhr.ph"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
-                                        <IconHeadset className="h-4 w-4 text-muted-foreground" />
+                                        <IconHeadset className="text-muted-foreground h-4 w-4" />
                                         Submit Support Ticket
                                     </a>
                                 </DropdownMenuItem>

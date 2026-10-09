@@ -122,3 +122,12 @@
         @apply scroll-m-20 text-2xl font-semibold tracking-tight;
     }
 }
+
+.login-card input:-webkit-autofill,
+.login-card input:-webkit-autofill:hover,
+.login-card input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #fff;
+    caret-color: #fff;
+    box-shadow: 0 0 0 1000px #27272a inset;
+    transition: background-color 9999s ease-in-out 0s;
+}

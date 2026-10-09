@@ -15,8 +15,9 @@ interface User {
 
 interface AuthState {
     token: string | null;
+    refreshToken: string | null;
     user: User | null;
-    setToken: (token: string) => void;
+    setToken: (token: string, refreshToken?: string | null) => void;
     getToken: () => string;
     clear: () => void;
     logout: () => void;
@@ -27,10 +28,11 @@ export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => ({
             token: null,
+            refreshToken: null,
             user: null,
 
-            setToken: (token: string) => {
-                set({ token });
+            setToken: (token: string, refreshToken?: string | null) => {
+                set(refreshToken ? { token, refreshToken } : { token });
                 api.defaults.headers.common["Authorization"] =
                     `Bearer ${token}`;
             },
@@ -38,14 +40,27 @@ export const useAuthStore = create<AuthState>()(
             getToken: () => get().token as string,
 
             clear: () => {
-                set({ token: null, user: null });
+                set({ token: null, refreshToken: null, user: null });
                 delete api.defaults.headers.common["Authorization"];
             },
 
             logout: () => {
-                get().clear();
-                console.log("Logged out due to inactivity.");
-                window.location.href = "/login";
+                const { token, refreshToken } = get();
+                const done = () => {
+                    get().clear();
+                    window.location.href = "/login";
+                };
+                if (!token && !refreshToken) {
+                    done();
+                    return;
+                }
+                api.post(
+                    "/api/v2/auth/logout",
+                    { refresh_token: refreshToken },
+                    { headers: { Authorization: `Bearer ${token}` } },
+                )
+                    .catch(() => undefined)
+                    .finally(done);
             },
 
             loadUser: async (tokenOverride?: string) => {

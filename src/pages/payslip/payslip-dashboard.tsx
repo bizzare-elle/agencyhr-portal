@@ -68,13 +68,15 @@ export default function PayslipDashboard() {
     const meQuery = useQuery({
         queryKey: ["me"],
         queryFn: async () => {
-            const res = await api.get<ApiResponse<{
-                hr_id: string;
-                name: string;
-                id_number?: string;
-                primary_branch_name?: string;
-                agency_name?: string;
-            }>>("/api/v2/auth/me");
+            const res = await api.get<
+                ApiResponse<{
+                    hr_id: string;
+                    name: string;
+                    id_number?: string;
+                    primary_branch_name?: string;
+                    agency_name?: string;
+                }>
+            >("/api/v2/auth/me");
             return res.data.data;
         },
     });
@@ -98,7 +100,10 @@ export default function PayslipDashboard() {
     );
 
     const selected = useMemo(
-        () => (selectedId === "all" ? null : records.find((r) => r.id === selectedId) ?? null),
+        () =>
+            selectedId === "all"
+                ? null
+                : (records.find((r) => r.id === selectedId) ?? null),
         [selectedId, records],
     );
 
@@ -129,16 +134,19 @@ export default function PayslipDashboard() {
                                         {me?.name ?? "N/A"}
                                     </h1>
                                     {me?.agency_name && (
-                                        <Badge className="text-xs sm:text-sm">{me.agency_name}</Badge>
+                                        <Badge className="text-xs sm:text-sm">
+                                            {me.agency_name}
+                                        </Badge>
                                     )}
                                 </div>
-                                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                                    ID: {me?.id_number ?? "N/A"} &bull; {me?.primary_branch_name ?? "N/A"}
+                                <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+                                    ID: {me?.id_number ?? "N/A"} &bull;{" "}
+                                    {me?.primary_branch_name ?? "N/A"}
                                 </p>
                             </div>
                         </div>
                         <div className="flex flex-col items-center sm:items-end">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            <p className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">
                                 {selected ? "Net Pay" : "Total Net Pay"}
                             </p>
                             <p className="text-2xl font-bold text-green-400 sm:text-3xl">
@@ -155,7 +163,7 @@ export default function PayslipDashboard() {
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                             <div>
                                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                                    <IconReceipt className="size-5 text-primary" />
+                                    <IconReceipt className="text-primary size-5" />
                                     Salary Payslips
                                 </CardTitle>
                                 <CardDescription className="mt-0.5 text-sm">
@@ -176,10 +184,18 @@ export default function PayslipDashboard() {
                                             <SelectValue placeholder="Select period..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="all">All Periods</SelectItem>
+                                            <SelectItem value="all">
+                                                All Periods
+                                            </SelectItem>
                                             {records.map((r) => (
-                                                <SelectItem key={r.id} value={r.id}>
-                                                    {periodLabel(r.period_from, r.period_to)}
+                                                <SelectItem
+                                                    key={r.id}
+                                                    value={r.id}
+                                                >
+                                                    {periodLabel(
+                                                        r.period_from,
+                                                        r.period_to,
+                                                    )}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -194,27 +210,55 @@ export default function PayslipDashboard() {
                             <Table className="min-w-[820px] text-xs sm:text-sm">
                                 <TableHeader className="bg-muted/50">
                                     <TableRow>
-                                        <TableHead className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wider">Period</TableHead>
-                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Basic Pay</TableHead>
-                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">OT Pay</TableHead>
-                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Allowance</TableHead>
-                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Gross Pay</TableHead>
-                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Deductions</TableHead>
-                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wider">Net Pay</TableHead>
-                                        <TableHead className="px-3 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Status</TableHead>
+                                        <TableHead className="px-3 py-3 text-[11px] font-semibold tracking-wider uppercase">
+                                            Period
+                                        </TableHead>
+                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold tracking-wider uppercase">
+                                            Basic Pay
+                                        </TableHead>
+                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold tracking-wider uppercase">
+                                            OT Pay
+                                        </TableHead>
+                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold tracking-wider uppercase">
+                                            Allowance
+                                        </TableHead>
+                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold tracking-wider uppercase">
+                                            Gross Pay
+                                        </TableHead>
+                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold tracking-wider uppercase">
+                                            Deductions
+                                        </TableHead>
+                                        <TableHead className="px-3 py-3 text-right text-[11px] font-semibold tracking-wider uppercase">
+                                            Net Pay
+                                        </TableHead>
+                                        <TableHead className="px-3 py-3 text-center text-[11px] font-semibold tracking-wider uppercase">
+                                            Status
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {displayed.length > 0 ? (
                                         displayed.map((r) => (
-                                            <TableRow key={r.id} className="hover:bg-muted/10">
+                                            <TableRow
+                                                key={r.id}
+                                                className="hover:bg-muted/10"
+                                            >
                                                 <TableCell className="px-3 py-3 font-medium">
-                                                    {periodLabel(r.period_from, r.period_to)}
+                                                    {periodLabel(
+                                                        r.period_from,
+                                                        r.period_to,
+                                                    )}
                                                 </TableCell>
-                                                <TableCell className="px-3 py-3 text-right">{fmt(r.basic_pay)}</TableCell>
-                                                <TableCell className="px-3 py-3 text-right">{fmt(r.overtime_pay)}</TableCell>
-                                                <TableCell className="px-3 py-3 text-right">{fmt(r.allowance)}</TableCell>
-                                                <TableCell className="px-3 py-3 text-right font-semibold text-primary">
+                                                <TableCell className="px-3 py-3 text-right">
+                                                    {fmt(r.basic_pay)}
+                                                </TableCell>
+                                                <TableCell className="px-3 py-3 text-right">
+                                                    {fmt(r.overtime_pay)}
+                                                </TableCell>
+                                                <TableCell className="px-3 py-3 text-right">
+                                                    {fmt(r.allowance)}
+                                                </TableCell>
+                                                <TableCell className="text-primary px-3 py-3 text-right font-semibold">
                                                     {fmt(r.gross_pay)}
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3 text-right text-red-400">
@@ -224,13 +268,17 @@ export default function PayslipDashboard() {
                                                     {fmt(r.net_pay)}
                                                 </TableCell>
                                                 <TableCell className="px-3 py-3 text-center">
-                                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                                        r.status === "released"
-                                                            ? "bg-green-500/10 text-green-400"
-                                                            : r.status === "pending"
-                                                            ? "bg-yellow-500/10 text-yellow-400"
-                                                            : "bg-muted text-muted-foreground"
-                                                    }`}>
+                                                    <span
+                                                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                                            r.status ===
+                                                            "released"
+                                                                ? "bg-green-500/10 text-green-400"
+                                                                : r.status ===
+                                                                    "pending"
+                                                                  ? "bg-yellow-500/10 text-yellow-400"
+                                                                  : "bg-muted text-muted-foreground"
+                                                        }`}
+                                                    >
                                                         {r.status ?? "—"}
                                                     </span>
                                                 </TableCell>
@@ -238,7 +286,10 @@ export default function PayslipDashboard() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
+                                            <TableCell
+                                                colSpan={8}
+                                                className="text-muted-foreground py-12 text-center"
+                                            >
                                                 No payslip records found.
                                             </TableCell>
                                         </TableRow>
@@ -246,9 +297,13 @@ export default function PayslipDashboard() {
                                 </TableBody>
                                 {displayed.length > 1 && (
                                     <tfoot>
-                                        <TableRow className="border-t-2 bg-muted/30">
-                                            <TableCell className="px-3 py-3 font-bold" colSpan={6}>
-                                                Total ({displayed.length} periods)
+                                        <TableRow className="bg-muted/30 border-t-2">
+                                            <TableCell
+                                                className="px-3 py-3 font-bold"
+                                                colSpan={6}
+                                            >
+                                                Total ({displayed.length}{" "}
+                                                periods)
                                             </TableCell>
                                             <TableCell className="px-3 py-3 text-right font-bold text-green-400">
                                                 {fmt(totalNet)}
@@ -265,32 +320,74 @@ export default function PayslipDashboard() {
                             <div className="mt-6 grid gap-4 sm:grid-cols-2">
                                 <Card className="bg-card border">
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-semibold text-primary">Earnings</CardTitle>
+                                        <CardTitle className="text-primary text-sm font-semibold">
+                                            Earnings
+                                        </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-2 text-sm">
-                                        <Row label="Basic Pay" value={fmt(selected.basic_pay)} />
-                                        <Row label="Overtime Pay" value={fmt(selected.overtime_pay)} />
-                                        <Row label="Allowance" value={fmt(selected.allowance)} />
-                                        <div className="border-t border-border pt-2">
-                                            <Row label="Gross Pay" value={fmt(selected.gross_pay)} bold />
+                                        <Row
+                                            label="Basic Pay"
+                                            value={fmt(selected.basic_pay)}
+                                        />
+                                        <Row
+                                            label="Overtime Pay"
+                                            value={fmt(selected.overtime_pay)}
+                                        />
+                                        <Row
+                                            label="Allowance"
+                                            value={fmt(selected.allowance)}
+                                        />
+                                        <div className="border-border border-t pt-2">
+                                            <Row
+                                                label="Gross Pay"
+                                                value={fmt(selected.gross_pay)}
+                                                bold
+                                            />
                                         </div>
                                     </CardContent>
                                 </Card>
 
                                 <Card className="bg-card border">
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-sm font-semibold text-red-400">Deductions</CardTitle>
+                                        <CardTitle className="text-sm font-semibold text-red-400">
+                                            Deductions
+                                        </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-2 text-sm">
-                                        <Row label="SSS" value={fmt(selected.sss)} />
-                                        <Row label="PhilHealth" value={fmt(selected.philhealth)} />
-                                        <Row label="Pag-IBIG" value={fmt(selected.pagibig)} />
-                                        <Row label="Tax" value={fmt(selected.tax)} />
-                                        {parseFloat(selected.other_deductions) > 0 && (
-                                            <Row label="Other" value={fmt(selected.other_deductions)} />
+                                        <Row
+                                            label="SSS"
+                                            value={fmt(selected.sss)}
+                                        />
+                                        <Row
+                                            label="PhilHealth"
+                                            value={fmt(selected.philhealth)}
+                                        />
+                                        <Row
+                                            label="Pag-IBIG"
+                                            value={fmt(selected.pagibig)}
+                                        />
+                                        <Row
+                                            label="Tax"
+                                            value={fmt(selected.tax)}
+                                        />
+                                        {parseFloat(selected.other_deductions) >
+                                            0 && (
+                                            <Row
+                                                label="Other"
+                                                value={fmt(
+                                                    selected.other_deductions,
+                                                )}
+                                            />
                                         )}
-                                        <div className="border-t border-border pt-2">
-                                            <Row label="Total Deductions" value={fmt(selected.total_deductions)} bold red />
+                                        <div className="border-border border-t pt-2">
+                                            <Row
+                                                label="Total Deductions"
+                                                value={fmt(
+                                                    selected.total_deductions,
+                                                )}
+                                                bold
+                                                red
+                                            />
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -298,7 +395,9 @@ export default function PayslipDashboard() {
                                 <div className="sm:col-span-2">
                                     <Card className="border border-green-500/20 bg-green-500/5">
                                         <CardContent className="flex items-center justify-between px-5 py-4">
-                                            <span className="font-semibold text-foreground">Net Pay</span>
+                                            <span className="text-foreground font-semibold">
+                                                Net Pay
+                                            </span>
                                             <span className="text-2xl font-bold text-green-400">
                                                 {fmt(selected.net_pay)}
                                             </span>
@@ -328,7 +427,9 @@ function Row({
     return (
         <div className="flex items-center justify-between">
             <span className="text-muted-foreground">{label}</span>
-            <span className={`${bold ? "font-bold" : "font-medium"} ${red ? "text-red-400" : "text-foreground"}`}>
+            <span
+                className={`${bold ? "font-bold" : "font-medium"} ${red ? "text-red-400" : "text-foreground"}`}
+            >
                 {value}
             </span>
         </div>

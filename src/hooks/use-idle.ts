@@ -1,47 +1,74 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthStore } from "./use-auth";
+
+const IDLE_LIMIT_MS = 30 * 60 * 1000;
+const WARNING_MS = 2 * 60 * 1000;
+const TICK_MS = 1000;
+const ACTIVITY_EVENTS = [
+    "mousemove",
+    "mousedown",
+    "keydown",
+    "scroll",
+    "touchstart",
+];
 
 export const useIdleLogout = () => {
     const logout = useAuthStore((state) => state.logout);
     const token = useAuthStore((state) => state.token);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastActivity = useRef(Date.now());
+    const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
-    const resetTimer = () => {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
-
-        timeoutRef.current = setTimeout(
-            () => {
-                logout();
-            },
-            30 * 60 * 1000,
-        );
-    };
+    const stay = useCallback(() => {
+        lastActivity.current = Date.now();
+        setSecondsLeft(null);
+    }, []);
 
     useEffect(() => {
-        if (!token) return;
+        if (!token) {
+            setSecondsLeft(null);
+            return;
+        }
 
-        const events = [
-            "mousemove",
-            "mousedown",
-            "keydown",
-            "scroll",
-            "touchstart",
-        ];
+        lastActivity.current = Date.now();
 
-        events.forEach((event) => window.addEventListener(event, resetTimer));
+        // While the warning is up, only the "Stay signed in" button counts as
+        // activity, so a stray touch cannot silently dismiss it.
+        const onActivity = () => {
+            if (
+                Date.now() - lastActivity.current <
+                IDLE_LIMIT_MS - WARNING_MS
+            ) {
+                lastActivity.current = Date.now();
+            }
+        };
 
-        resetTimer();
+        // Compare timestamps instead of using one long timeout: a phone that was
+        // locked or a tab in the background throttles timers, but the clock
+        // difference is still right when the page wakes up.
+        const tick = window.setInterval(() => {
+            const idle = Date.now() - lastActivity.current;
+            if (idle >= IDLE_LIMIT_MS) {
+                window.clearInterval(tick);
+                setSecondsLeft(null);
+                logout();
+            } else if (idle >= IDLE_LIMIT_MS - WARNING_MS) {
+                setSecondsLeft(Math.ceil((IDLE_LIMIT_MS - idle) / 1000));
+            } else {
+                setSecondsLeft(null);
+            }
+        }, TICK_MS);
+
+        ACTIVITY_EVENTS.forEach((event) =>
+            window.addEventListener(event, onActivity, { passive: true }),
+        );
 
         return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
-
-            events.forEach((event) =>
-                window.removeEventListener(event, resetTimer),
+            window.clearInterval(tick);
+            ACTIVITY_EVENTS.forEach((event) =>
+                window.removeEventListener(event, onActivity),
             );
         };
     }, [token, logout]);
+
+    return { secondsLeft, stay };
 };

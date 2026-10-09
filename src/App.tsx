@@ -22,6 +22,12 @@ import ScheduleForm from "./pages/schedules/schedule-form";
 import ScheduleDashboard from "./pages/schedules/schedule-dashboard";
 import { ParentComponent } from "./components/parent-container";
 import { useIdleLogout } from "./hooks/use-idle";
+import { IdleWarning } from "./components/idle-warning";
+import DevicesPage from "./pages/account/devices";
+import MySchedulePage from "./pages/my-schedule";
+import MyDocumentsPage from "./pages/documents/my-documents";
+import DocumentRequestsManagePage from "./pages/documents/document-requests-manage";
+import { OfflineBanner } from "./components/offline-banner";
 import ScheduleUpload from "./pages/schedules/schedules-upload";
 import LeaveDashboard from "./pages/leave-forms/leave-dashboard";
 import LeaveForm from "./pages/leave-forms/leave-form";
@@ -299,6 +305,26 @@ const router = createBrowserRouter([
                 element: <SystemGuide />,
                 handle: { title: "System Guide" },
             },
+            {
+                path: "/account/devices",
+                element: <DevicesPage />,
+                handle: { title: "Signed-in Devices" },
+            },
+            {
+                path: "/my-schedule",
+                element: <MySchedulePage />,
+                handle: { title: "My Schedule" },
+            },
+            {
+                path: "/documents",
+                element: <MyDocumentsPage />,
+                handle: { title: "Document Requests" },
+            },
+            {
+                path: "/document-requests",
+                element: <DocumentRequestsManagePage />,
+                handle: { title: "Document Requests" },
+            },
         ],
     },
     {
@@ -308,6 +334,12 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-    useIdleLogout();
-    return <RouterProvider router={router} />;
+    const { secondsLeft, stay } = useIdleLogout();
+    return (
+        <>
+            <OfflineBanner />
+            <RouterProvider router={router} />
+            <IdleWarning secondsLeft={secondsLeft} onStay={stay} />
+        </>
+    );
 }

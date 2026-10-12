@@ -322,7 +322,12 @@ export default function Employees() {
 
         try {
             const res = await api.post<
-                ApiResponse<{ employee_id: number; password: string }>
+                ApiResponse<{
+                    employee_id: number;
+                    emailed: boolean;
+                    sent_to?: string;
+                    password?: string;
+                }>
             >(`/api/v2/auth/admin-reset/${employee.id}`);
 
             // The server generates a fresh single-use password per reset (see
@@ -330,6 +335,13 @@ export default function Employees() {
             // once here -- there is no fixed/predictable default to fall back
             // on, so surfacing anything other than this value would hand the
             // coordinator a password that doesn't actually work.
+            if (res.data?.data?.emailed) {
+                toast.success(
+                    `A temporary password was emailed to ${res.data.data.sent_to}.`,
+                );
+                return;
+            }
+
             const password = res.data?.data?.password;
 
             if (!password) {
